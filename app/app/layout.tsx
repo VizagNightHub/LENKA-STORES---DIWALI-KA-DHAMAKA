@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { Space_Grotesk } from "next/font/google";
+import { VisitorTracker } from "@/components/analytics/VisitorTracker";
 import "./globals.css";
 
 const spaceGrotesk = Space_Grotesk({
@@ -8,9 +9,9 @@ const spaceGrotesk = Space_Grotesk({
 });
 
 export const metadata: Metadata = {
-  title: "LENKA STORE — Diwali Ka Dhamaka",
+  title: "LENKA STORE — Lenka Stores Diwali Ka Dhamaka",
   description:
-    "Official Lenka Store Diwali Ka Dhamaka —  Firecrackers, Fashion Wear, Electronics & New Launches.",
+    "Official Lenka Store Diwali Ka Dhamaka — Sivakasi Direct Firecrackers, Fashion Wear, Electronics & New Launches.",
 };
 
 export default function RootLayout({
@@ -21,6 +22,7 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body className={`${spaceGrotesk.className} bg-[#09090b] antialiased`}>
+        <VisitorTracker />
         {children}
       </body>
     </html>
