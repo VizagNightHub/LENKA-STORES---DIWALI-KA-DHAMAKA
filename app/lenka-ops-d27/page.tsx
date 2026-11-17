@@ -2,7 +2,19 @@
 
 import { onAuthStateChanged, signInWithEmailAndPassword, signOut, User } from "firebase/auth";
 import { collection, doc, onSnapshot, orderBy, query, updateDoc } from "firebase/firestore";
-import { CheckCircle2, ExternalLink, Lock, LogOut, MessageCircle, Package, Receipt, XCircle } from "lucide-react";
+import {
+  CheckCircle2,
+  ExternalLink,
+  Eye,
+  IndianRupee,
+  Lock,
+  LogOut,
+  MessageCircle,
+  Package,
+  Receipt,
+  ShoppingBag,
+  XCircle,
+} from "lucide-react";
 import { useEffect, useState } from "react";
 import { CatalogManager } from "@/components/admin/CatalogManager";
 import { auth, db } from "@/lib/firebase";
@@ -30,6 +42,7 @@ export default function AdminDashboardPage() {
   const [loginError, setLoginError] = useState("");
   const [section, setSection] = useState<"orders" | "products">("orders");
   const [orders, setOrders] = useState<OrderRecord[]>([]);
+  const [visitorCount, setVisitorCount] = useState(0);
   const [filter, setFilter] = useState<"ALL" | "PENDING_VERIFICATION" | "CONFIRMED" | "CANCELLED">("ALL");
   const [previewImg, setPreviewImg] = useState<string | null>(null);
 
@@ -44,14 +57,24 @@ export default function AdminDashboardPage() {
   useEffect(() => {
     if (!user) return;
     const q = query(collection(db, "orders"), orderBy("createdAt", "desc"));
-    const unsub = onSnapshot(q, (snap) => {
+    const unsubOrders = onSnapshot(q, (snap) => {
       const list: OrderRecord[] = snap.docs.map((d) => ({
         id: d.id,
         ...(d.data() as Omit<OrderRecord, "id">),
       }));
       setOrders(list);
     });
-    return () => unsub();
+
+    const unsubVisitors = onSnapshot(doc(db, "stats", "visitors"), (snap) => {
+      if (snap.exists()) {
+        setVisitorCount(Number(snap.data().count) || 0);
+      }
+    });
+
+    return () => {
+      unsubOrders();
+      unsubVisitors();
+    };
   }, [user]);
 
   const handleLogin = async (e: React.FormEvent) => {
@@ -67,6 +90,14 @@ export default function AdminDashboardPage() {
   const updateStatus = async (id: string, status: "CONFIRMED" | "CANCELLED") => {
     await updateDoc(doc(db, "orders", id), { status });
   };
+
+  const confirmedCash = orders
+    .filter((o) => o.status === "CONFIRMED")
+    .reduce((sum, o) => sum + (Number(o.totalAmount) || 0), 0);
+
+  const pendingCash = orders
+    .filter((o) => o.status === "PENDING_VERIFICATION")
+    .reduce((sum, o) => sum + (Number(o.totalAmount) || 0), 0);
 
   const filteredOrders =
     filter === "ALL" ? orders : orders.filter((o) => o.status === filter);
@@ -119,6 +150,7 @@ export default function AdminDashboardPage() {
   return (
     <main className="min-h-screen bg-[#09090b] px-4 py-8 text-[#E1E0CC] sm:px-8">
       <div className="mx-auto max-w-6xl">
+        {/* Header */}
         <div className="flex flex-wrap items-center justify-between gap-4 border-b border-white/10 pb-5">
           <div>
             <p className="text-xs font-semibold uppercase tracking-widest text-[#FFD54A]">
@@ -152,7 +184,7 @@ export default function AdminDashboardPage() {
               }`}
             >
               <Package className="h-3.5 w-3.5" />
-              Products & 3D
+              Products & Ads
             </button>
             <button
               type="button"
@@ -162,6 +194,45 @@ export default function AdminDashboardPage() {
               <LogOut className="h-3.5 w-3.5" />
               Sign Out
             </button>
+          </div>
+        </div>
+
+        {/* 3 Live KPI Cards */}
+        <div className="mt-6 grid grid-cols-1 gap-4 sm:grid-cols-3">
+          <div className="rounded-2xl border border-white/10 bg-zinc-900/80 p-5">
+            <div className="flex items-center justify-between text-xs text-[#E1E0CC]/65">
+              <span>Live Website Visitors</span>
+              <Eye className="h-4 w-4 text-[#38BDF8]" />
+            </div>
+            <p className="mt-2 text-3xl font-bold text-white">
+              {visitorCount.toLocaleString("en-IN")}
+            </p>
+          </div>
+
+          <div className="rounded-2xl border border-white/10 bg-zinc-900/80 p-5">
+            <div className="flex items-center justify-between text-xs text-[#E1E0CC]/65">
+              <span>Total Ordered Members</span>
+              <ShoppingBag className="h-4 w-4 text-[#FFD54A]" />
+            </div>
+            <p className="mt-2 text-3xl font-bold text-white">
+              {orders.length}
+            </p>
+            <p className="mt-1 text-[11px] text-[#E1E0CC]/55">
+              {orders.filter((o) => o.status === "CONFIRMED").length} Confirmed
+            </p>
+          </div>
+
+          <div className="rounded-2xl border border-[#4ADE80]/30 bg-zinc-900/80 p-5">
+            <div className="flex items-center justify-between text-xs text-[#E1E0CC]/65">
+              <span>Total Collected Cash</span>
+              <IndianRupee className="h-4 w-4 text-[#4ADE80]" />
+            </div>
+            <p className="mt-2 text-3xl font-bold text-[#4ADE80]">
+              ₹{confirmedCash.toLocaleString("en-IN")}
+            </p>
+            <p className="mt-1 text-[11px] text-[#E1E0CC]/55">
+              Pending Verification: ₹{pendingCash.toLocaleString("en-IN")}
+            </p>
           </div>
         </div>
 
