@@ -1,15 +1,41 @@
 "use client";
 
-import { ArrowLeft, CheckCircle2, Copy, Smartphone, ShieldCheck } from "lucide-react";
+import { doc, getDoc, serverTimestamp, setDoc } from "firebase/firestore";
+import { ArrowLeft, CheckCircle2, Copy, ShieldCheck, Smartphone, Upload } from "lucide-react";
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import { STORE_CONFIG } from "@/data/storeConfig";
+import { db } from "@/lib/firebase";
 
 interface CartItem {
   id: string;
   name: string;
   price: number;
   qty: number;
+}
+
+function compressImage(file: File): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => {
+      const img = new Image();
+      img.onload = () => {
+        const maxW = 720;
+        const scale = Math.min(1, maxW / img.width);
+        const canvas = document.createElement("canvas");
+        canvas.width = img.width * scale;
+        canvas.height = img.height * scale;
+        const ctx = canvas.getContext("2d");
+        if (!ctx) return reject(new Error("Canvas error"));
+        ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+        resolve(canvas.toDataURL("image/jpeg", 0.65));
+      };
+      img.onerror = reject;
+      img.src = reader.result as string;
+    };
+    reader.onerror = reject;
+    reader.readAsDataURL(file);
+  });
 }
 
 export default function CheckoutPage() {
@@ -20,7 +46,9 @@ export default function CheckoutPage() {
   const [city, setCity] = useState("");
   const [address, setAddress] = useState("");
   const [utr, setUtr] = useState("");
+  const [screenshot, setScreenshot] = useState<string>("");
   const [copied, setCopied] = useState(false);
+  const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [orderId, setOrderId] = useState<string | null>(null);
 
@@ -36,7 +64,7 @@ export default function CheckoutPage() {
   const total = cart.reduce((s, item) => s + item.price * item.qty, 0);
   const upiLink = `upi://pay?pa=${encodeURIComponent(STORE_CONFIG.upiId)}&pn=${encodeURIComponent(
     STORE_CONFIG.businessName
-  )}&am=${total}&cu=INR&tn=${encodeURIComponent("Lenka Store Diwali Pre-Book")}`;
+  )}&am=${total}&cu=INR&tn=${encodeURIComponent("Lenka Store Pre-Book")}`;
 
   const copyUpi = () => {
     navigator.clipboard.writeText(STORE_CONFIG.upiId);
@@ -44,10 +72,23 @@ export default function CheckoutPage() {
     setTimeout(() => setCopied(false), 2000);
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    try {
+      const compressed = await compressImage(file);
+      setScreenshot(compressed);
+      setError("");
+    } catch {
+      setError("Could not read screenshot. Please try another image.");
+    }
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError("");
 
+    const cleanUtr = utr.trim();
     if (!name.trim() || !/^\d{10}$/.test(phone.trim())) {
       setError("Enter your full name and a valid 10-digit mobile number.");
       return;
@@ -56,26 +97,55 @@ export default function CheckoutPage() {
       setError("Enter your city and full delivery address.");
       return;
     }
-    if (!/^\d{12}$/.test(utr.trim())) {
+    if (!/^\d{12}$/.test(cleanUtr)) {
       setError("Enter a valid 12-digit UPI UTR / Reference number.");
       return;
     }
+    if (!screenshot) {
+      setError("Please upload your UPI payment screenshot.");
+      return;
+    }
 
-    const newOrderId = `D27-${Date.now().toString().slice(-6)}`;
-    const itemsText = cart
-      .map((c) => `${c.name} x${c.qty} (₹${(c.price * c.qty).toLocaleString("en-IN")})`)
-      .join(", ");
+    setLoading(true);
+    try {
+      // Block duplicate/repeated UTR numbers
+      const utrRef = doc(db, "used_utrs", cleanUtr);
+      const utrSnap = await getDoc(utrRef);
+      if (utrSnap.exists()) {
+        setError("This UTR number has already been used. Duplicate UTRs are blocked.");
+        setLoading(false);
+        return;
+      }
 
-    const msg = encodeURIComponent(
-      `*NEW PRE-BOOK ORDER (${newOrderId})*\n` +
-        `Name: ${name}\nPhone: ${phone}\nLocation: ${city}, ${state}\n` +
-        `Address: ${address}\nItems: ${itemsText}\nTotal Paid: ₹${total.toLocaleString("en-IN")}\n` +
-        `UTR: ${utr}`
-    );
+      const newOrderId = `D27-${Date.now().toString().slice(-6)}`;
 
-    localStorage.removeItem("lenka_d27_cart");
-    setOrderId(newOrderId);
-    window.open(`https://wa.me/${STORE_CONFIG.whatsappNumber}?text=${msg}`, "_blank");
+      await setDoc(utrRef, {
+        orderId: newOrderId,
+        createdAt: serverTimestamp(),
+      });
+
+      await setDoc(doc(db, "orders", newOrderId), {
+        orderId: newOrderId,
+        customerName: name.trim(),
+        phone: phone.trim(),
+        state,
+        city: city.trim(),
+        address: address.trim(),
+        items: cart,
+        totalAmount: total,
+        utr: cleanUtr,
+        screenshot,
+        status: "PENDING_VERIFICATION",
+        createdAt: serverTimestamp(),
+      });
+
+      localStorage.removeItem("lenka_d27_cart");
+      setOrderId(newOrderId);
+    } catch {
+      setError("Could not save order. Please check connection and try again.");
+    } finally {
+      setLoading(false);
+    }
   };
 
   if (orderId) {
@@ -88,7 +158,7 @@ export default function CheckoutPage() {
             Order ID: <span className="font-semibold text-[#FFD54A]">{orderId}</span>
           </p>
           <p className="mt-3 text-xs text-[#E1E0CC]/65">
-            Your 12-digit UTR ({utr}) is queued for verification. Confirmation will be sent on WhatsApp.
+            Your UTR ({utr}) and payment screenshot are saved. Our team will verify your payment and confirm your order shortly.
           </p>
           <Link
             href="/"
@@ -109,7 +179,7 @@ export default function CheckoutPage() {
           className="inline-flex items-center gap-2 text-sm text-[#E1E0CC]/75 hover:text-[#FFD54A]"
         >
           <ArrowLeft className="h-4 w-4" />
-          Back to Combos
+          Back to Store
         </Link>
 
         <h1 className="mt-4 text-3xl font-semibold sm:text-4xl">Prepaid UPI Checkout</h1>
@@ -173,7 +243,7 @@ export default function CheckoutPage() {
             </div>
 
             <div className="space-y-5 rounded-3xl border border-[#FFD54A]/35 bg-zinc-900/90 p-6 lg:col-span-5">
-              <h2 className="text-lg font-semibold text-white">2. Pay & Verify UTR</h2>
+              <h2 className="text-lg font-semibold text-white">2. Pay & Upload Proof</h2>
 
               <div className="space-y-2 border-b border-white/10 pb-4 text-xs">
                 {cart.map((c) => (
@@ -189,7 +259,7 @@ export default function CheckoutPage() {
               </div>
 
               <div className="rounded-2xl border border-white/10 bg-black/50 p-4 text-xs">
-                <p className="text-[#E1E0CC]/65">Pay to UPI ID:</p>
+                <p className="text-[#E1E0CC]/65">Step 1: Pay via UPI to:</p>
                 <div className="mt-1.5 flex items-center justify-between gap-2">
                   <span className="font-mono text-sm font-semibold text-white">
                     {STORE_CONFIG.upiId}
@@ -210,11 +280,14 @@ export default function CheckoutPage() {
                   <Smartphone className="h-4 w-4" />
                   Open UPI App to Pay ₹{total.toLocaleString("en-IN")}
                 </a>
+                <p className="mt-2.5 text-[11px] text-[#FFD54A]">
+                  Important: After paying, take a screenshot of the payment receipt and upload it below.
+                </p>
               </div>
 
               <div>
                 <label className="mb-1.5 block text-xs text-[#E1E0CC]/75">
-                  Enter 12-Digit UTR / UPI Reference Number
+                  Step 2: 12-Digit UTR / UPI Reference Number
                 </label>
                 <input
                   type="text"
@@ -226,14 +299,31 @@ export default function CheckoutPage() {
                 />
               </div>
 
+              <div>
+                <label className="mb-1.5 block text-xs text-[#E1E0CC]/75">
+                  Step 3: Upload Payment Screenshot
+                </label>
+                <label className="flex cursor-pointer items-center justify-center gap-2 rounded-xl border border-dashed border-white/25 bg-black/40 px-4 py-3 text-xs hover:border-[#FFD54A]">
+                  <Upload className="h-4 w-4 text-[#FFD54A]" />
+                  <span>{screenshot ? "Screenshot Uploaded ✓ (Change)" : "Choose Payment Screenshot"}</span>
+                  <input
+                    type="file"
+                    accept="image/*"
+                    onChange={handleFileChange}
+                    className="hidden"
+                  />
+                </label>
+              </div>
+
               {error && <p className="text-xs text-red-400">{error}</p>}
 
               <button
                 type="submit"
-                className="flex w-full cursor-pointer items-center justify-center gap-2 rounded-full bg-[#FFD54A] py-3.5 text-sm font-bold text-black hover:bg-[#ffe27a]"
+                disabled={loading}
+                className="flex w-full cursor-pointer items-center justify-center gap-2 rounded-full bg-[#FFD54A] py-3.5 text-sm font-bold text-black hover:bg-[#ffe27a] disabled:opacity-50"
               >
                 <ShieldCheck className="h-4 w-4" />
-                Confirm Order & Verify UTR
+                {loading ? "Saving Order..." : "Submit Order & Proof"}
               </button>
             </div>
           </form>
