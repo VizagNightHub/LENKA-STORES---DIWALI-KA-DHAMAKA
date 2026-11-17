@@ -11,7 +11,6 @@ const navItems = [
   { label: "Fashion Wear", href: "/fashion-wear" },
   { label: "Electronics", href: "/electronics" },
   { label: "New Launch", href: "/new-launch" },
-  { label: "Admin", href: "/admin" },
 ];
 
 export const PrismaHero = () => {
