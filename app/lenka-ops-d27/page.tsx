@@ -2,8 +2,9 @@
 
 import { onAuthStateChanged, signInWithEmailAndPassword, signOut, User } from "firebase/auth";
 import { collection, doc, onSnapshot, orderBy, query, updateDoc } from "firebase/firestore";
-import { CheckCircle2, ExternalLink, Lock, LogOut, MessageCircle, XCircle } from "lucide-react";
+import { CheckCircle2, ExternalLink, Lock, LogOut, MessageCircle, Package, Receipt, XCircle } from "lucide-react";
 import { useEffect, useState } from "react";
+import { CatalogManager } from "@/components/admin/CatalogManager";
 import { auth, db } from "@/lib/firebase";
 
 interface OrderRecord {
@@ -27,6 +28,7 @@ export default function AdminDashboardPage() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [loginError, setLoginError] = useState("");
+  const [section, setSection] = useState<"orders" | "products">("orders");
   const [orders, setOrders] = useState<OrderRecord[]>([]);
   const [filter, setFilter] = useState<"ALL" | "PENDING_VERIFICATION" | "CONFIRMED" | "CANCELLED">("ALL");
   const [previewImg, setPreviewImg] = useState<string | null>(null);
@@ -123,149 +125,176 @@ export default function AdminDashboardPage() {
               Private Operations
             </p>
             <h1 className="text-2xl font-bold text-white sm:text-3xl">
-              Order & UTR Verification
+              LENKA D-27 Admin
             </h1>
           </div>
-          <button
-            type="button"
-            onClick={() => signOut(auth)}
-            className="inline-flex cursor-pointer items-center gap-2 rounded-full border border-white/15 px-4 py-2 text-xs hover:border-white/30"
-          >
-            <LogOut className="h-3.5 w-3.5" />
-            Sign Out
-          </button>
-        </div>
 
-        {/* Status Filter Tabs */}
-        <div className="mt-6 flex flex-wrap gap-2">
-          {(["ALL", "PENDING_VERIFICATION", "CONFIRMED", "CANCELLED"] as const).map((tab) => (
+          <div className="flex items-center gap-2">
             <button
-              key={tab}
               type="button"
-              onClick={() => setFilter(tab)}
-              className={`cursor-pointer rounded-full px-4 py-1.5 text-xs font-semibold ${
-                filter === tab
+              onClick={() => setSection("orders")}
+              className={`inline-flex cursor-pointer items-center gap-1.5 rounded-full px-4 py-2 text-xs font-semibold ${
+                section === "orders"
                   ? "bg-[#FFD54A] text-black"
-                  : "border border-white/15 bg-zinc-900 text-[#E1E0CC]/75"
+                  : "border border-white/15 text-[#E1E0CC]"
               }`}
             >
-              {tab.replace("_", " ")}
+              <Receipt className="h-3.5 w-3.5" />
+              Orders ({orders.length})
             </button>
-          ))}
+            <button
+              type="button"
+              onClick={() => setSection("products")}
+              className={`inline-flex cursor-pointer items-center gap-1.5 rounded-full px-4 py-2 text-xs font-semibold ${
+                section === "products"
+                  ? "bg-[#FFD54A] text-black"
+                  : "border border-white/15 text-[#E1E0CC]"
+              }`}
+            >
+              <Package className="h-3.5 w-3.5" />
+              Products & 3D
+            </button>
+            <button
+              type="button"
+              onClick={() => signOut(auth)}
+              className="inline-flex cursor-pointer items-center gap-1.5 rounded-full border border-white/15 px-4 py-2 text-xs hover:border-white/30"
+            >
+              <LogOut className="h-3.5 w-3.5" />
+              Sign Out
+            </button>
+          </div>
         </div>
 
-        {/* Orders List */}
-        <div className="mt-6 space-y-4">
-          {filteredOrders.length === 0 ? (
-            <p className="rounded-2xl border border-white/10 bg-zinc-900/60 p-8 text-center text-sm text-[#E1E0CC]/60">
-              No orders in this filter yet.
-            </p>
-          ) : (
-            filteredOrders.map((order) => (
-              <div
-                key={order.id}
-                className="grid gap-6 rounded-2xl border border-white/10 bg-zinc-900/80 p-5 lg:grid-cols-12"
-              >
-                {/* Customer & Address */}
-                <div className="space-y-1.5 text-xs lg:col-span-5">
-                  <div className="flex items-center gap-2">
-                    <span className="font-mono text-sm font-bold text-[#FFD54A]">
-                      {order.orderId}
-                    </span>
-                    <span
-                      className={`rounded-full px-2.5 py-0.5 text-[10px] font-bold ${
-                        order.status === "CONFIRMED"
-                          ? "bg-green-500/20 text-green-400"
-                          : order.status === "CANCELLED"
-                          ? "bg-red-500/20 text-red-400"
-                          : "bg-yellow-500/20 text-yellow-300"
-                      }`}
-                    >
-                      {order.status}
-                    </span>
-                  </div>
-                  <p className="text-sm font-semibold text-white">
-                    {order.customerName} • {order.phone}
-                  </p>
-                  <p className="text-[#E1E0CC]/75">
-                    {order.address}, {order.city}, {order.state}
-                  </p>
-                  <div className="pt-2 text-[#E1E0CC]/85">
-                    {order.items?.map((it, i) => (
-                      <div key={i}>
-                        • {it.name} × {it.qty} (₹{(it.price * it.qty).toLocaleString("en-IN")})
+        {section === "products" ? (
+          <CatalogManager />
+        ) : (
+          <>
+            <div className="mt-6 flex flex-wrap gap-2">
+              {(["ALL", "PENDING_VERIFICATION", "CONFIRMED", "CANCELLED"] as const).map((tab) => (
+                <button
+                  key={tab}
+                  type="button"
+                  onClick={() => setFilter(tab)}
+                  className={`cursor-pointer rounded-full px-4 py-1.5 text-xs font-semibold ${
+                    filter === tab
+                      ? "bg-[#FFD54A] text-black"
+                      : "border border-white/15 bg-zinc-900 text-[#E1E0CC]/75"
+                  }`}
+                >
+                  {tab.replace("_", " ")}
+                </button>
+              ))}
+            </div>
+
+            <div className="mt-6 space-y-4">
+              {filteredOrders.length === 0 ? (
+                <p className="rounded-2xl border border-white/10 bg-zinc-900/60 p-8 text-center text-sm text-[#E1E0CC]/60">
+                  No orders in this filter yet.
+                </p>
+              ) : (
+                filteredOrders.map((order) => (
+                  <div
+                    key={order.id}
+                    className="grid gap-6 rounded-2xl border border-white/10 bg-zinc-900/80 p-5 lg:grid-cols-12"
+                  >
+                    <div className="space-y-1.5 text-xs lg:col-span-5">
+                      <div className="flex items-center gap-2">
+                        <span className="font-mono text-sm font-bold text-[#FFD54A]">
+                          {order.orderId}
+                        </span>
+                        <span
+                          className={`rounded-full px-2.5 py-0.5 text-[10px] font-bold ${
+                            order.status === "CONFIRMED"
+                              ? "bg-green-500/20 text-green-400"
+                              : order.status === "CANCELLED"
+                              ? "bg-red-500/20 text-red-400"
+                              : "bg-yellow-500/20 text-yellow-300"
+                          }`}
+                        >
+                          {order.status}
+                        </span>
                       </div>
-                    ))}
-                  </div>
-                </div>
+                      <p className="text-sm font-semibold text-white">
+                        {order.customerName} • {order.phone}
+                      </p>
+                      <p className="text-[#E1E0CC]/75">
+                        {order.address}, {order.city}, {order.state}
+                      </p>
+                      <div className="pt-2 text-[#E1E0CC]/85">
+                        {order.items?.map((it, i) => (
+                          <div key={i}>
+                            • {it.name} × {it.qty} (₹{(it.price * it.qty).toLocaleString("en-IN")})
+                          </div>
+                        ))}
+                      </div>
+                    </div>
 
-                {/* Payment UTR + Screenshot */}
-                <div className="flex items-center gap-4 lg:col-span-4">
-                  {order.screenshot && (
-                    <button
-                      type="button"
-                      onClick={() => setPreviewImg(order.screenshot!)}
-                      className="group relative h-24 w-20 shrink-0 cursor-pointer overflow-hidden rounded-xl border border-white/20"
-                    >
-                      <img
-                        src={order.screenshot}
-                        alt="Payment proof"
-                        className="h-full w-full object-cover"
-                      />
-                      <span className="absolute inset-0 flex items-center justify-center bg-black/50 opacity-0 group-hover:opacity-100">
-                        <ExternalLink className="h-4 w-4 text-white" />
-                      </span>
-                    </button>
-                  )}
-                  <div className="text-xs">
-                    <p className="text-[#E1E0CC]/60">Amount Paid</p>
-                    <p className="text-lg font-bold text-white">
-                      ₹{order.totalAmount?.toLocaleString("en-IN")}
-                    </p>
-                    <p className="mt-1 text-[#E1E0CC]/60">12-Digit UTR</p>
-                    <p className="font-mono text-sm font-bold text-[#FFD54A]">
-                      {order.utr}
-                    </p>
-                  </div>
-                </div>
+                    <div className="flex items-center gap-4 lg:col-span-4">
+                      {order.screenshot && (
+                        <button
+                          type="button"
+                          onClick={() => setPreviewImg(order.screenshot!)}
+                          className="group relative h-24 w-20 shrink-0 cursor-pointer overflow-hidden rounded-xl border border-white/20"
+                        >
+                          <img
+                            src={order.screenshot}
+                            alt="Payment proof"
+                            className="h-full w-full object-cover"
+                          />
+                          <span className="absolute inset-0 flex items-center justify-center bg-black/50 opacity-0 group-hover:opacity-100">
+                            <ExternalLink className="h-4 w-4 text-white" />
+                          </span>
+                        </button>
+                      )}
+                      <div className="text-xs">
+                        <p className="text-[#E1E0CC]/60">Amount Paid</p>
+                        <p className="text-lg font-bold text-white">
+                          ₹{order.totalAmount?.toLocaleString("en-IN")}
+                        </p>
+                        <p className="mt-1 text-[#E1E0CC]/60">12-Digit UTR</p>
+                        <p className="font-mono text-sm font-bold text-[#FFD54A]">
+                          {order.utr}
+                        </p>
+                      </div>
+                    </div>
 
-                {/* Team Verify Actions */}
-                <div className="flex flex-col justify-center gap-2 lg:col-span-3">
-                  <button
-                    type="button"
-                    onClick={() => updateStatus(order.id, "CONFIRMED")}
-                    className="flex cursor-pointer items-center justify-center gap-1.5 rounded-xl bg-green-600 py-2 text-xs font-bold text-white hover:bg-green-500"
-                  >
-                    <CheckCircle2 className="h-4 w-4" />
-                    Confirm Order
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => updateStatus(order.id, "CANCELLED")}
-                    className="flex cursor-pointer items-center justify-center gap-1.5 rounded-xl bg-red-600/80 py-2 text-xs font-bold text-white hover:bg-red-500"
-                  >
-                    <XCircle className="h-4 w-4" />
-                    Cancel Order
-                  </button>
-                  <a
-                    href={`https://wa.me/91${order.phone}?text=${encodeURIComponent(
-                      `Hi ${order.customerName}, your Lenka Store order ${order.orderId} (UTR ${order.utr}) status is: ${order.status}.`
-                    )}`}
-                    target="_blank"
-                    rel="noreferrer"
-                    className="flex items-center justify-center gap-1.5 rounded-xl border border-white/15 py-2 text-xs font-semibold hover:border-[#FFD54A]"
-                  >
-                    <MessageCircle className="h-4 w-4 text-[#4ADE80]" />
-                    WhatsApp Buyer
-                  </a>
-                </div>
-              </div>
-            ))
-          )}
-        </div>
+                    <div className="flex flex-col justify-center gap-2 lg:col-span-3">
+                      <button
+                        type="button"
+                        onClick={() => updateStatus(order.id, "CONFIRMED")}
+                        className="flex cursor-pointer items-center justify-center gap-1.5 rounded-xl bg-green-600 py-2 text-xs font-bold text-white hover:bg-green-500"
+                      >
+                        <CheckCircle2 className="h-4 w-4" />
+                        Confirm Order
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => updateStatus(order.id, "CANCELLED")}
+                        className="flex cursor-pointer items-center justify-center gap-1.5 rounded-xl bg-red-600/80 py-2 text-xs font-bold text-white hover:bg-red-500"
+                      >
+                        <XCircle className="h-4 w-4" />
+                        Cancel Order
+                      </button>
+                      <a
+                        href={`https://wa.me/91${order.phone}?text=${encodeURIComponent(
+                          `Hi ${order.customerName}, your Lenka Store order ${order.orderId} (UTR ${order.utr}) status is: ${order.status}.`
+                        )}`}
+                        target="_blank"
+                        rel="noreferrer"
+                        className="flex items-center justify-center gap-1.5 rounded-xl border border-white/15 py-2 text-xs font-semibold hover:border-[#FFD54A]"
+                      >
+                        <MessageCircle className="h-4 w-4 text-[#4ADE80]" />
+                        WhatsApp Buyer
+                      </a>
+                    </div>
+                  </div>
+                ))
+              )}
+            </div>
+          </>
+        )}
       </div>
 
-      {/* Fullscreen Screenshot Modal */}
       {previewImg && (
         <div
           onClick={() => setPreviewImg(null)}
