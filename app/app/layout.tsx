@@ -8,9 +8,9 @@ const spaceGrotesk = Space_Grotesk({
 });
 
 export const metadata: Metadata = {
-  title: "LENKA STORE — Lenka Stores Diwali Ka Dhamaka",
+  title: "LENKA STORE — Diwali Ka Dhamaka",
   description:
-    "Official Lenka Store Diwali Ka Dhamaka — Sivakasi Direct Firecrackers, Fashion Wear, Electronics & New Launches.",
+    "Official Lenka Store Diwali Ka Dhamaka —  Firecrackers, Fashion Wear, Electronics & New Launches.",
 };
 
 export default function RootLayout({
