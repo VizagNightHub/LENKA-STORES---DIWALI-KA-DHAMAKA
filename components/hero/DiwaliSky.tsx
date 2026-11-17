@@ -3,34 +3,45 @@
 import { useEffect, useRef } from "react";
 
 const PALETTES = [
-  ["#FFD54A", "#FFB300", "#FFF3B0"],
-  ["#FF4D6D", "#FF1744", "#FFB3C1"],
-  ["#C77DFF", "#9D4EDD", "#E9C6FF"],
-  ["#4ADE80", "#22C55E", "#BBF7D0"],
-  ["#FF9A3C", "#FF6B00", "#FFD2A1"],
-  ["#5CE1E6", "#38BDF8", "#C9F4FF"],
+  ["#FFE89E", "#FFB703", "#FB8500"], // warm gold
+  ["#FFF3B0", "#FFD166", "#FFFFFF"], // champagne silver-gold
+  ["#FF4D6D", "#FF758F", "#FFD6E0"], // crimson rose
+  ["#38BDF8", "#7DD3FC", "#E0F2FE"], // electric sapphire
+  ["#C77DFF", "#E0AAFF", "#FFF0F5"], // royal violet
 ];
 
-interface Rocket {
+interface Shell {
   x: number;
   y: number;
   vx: number;
   vy: number;
   targetY: number;
   palette: string[];
-  trail: { x: number; y: number }[];
+  trail: { x: number; y: number; alpha: number }[];
 }
 
-interface Spark {
+interface Ember {
   x: number;
   y: number;
+  px: number;
+  py: number;
   vx: number;
   vy: number;
   life: number;
   decay: number;
   size: number;
   color: string;
-  crackle: boolean;
+  gravity: number;
+  drag: number;
+  strobe: boolean;
+}
+
+interface Flash {
+  x: number;
+  y: number;
+  radius: number;
+  life: number;
+  color: string;
 }
 
 export const DiwaliSky = () => {
@@ -58,104 +69,72 @@ export const DiwaliSky = () => {
     resize();
     window.addEventListener("resize", resize);
 
-    const rockets: Rocket[] = [];
-    const sparks: Spark[] = [];
+    const shells: Shell[] = [];
+    const embers: Ember[] = [];
+    const flashes: Flash[] = [];
     const isMobile = w < 640;
-    const maxSparks = isMobile ? 500 : 1400;
+    const maxEmbers = isMobile ? 450 : 1200;
 
     const launch = () => {
-      const x = w * (0.08 + Math.random() * 0.84);
-      rockets.push({
+      const x = w * (0.12 + Math.random() * 0.76);
+      shells.push({
         x,
-        y: h * 0.7,
-        vx: (Math.random() - 0.5) * 1.2,
-        vy: -(5.5 + Math.random() * 2.5),
-        targetY: h * (0.1 + Math.random() * 0.28),
+        y: h * 0.82,
+        vx: (Math.random() - 0.5) * 1.1,
+        vy: -(6.8 + Math.random() * 2.4),
+        targetY: h * (0.12 + Math.random() * 0.28),
         palette: PALETTES[Math.floor(Math.random() * PALETTES.length)],
         trail: [],
       });
     };
 
     const burst = (x: number, y: number, palette: string[]) => {
-      const type = Math.floor(Math.random() * 3);
-      const count = isMobile ? 60 : 110;
-      for (let i = 0; i < count; i++) {
-        const a = (Math.PI * 2 * i) / count + Math.random() * 0.1;
-        let speed = 1.5 + Math.random() * 3.2;
-        if (type === 2) speed = 3.2;
-        sparks.push({
-          x,
-          y,
-          vx: Math.cos(a) * speed,
-          vy: Math.sin(a) * speed,
-          life: 1,
-          decay:
-            type === 1
-              ? 0.007 + Math.random() * 0.005
-              : 0.012 + Math.random() * 0.01,
-          size: type === 1 ? 1.4 : 1.8 + Math.random() * 1.2,
-          color: palette[Math.floor(Math.random() * palette.length)],
-          crackle: Math.random() < 0.15,
-        });
-      }
-      sparks.push({
+      const style = Math.floor(Math.random() * 3);
+      const count = isMobile ? 55 : 105;
+
+      flashes.push({
         x,
         y,
-        vx: 0,
-        vy: 0,
+        radius: isMobile ? 65 : 110,
         life: 1,
-        decay: 0.12,
-        size: 26,
-        color: "#FFFFFF",
-        crackle: false,
+        color: palette[0],
       });
-      if (sparks.length > maxSparks) {
-        sparks.splice(0, sparks.length - maxSparks);
+
+      for (let i = 0; i < count; i++) {
+        const angle = (Math.PI * 2 * i) / count + (Math.random() - 0.5) * 0.08;
+        const speed =
+          style === 2
+            ? i % 2 === 0
+              ? 4.1
+              : 2.3
+            : 1.4 + Math.random() * 3.8;
+
+        embers.push({
+          x,
+          y,
+          px: x,
+          py: y,
+          vx: Math.cos(angle) * speed,
+          vy: Math.sin(angle) * speed,
+          life: 1,
+          decay:
+            style === 1
+              ? 0.0065 + Math.random() * 0.004
+              : 0.011 + Math.random() * 0.008,
+          size: style === 1 ? 1.5 : 1.3 + Math.random() * 1.1,
+          color:
+            style === 1
+              ? PALETTES[0][Math.floor(Math.random() * 3)]
+              : palette[Math.floor(Math.random() * palette.length)],
+          gravity: style === 1 ? 0.055 : 0.038,
+          drag: style === 1 ? 0.978 : 0.984,
+          strobe: Math.random() < 0.22,
+        });
       }
-    };
 
-    const drawRocket = (r: Rocket) => {
-      const angle = Math.atan2(r.vy, r.vx) + Math.PI / 2;
-      ctx.save();
-      ctx.translate(r.x, r.y);
-      ctx.rotate(angle);
-
-      const flameLen = 10 + Math.random() * 8;
-      const fg = ctx.createLinearGradient(0, 6, 0, 6 + flameLen);
-      fg.addColorStop(0, "rgba(255,240,150,1)");
-      fg.addColorStop(0.5, "rgba(255,140,30,0.9)");
-      fg.addColorStop(1, "rgba(255,60,0,0)");
-      ctx.fillStyle = fg;
-      ctx.beginPath();
-      ctx.moveTo(-2.5, 6);
-      ctx.lineTo(0, 6 + flameLen);
-      ctx.lineTo(2.5, 6);
-      ctx.fill();
-
-      ctx.fillStyle = "#8a5a2b";
-      ctx.fillRect(-0.6, 6, 1.2, 9);
-
-      const bg = ctx.createLinearGradient(-3.5, 0, 3.5, 0);
-      bg.addColorStop(0, "#7a0f1c");
-      bg.addColorStop(0.45, "#ff4057");
-      bg.addColorStop(1, "#8f1425");
-      ctx.fillStyle = bg;
-      ctx.fillRect(-3.5, -9, 7, 15);
-
-      ctx.fillStyle = "#FFD54A";
-      ctx.fillRect(-3.5, -2, 7, 2.2);
-
-      const ng = ctx.createLinearGradient(-3.5, 0, 3.5, 0);
-      ng.addColorStop(0, "#b8860b");
-      ng.addColorStop(0.5, "#ffe27a");
-      ng.addColorStop(1, "#b8860b");
-      ctx.fillStyle = ng;
-      ctx.beginPath();
-      ctx.moveTo(-3.5, -9);
-      ctx.lineTo(0, -17);
-      ctx.lineTo(3.5, -9);
-      ctx.fill();
-      ctx.restore();
+      if (embers.length > maxEmbers) {
+        embers.splice(0, embers.length - maxEmbers);
+      }
     };
 
     let raf = 0;
@@ -167,74 +146,94 @@ export const DiwaliSky = () => {
       last = now;
 
       ctx.globalCompositeOperation = "destination-out";
-      ctx.fillStyle = "rgba(0,0,0,0.2)";
+      ctx.fillStyle = "rgba(0,0,0,0.22)";
       ctx.fillRect(0, 0, w, h);
       ctx.globalCompositeOperation = "lighter";
 
       if (now > nextLaunch) {
         launch();
-        if (Math.random() < 0.35) launch();
-        nextLaunch = now + 900 + Math.random() * 1100;
+        if (Math.random() < 0.3) launch();
+        nextLaunch = now + 950 + Math.random() * 1200;
       }
 
-      for (let i = rockets.length - 1; i >= 0; i--) {
-        const r = rockets[i];
-        r.x += r.vx * dt;
-        r.y += r.vy * dt;
-        r.vy *= 0.992;
-        r.trail.push({ x: r.x, y: r.y });
-        if (r.trail.length > 22) r.trail.shift();
-
-        for (let t = 0; t < r.trail.length; t++) {
-          const p = r.trail[t];
-          const a = t / r.trail.length;
-          ctx.fillStyle = `rgba(255,${180 + Math.floor(a * 60)},90,${a * 0.7})`;
-          ctx.beginPath();
-          ctx.arc(
-            p.x + (Math.random() - 0.5) * 2,
-            p.y,
-            1.2 * a + 0.3,
-            0,
-            Math.PI * 2
-          );
-          ctx.fill();
-        }
-        drawRocket(r);
-        if (r.y <= r.targetY || r.vy > -1.2) {
-          burst(r.x, r.y, r.palette);
-          rockets.splice(i, 1);
-        }
-      }
-
-      for (let i = sparks.length - 1; i >= 0; i--) {
-        const s = sparks[i];
-        s.x += s.vx * dt;
-        s.y += s.vy * dt;
-        s.vx *= 0.985;
-        s.vy = s.vy * 0.985 + 0.045 * dt;
-        s.life -= s.decay * dt;
-        if (s.life <= 0) {
-          sparks.splice(i, 1);
+      for (let i = flashes.length - 1; i >= 0; i--) {
+        const f = flashes[i];
+        f.life -= 0.08 * dt;
+        if (f.life <= 0) {
+          flashes.splice(i, 1);
           continue;
         }
-        const twinkle =
-          s.crackle && s.life < 0.4 && Math.random() < 0.5 ? 0.15 : 1;
-        ctx.globalAlpha = Math.max(s.life, 0) * twinkle;
-        ctx.fillStyle = s.color;
-        ctx.shadowColor = s.color;
-        ctx.shadowBlur = 10;
+        const grad = ctx.createRadialGradient(f.x, f.y, 0, f.x, f.y, f.radius);
+        grad.addColorStop(0, `rgba(255, 248, 220, ${f.life * 0.45})`);
+        grad.addColorStop(0.35, `rgba(255, 190, 90, ${f.life * 0.16})`);
+        grad.addColorStop(1, "rgba(0, 0, 0, 0)");
+        ctx.fillStyle = grad;
         ctx.beginPath();
-        ctx.arc(
-          s.x,
-          s.y,
-          s.size * (s.size > 10 ? s.life : 1),
-          0,
-          Math.PI * 2
-        );
+        ctx.arc(f.x, f.y, f.radius, 0, Math.PI * 2);
         ctx.fill();
       }
+
+      for (let i = shells.length - 1; i >= 0; i--) {
+        const s = shells[i];
+        s.x += s.vx * dt;
+        s.y += s.vy * dt;
+        s.vy *= 0.988;
+        s.trail.push({ x: s.x, y: s.y, alpha: 1 });
+        if (s.trail.length > 18) s.trail.shift();
+
+        for (let t = 1; t < s.trail.length; t++) {
+          const prev = s.trail[t - 1];
+          const curr = s.trail[t];
+          const ratio = t / s.trail.length;
+          ctx.strokeStyle = `rgba(255, 215, 130, ${ratio * 0.75})`;
+          ctx.lineWidth = ratio * 2.2;
+          ctx.beginPath();
+          ctx.moveTo(prev.x, prev.y);
+          ctx.lineTo(curr.x, curr.y);
+          ctx.stroke();
+        }
+
+        ctx.fillStyle = "#FFF7D6";
+        ctx.shadowColor = "#FFB703";
+        ctx.shadowBlur = 12;
+        ctx.beginPath();
+        ctx.arc(s.x, s.y, 2, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.shadowBlur = 0;
+
+        if (s.y <= s.targetY || s.vy > -1.3) {
+          burst(s.x, s.y, s.palette);
+          shells.splice(i, 1);
+        }
+      }
+
+      for (let i = embers.length - 1; i >= 0; i--) {
+        const e = embers[i];
+        e.px = e.x;
+        e.py = e.y;
+        e.x += e.vx * dt;
+        e.y += e.vy * dt;
+        e.vx *= e.drag;
+        e.vy = e.vy * e.drag + e.gravity * dt;
+        e.life -= e.decay * dt;
+
+        if (e.life <= 0) {
+          embers.splice(i, 1);
+          continue;
+        }
+
+        const flicker =
+          e.strobe && e.life < 0.45 && Math.random() < 0.45 ? 0.15 : 1;
+        ctx.globalAlpha = Math.max(e.life, 0) * flicker;
+        ctx.strokeStyle = e.color;
+        ctx.lineWidth = e.size;
+        ctx.lineCap = "round";
+        ctx.beginPath();
+        ctx.moveTo(e.px, e.py);
+        ctx.lineTo(e.x, e.y);
+        ctx.stroke();
+      }
       ctx.globalAlpha = 1;
-      ctx.shadowBlur = 0;
 
       raf = requestAnimationFrame(loop);
     };
