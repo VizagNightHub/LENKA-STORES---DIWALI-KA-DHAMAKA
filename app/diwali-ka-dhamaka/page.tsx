@@ -15,6 +15,7 @@ import {
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
+import { ProductViewer3D } from "@/components/product/ProductViewer3D";
 import { DIWALI_COMBOS, DiwaliCombo } from "@/data/diwaliCombos";
 
 export default function DiwaliKaDhamakaPage() {
@@ -151,6 +152,15 @@ export default function DiwaliKaDhamakaPage() {
                     )}
                   </div>
 
+                  {/* Interactive 3D Touch-Drag Viewer */}
+                  <div className="mt-4">
+                    <ProductViewer3D
+                      images={combo.images}
+                      alt={combo.name}
+                      accent={combo.accent}
+                    />
+                  </div>
+
                   <h2 className="mt-5 text-2xl font-semibold tracking-tight">
                     {combo.name}
                   </h2>
@@ -158,7 +168,7 @@ export default function DiwaliKaDhamakaPage() {
                     {combo.tagline}
                   </p>
 
-                  <div className="mt-6 flex items-baseline gap-3">
+                  <div className="mt-5 flex items-baseline gap-3">
                     <span className="text-4xl font-bold text-white">
                       ₹{combo.price.toLocaleString("en-IN")}
                     </span>
