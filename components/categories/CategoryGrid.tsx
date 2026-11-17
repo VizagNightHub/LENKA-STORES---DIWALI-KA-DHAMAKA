@@ -1,46 +1,15 @@
 "use client";
 
 import { motion } from "framer-motion";
-import { ArrowUpRight, Headphones, Shirt, Sparkles } from "lucide-react";
+import { ArrowUpRight } from "lucide-react";
 import Link from "next/link";
 import { CATEGORIES } from "@/data/categories";
-import { CrackerBox } from "@/components/hero/CrackerBox";
 
-const PopVisual = ({ id, accent }: { id: string; accent: string }) => {
-  if (id === "diwali") {
-    return (
-      <div className="relative h-32 w-32 sm:h-40 sm:w-40">
-        <CrackerBox
-          label="cat-diwali"
-          front="#d62839"
-          side="#8f1a27"
-          top="#FFD54A"
-        />
-      </div>
-    );
-  }
-
-  if (id === "fashion") {
-    return (
-      <div className="flex h-32 w-32 items-center justify-center rounded-3xl border border-white/15 bg-gradient-to-br from-[#ff5d8f]/25 to-[#7c3aed]/25 shadow-2xl sm:h-40 sm:w-40">
-        <Shirt className="h-16 w-16 sm:h-20 sm:w-20" style={{ color: accent }} />
-      </div>
-    );
-  }
-
-  if (id === "electronics") {
-    return (
-      <div className="flex h-32 w-32 items-center justify-center rounded-3xl border border-white/15 bg-gradient-to-br from-[#38bdf8]/25 to-[#0f172a]/70 shadow-2xl sm:h-40 sm:w-40">
-        <Headphones className="h-16 w-16 sm:h-20 sm:w-20" style={{ color: accent }} />
-      </div>
-    );
-  }
-
-  return (
-    <div className="flex h-32 w-32 items-center justify-center rounded-3xl border border-white/15 bg-gradient-to-br from-[#a78bfa]/25 to-[#fbbf24]/20 shadow-2xl sm:h-40 sm:w-40">
-      <Sparkles className="h-16 w-16 sm:h-20 sm:w-20" style={{ color: accent }} />
-    </div>
-  );
+const IMAGE_MAP: Record<string, string> = {
+  diwali: "/images/diwali.png",
+  fashion: "/images/fashion.png",
+  electronics: "/images/electronics.png",
+  "new-launch": "/images/new-launch.png",
 };
 
 export const CategoryGrid = () => {
@@ -95,15 +64,15 @@ export const CategoryGrid = () => {
             >
               <Link
                 href={cat.href}
-                className="relative flex min-h-[260px] flex-col justify-between overflow-hidden rounded-3xl border border-white/10 bg-zinc-900/80 p-7 transition-colors duration-300 hover:border-white/25 sm:min-h-[300px] sm:p-9"
+                className="relative flex min-h-[280px] flex-col justify-between overflow-hidden rounded-3xl border border-white/10 bg-zinc-900/85 p-7 transition-colors duration-300 hover:border-white/25 sm:min-h-[320px] sm:p-9"
               >
                 <div
-                  className="pointer-events-none absolute -right-12 -top-12 h-56 w-56 rounded-full opacity-50 blur-3xl transition-opacity duration-500 group-hover:opacity-90"
+                  className="pointer-events-none absolute -right-12 -top-12 h-56 w-56 rounded-full opacity-45 blur-3xl transition-opacity duration-500 group-hover:opacity-90"
                   style={{ background: cat.glow }}
                 />
 
-                <div className="relative z-10 flex items-start justify-between gap-4">
-                  <div>
+                <div className="relative z-10 flex items-start justify-between gap-5">
+                  <div className="flex-1">
                     <span
                       className="inline-block rounded-full border px-3 py-1 text-[10px] font-semibold tracking-[0.2em]"
                       style={{
@@ -121,9 +90,14 @@ export const CategoryGrid = () => {
                     </p>
                   </div>
 
-                  <motion.div className="shrink-0 transition-transform duration-500 ease-out group-hover:-translate-y-2 group-hover:rotate-3 group-hover:scale-110">
-                    <PopVisual id={cat.id} accent={cat.accent} />
-                  </motion.div>
+                  {/* Pop-out 3D Product Image */}
+                  <div className="relative h-32 w-32 shrink-0 overflow-hidden rounded-2xl border border-white/15 shadow-[0_18px_40px_rgba(0,0,0,0.65)] transition-transform duration-500 ease-out group-hover:-translate-y-3 group-hover:rotate-2 group-hover:scale-110 sm:h-40 sm:w-40">
+                    <img
+                      src={IMAGE_MAP[cat.id]}
+                      alt={cat.title}
+                      className="h-full w-full object-cover"
+                    />
+                  </div>
                 </div>
 
                 <div className="relative z-10 mt-6 flex items-center justify-between border-t border-white/10 pt-4 text-sm font-medium">
