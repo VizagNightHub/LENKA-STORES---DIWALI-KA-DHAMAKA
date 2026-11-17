@@ -6,6 +6,7 @@ export interface DiwaliCombo {
   mrp: number;
   badge?: string;
   itemCount: string;
+  images: string[];
   items: string[];
   accent: string;
 }
@@ -19,6 +20,7 @@ export const DIWALI_COMBOS: DiwaliCombo[] = [
     mrp: 4500,
     itemCount: "22 Items",
     accent: "#38BDF8",
+    images: ["/images/diwali.png"],
     items: [
       "Electric Sparklers (10cm & 15cm) — 4 Boxes",
       "Color Flower Pots (Big) — 2 Boxes",
@@ -39,6 +41,7 @@ export const DIWALI_COMBOS: DiwaliCombo[] = [
     badge: "MOST POPULAR",
     itemCount: "36 Items",
     accent: "#FFD54A",
+    images: ["/images/diwali.png"],
     items: [
       "Assorted Gold & Red Sparklers — 6 Boxes",
       "Special Giant Flower Pots — 4 Boxes",
@@ -60,6 +63,7 @@ export const DIWALI_COMBOS: DiwaliCombo[] = [
     badge: "BEST VALUE",
     itemCount: "55+ Items",
     accent: "#FF5D8F",
+    images: ["/images/diwali.png"],
     items: [
       "30-Shot & 60-Shot Grand Sky Aerials — 2 Pcs",
       "12-Shot & 25-Shot Multicolour Aerials — 3 Pcs",
