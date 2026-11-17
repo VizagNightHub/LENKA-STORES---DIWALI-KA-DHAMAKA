@@ -1,11 +1,13 @@
 "use client";
 
+import { collection, onSnapshot, query, where } from "firebase/firestore";
 import { ArrowLeft, Minus, Plus, ShoppingBag } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { ProductViewer3D } from "@/components/product/ProductViewer3D";
 import { STORE_PRODUCTS, StoreProduct } from "@/data/catalog";
+import { db } from "@/lib/firebase";
 
 interface CategoryStorefrontProps {
   category: "fashion-wear" | "electronics" | "new-launch";
@@ -21,8 +23,33 @@ export const CategoryStorefront = ({
   accent,
 }: CategoryStorefrontProps) => {
   const router = useRouter();
-  const products = STORE_PRODUCTS.filter((p) => p.category === category);
+  const baseProducts = STORE_PRODUCTS.filter((p) => p.category === category);
+  const [liveProducts, setLiveProducts] = useState<StoreProduct[]>([]);
   const [quantities, setQuantities] = useState<Record<string, number>>({});
+
+  useEffect(() => {
+    const q = query(collection(db, "products"), where("category", "==", category));
+    const unsub = onSnapshot(q, (snap) => {
+      const added: StoreProduct[] = snap.docs.map((d) => {
+        const data = d.data();
+        return {
+          id: d.id,
+          category,
+          name: data.name || "Untitled",
+          tagline: data.tagline || "",
+          price: Number(data.price) || 0,
+          mrp: Number(data.mrp) || Number(data.price) || 0,
+          badge: data.badge || undefined,
+          images: Array.isArray(data.images) ? data.images : [],
+          accent,
+        };
+      });
+      setLiveProducts(added);
+    });
+    return () => unsub();
+  }, [category, accent]);
+
+  const products = [...liveProducts, ...baseProducts];
 
   const updateQty = (id: string, delta: number) => {
     setQuantities((prev) => ({
