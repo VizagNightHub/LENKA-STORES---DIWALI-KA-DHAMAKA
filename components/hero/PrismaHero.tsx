@@ -3,9 +3,7 @@
 import { motion } from "framer-motion";
 import { ArrowDown } from "lucide-react";
 import Link from "next/link";
-import { CrackerBox } from "./CrackerBox";
 import { DiwaliSky } from "./DiwaliSky";
-import { OrderOverlay } from "./OrderOverlay";
 import { WordsPullUp } from "./WordsPullUp";
 
 const navItems = [
@@ -36,84 +34,6 @@ export const PrismaHero = () => {
           className="absolute inset-0 h-full w-full object-cover"
           src="https://d8j0ntlcm91z4.cloudfront.net/user_38xzZboKViGWJOttwIXH07lWA1P/hf_20260405_170732_8a9ccda6-5cff-4628-b164-059c500a2b41.mp4"
         />
-
-        {/* Scene layer */}
-        <div
-          className="pointer-events-none absolute left-1/2 top-1/2"
-          style={{
-            width: "max(100%, 177.78vh)",
-            aspectRatio: "16 / 9",
-            transform: "translate(-50%, -50%)",
-            containerType: "inline-size",
-          }}
-        >
-          <motion.div
-            className="absolute"
-            style={{ left: "17%", top: "52%", width: "6.5%" }}
-            animate={{ y: [0, -3, 0] }}
-            transition={{ duration: 3, repeat: Infinity, ease: "easeInOut" }}
-          >
-            <CrackerBox
-              label="a"
-              front="#d62839"
-              side="#8f1a27"
-              top="#ff5d6c"
-            />
-          </motion.div>
-
-          <motion.div
-            className="absolute"
-            style={{ left: "23.5%", top: "57%", width: "5.5%" }}
-            animate={{ y: [0, -3, 0] }}
-            transition={{
-              duration: 3.6,
-              repeat: Infinity,
-              ease: "easeInOut",
-              delay: 0.5,
-            }}
-          >
-            <CrackerBox
-              label="b"
-              front="#1f9d55"
-              side="#136b39"
-              top="#4ade80"
-            />
-          </motion.div>
-
-          <motion.div
-            className="absolute"
-            style={{ left: "29%", top: "53%", width: "5%" }}
-            animate={{ y: [0, -3, 0] }}
-            transition={{
-              duration: 3.3,
-              repeat: Infinity,
-              ease: "easeInOut",
-              delay: 1,
-            }}
-          >
-            <CrackerBox
-              label="c"
-              front="#7c3aed"
-              side="#4c1d95"
-              top="#a78bfa"
-            />
-          </motion.div>
-
-          <div
-            className="absolute rounded-full"
-            style={{
-              left: "15%",
-              top: "50%",
-              width: "22%",
-              height: "14%",
-              background:
-                "radial-gradient(closest-side, rgba(255,170,60,0.28), transparent)",
-              filter: "blur(6px)",
-            }}
-          />
-
-          <OrderOverlay />
-        </div>
 
         {/* Sky: rockets + fireworks */}
         <div className="pointer-events-none absolute inset-x-0 top-0 h-[75%]">
