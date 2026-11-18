@@ -1,7 +1,6 @@
 "use client";
 
 import { collection, onSnapshot, orderBy, query } from "firebase/firestore";
-import { ArrowUpRight, Megaphone } from "lucide-react";
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import { db } from "@/lib/firebase";
@@ -36,11 +35,13 @@ export const PromoBanner = () => {
           <Link
             key={ad.id}
             href={ad.href || "/diwali-ka-dhamaka"}
-            className="group relative flex items-center justify-between gap-4 overflow-hidden rounded-3xl border border-[#FFD54A]/30 bg-zinc-900/90 p-6 transition-all hover:border-[#FFD54A]"
+            className="group relative flex items-center justify-between gap-4 overflow-hidden rounded-3xl border border-[#FFD54A]/30 bg-[#111114] p-6 transition-all hover:border-[#FFD54A]"
           >
             <div className="z-10 space-y-2">
               <span className="inline-flex items-center gap-1.5 rounded-full bg-[#FFD54A]/15 px-3 py-1 text-[10px] font-bold uppercase tracking-widest text-[#FFD54A]">
-                <Megaphone className="h-3 w-3" />
+                <svg viewBox="0 0 12 12" className="h-2.5 w-2.5 fill-current" aria-hidden="true">
+                  <path d="M6 0 7.6 4.4 12 6 7.6 7.6 6 12 4.4 7.6 0 6l4.4-1.6z" />
+                </svg>
                 Special Offer
               </span>
               <h3 className="text-xl font-bold text-white sm:text-2xl">
@@ -50,7 +51,15 @@ export const PromoBanner = () => {
                 {ad.subtitle}
               </p>
               <span className="inline-flex items-center gap-1 pt-1 text-xs font-semibold text-[#FFD54A]">
-                Grab Offer <ArrowUpRight className="h-3.5 w-3.5" />
+                Grab Offer
+                <svg viewBox="0 0 16 16" fill="none" className="h-3.5 w-3.5" aria-hidden="true">
+                  <path
+                    d="M4.5 11.5 11.5 4.5m0 0H6m5.5 0V10"
+                    stroke="currentColor"
+                    strokeWidth="1.75"
+                    strokeLinecap="square"
+                  />
+                </svg>
               </span>
             </div>
 
