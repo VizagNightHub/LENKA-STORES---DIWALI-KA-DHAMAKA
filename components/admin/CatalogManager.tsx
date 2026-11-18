@@ -168,9 +168,18 @@ export const CatalogManager = () => {
           { merge: true }
         );
       }
+      // Remember that the catalog has been initialized,
+      // so deleted items stay deleted even after refresh.
+      await setDoc(doc(db, "stats", "catalog"), { initialized: true }, { merge: true });
     } finally {
       setSyncing(false);
     }
+  };
+
+  const handleDeleteProduct = async (id: string) => {
+    // Mark catalog as initialized so the storefront never falls back to defaults.
+    await setDoc(doc(db, "stats", "catalog"), { initialized: true }, { merge: true });
+    await deleteDoc(doc(db, "products", id));
   };
 
   const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -425,7 +434,7 @@ export const CatalogManager = () => {
                   </button>
                   <button
                     type="button"
-                    onClick={() => deleteDoc(doc(db, "products", p.id))}
+                    onClick={() => handleDeleteProduct(p.id)}
                     className="cursor-pointer rounded-xl bg-red-600/20 p-2.5 text-red-400 hover:bg-red-600 hover:text-white"
                     title="Delete Product"
                   >
