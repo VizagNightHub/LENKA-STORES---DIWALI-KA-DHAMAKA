@@ -28,7 +28,6 @@ export const PrismaHero = () => {
           muted
           playsInline
           preload="auto"
-          poster="/images/diwali.png"
           className="absolute inset-0 h-full w-full object-cover"
         >
           <source src="/hero.mp4" type="video/mp4" />
