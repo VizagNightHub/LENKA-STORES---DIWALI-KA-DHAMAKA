@@ -1,7 +1,6 @@
 "use client";
 
 import { motion } from "framer-motion";
-import { ArrowUpRight } from "lucide-react";
 import Link from "next/link";
 import { CATEGORIES } from "@/data/categories";
 
@@ -16,7 +15,7 @@ export const CategoryGrid = () => {
   return (
     <section
       id="categories"
-      className="relative min-h-screen w-full bg-[#09090b] px-4 py-20 text-[#E1E0CC] sm:px-8 md:px-12"
+      className="relative w-full bg-[#09090b] px-4 py-20 text-[#E1E0CC] sm:px-8 md:px-12"
     >
       <div className="mx-auto max-w-7xl">
         <motion.div
@@ -64,11 +63,12 @@ export const CategoryGrid = () => {
             >
               <Link
                 href={cat.href}
-                className="relative flex min-h-[280px] flex-col justify-between overflow-hidden rounded-3xl border border-white/10 bg-zinc-900/85 p-7 transition-colors duration-300 hover:border-white/25 sm:min-h-[320px] sm:p-9"
+                className="relative flex min-h-[280px] flex-col justify-between overflow-hidden rounded-3xl border border-white/10 bg-[#111114] p-7 transition-colors duration-300 hover:border-white/25 sm:min-h-[320px] sm:p-9"
               >
-                <div
-                  className="pointer-events-none absolute -right-12 -top-12 h-56 w-56 rounded-full opacity-45 blur-3xl transition-opacity duration-500 group-hover:opacity-90"
-                  style={{ background: cat.glow }}
+                {/* Crisp top brand accent hairline */}
+                <span
+                  className="absolute inset-x-0 top-0 h-[2px] opacity-70 transition-opacity duration-300 group-hover:opacity-100"
+                  style={{ backgroundColor: cat.accent }}
                 />
 
                 <div className="relative z-10 flex items-start justify-between gap-5">
@@ -90,8 +90,7 @@ export const CategoryGrid = () => {
                     </p>
                   </div>
 
-                  {/* Pop-out 3D Product Image */}
-                  <div className="relative h-32 w-32 shrink-0 overflow-hidden rounded-2xl border border-white/15 shadow-[0_18px_40px_rgba(0,0,0,0.65)] transition-transform duration-500 ease-out group-hover:-translate-y-3 group-hover:rotate-2 group-hover:scale-110 sm:h-40 sm:w-40">
+                  <div className="relative h-32 w-32 shrink-0 overflow-hidden rounded-2xl border border-white/15 bg-black shadow-[0_18px_40px_rgba(0,0,0,0.65)] transition-transform duration-500 ease-out group-hover:-translate-y-3 group-hover:rotate-2 group-hover:scale-110 sm:h-40 sm:w-40">
                     <img
                       src={IMAGE_MAP[cat.id]}
                       alt={cat.title}
@@ -105,7 +104,19 @@ export const CategoryGrid = () => {
                     Open {cat.title}
                   </span>
                   <span className="flex h-9 w-9 items-center justify-center rounded-full bg-white/10 transition-all duration-300 group-hover:bg-[#E1E0CC] group-hover:text-black">
-                    <ArrowUpRight className="h-4 w-4" />
+                    <svg
+                      viewBox="0 0 16 16"
+                      fill="none"
+                      className="h-4 w-4"
+                      aria-hidden="true"
+                    >
+                      <path
+                        d="M4.5 11.5 11.5 4.5m0 0H6m5.5 0V10"
+                        stroke="currentColor"
+                        strokeWidth="1.75"
+                        strokeLinecap="square"
+                      />
+                    </svg>
                   </span>
                 </div>
               </Link>
