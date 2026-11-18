@@ -1,6 +1,6 @@
 "use client";
 
-import { collection, onSnapshot, query, where } from "firebase/firestore";
+import { collection, doc, onSnapshot, query, where } from "firebase/firestore";
 import { ArrowLeft, Minus, Plus, ShoppingBag } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
@@ -26,11 +26,12 @@ export const CategoryStorefront = ({
   const baseProducts = STORE_PRODUCTS.filter((p) => p.category === category);
   const [liveProducts, setLiveProducts] = useState<StoreProduct[]>([]);
   const [loaded, setLoaded] = useState(false);
+  const [initialized, setInitialized] = useState(false);
   const [quantities, setQuantities] = useState<Record<string, number>>({});
 
   useEffect(() => {
     const q = query(collection(db, "products"), where("category", "==", category));
-    const unsub = onSnapshot(q, (snap) => {
+    const unsubProd = onSnapshot(q, (snap) => {
       const added: StoreProduct[] = snap.docs.map((d) => {
         const data = d.data();
         return {
@@ -48,10 +49,19 @@ export const CategoryStorefront = ({
       setLiveProducts(added);
       setLoaded(true);
     });
-    return () => unsub();
+
+    const unsubInit = onSnapshot(doc(db, "stats", "catalog"), (snap) => {
+      setInitialized(snap.exists() && !!snap.data()?.initialized);
+    });
+
+    return () => {
+      unsubProd();
+      unsubInit();
+    };
   }, [category, accent]);
 
-  const products = loaded && liveProducts.length > 0 ? liveProducts : baseProducts;
+  const products =
+    loaded && (initialized || liveProducts.length > 0) ? liveProducts : baseProducts;
 
   const updateQty = (id: string, delta: number) => {
     setQuantities((prev) => ({
