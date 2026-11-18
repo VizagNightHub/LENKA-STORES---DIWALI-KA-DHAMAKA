@@ -60,7 +60,7 @@ export const CategoryStorefront = ({
     };
   }, [category, accent]);
 
-  const products =
+  const products = liveProducts;
     loaded && (initialized || liveProducts.length > 0) ? liveProducts : baseProducts;
 
   const updateQty = (id: string, delta: number) => {
