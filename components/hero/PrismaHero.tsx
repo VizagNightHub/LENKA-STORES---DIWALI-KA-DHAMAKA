@@ -1,7 +1,6 @@
 "use client";
 
 import { motion } from "framer-motion";
-import { ArrowDown } from "lucide-react";
 import Link from "next/link";
 import { DiwaliSky } from "./DiwaliSky";
 import { WordsPullUp } from "./WordsPullUp";
@@ -24,7 +23,6 @@ export const PrismaHero = () => {
   return (
     <section className="h-screen w-full p-2 sm:p-3">
       <div className="relative h-full w-full overflow-hidden rounded-2xl md:rounded-[2rem]">
-        {/* Background video */}
         <video
           autoPlay
           loop
@@ -34,15 +32,12 @@ export const PrismaHero = () => {
           src="https://d8j0ntlcm91z4.cloudfront.net/user_38xzZboKViGWJOttwIXH07lWA1P/hf_20260405_170732_8a9ccda6-5cff-4628-b164-059c500a2b41.mp4"
         />
 
-        {/* Sky: rockets + fireworks */}
         <div className="pointer-events-none absolute inset-x-0 top-0 h-[75%]">
           <DiwaliSky />
         </div>
 
-        {/* Gradient overlay */}
         <div className="pointer-events-none absolute inset-0 bg-gradient-to-b from-black/35 via-transparent to-black/75" />
 
-        {/* Navbar */}
         <nav className="absolute left-1/2 top-0 z-20 -translate-x-1/2">
           <div className="flex items-center gap-3 rounded-b-2xl bg-black/90 px-4 py-2.5 backdrop-blur-md sm:gap-6 md:gap-10 md:rounded-b-3xl md:px-8">
             {navItems.map((item) => (
@@ -57,7 +52,6 @@ export const PrismaHero = () => {
           </div>
         </nav>
 
-        {/* Hero bottom content */}
         <div className="absolute bottom-0 left-0 right-0 z-10 px-4 pb-5 sm:px-6 md:px-10 md:pb-8">
           <div className="grid grid-cols-12 items-end gap-4">
             <div className="col-span-12 lg:col-span-8">
@@ -100,7 +94,19 @@ export const PrismaHero = () => {
               >
                 GO AND GRAB IT
                 <span className="flex h-10 w-10 items-center justify-center rounded-full bg-black transition-transform duration-300 group-hover:translate-y-0.5 group-hover:scale-105">
-                  <ArrowDown className="h-4 w-4 text-[#E1E0CC]" />
+                  <svg
+                    viewBox="0 0 16 16"
+                    fill="none"
+                    className="h-4 w-4 text-[#E1E0CC]"
+                    aria-hidden="true"
+                  >
+                    <path
+                      d="M8 2.5v10m0 0-4-4m4 4 4-4"
+                      stroke="currentColor"
+                      strokeWidth="1.75"
+                      strokeLinecap="square"
+                    />
+                  </svg>
                 </span>
               </motion.button>
             </div>
