@@ -1,4 +1,3 @@
-<meta name="google-site-verification" content="00e3XDew4RnhIASrndRNGXt_R-sCiNf8GwL47ry1Dig" />
 import type { Metadata } from "next";
 import { Space_Grotesk } from "next/font/google";
 import { VisitorTracker } from "@/components/analytics/VisitorTracker";
@@ -14,6 +13,9 @@ export const metadata: Metadata = {
   title: "LENKA STORE — Diwali Ka Dhamaka",
   description:
     "LENKA STORE offers Diwali firecracker combo packs, festive streetwear, ANC audio electronics, and limited-edition drops across Andhra Pradesh and Telangana.",
+  verification: {
+    google: "00e3XDew4RnhIASrndRNGXt_R-sCiNf8GwL47ry1Dig",
+  },
   icons: {
     icon: "/favicon.svg",
     apple: "/images/diwali.png",
