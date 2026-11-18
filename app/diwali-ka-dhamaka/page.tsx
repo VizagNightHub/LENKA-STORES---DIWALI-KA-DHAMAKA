@@ -86,11 +86,7 @@ export default function DiwaliKaDhamakaPage() {
   // Once the catalog is initialized, always show live data (even if empty).
   // Defaults are used only for a brand-new store that was never initialized.
   const displayProducts: ComboItem[] = liveProducts;
-    ? []
-    : initialized || liveProducts.length > 0
-      ? liveProducts
-      : DIWALI_COMBOS;
-
+  
   const updateQty = (id: string, delta: number) => {
     setQuantities((prev) => ({
       ...prev,
