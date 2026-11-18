@@ -2,7 +2,6 @@
 
 import { motion } from "framer-motion";
 import Link from "next/link";
-import { DiwaliSky } from "./DiwaliSky";
 import { WordsPullUp } from "./WordsPullUp";
 
 const navItems = [
@@ -31,10 +30,6 @@ export const PrismaHero = () => {
           className="absolute inset-0 h-full w-full object-cover"
           src="https://d8j0ntlcm91z4.cloudfront.net/user_38xzZboKViGWJOttwIXH07lWA1P/hf_20260405_170732_8a9ccda6-5cff-4628-b164-059c500a2b41.mp4"
         />
-
-        <div className="pointer-events-none absolute inset-x-0 top-0 h-[75%]">
-          <DiwaliSky />
-        </div>
 
         <div className="pointer-events-none absolute inset-0 bg-gradient-to-b from-black/35 via-transparent to-black/75" />
 
