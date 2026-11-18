@@ -1,6 +1,6 @@
 "use client";
 
-import { collection, onSnapshot, query, where } from "firebase/firestore";
+import { collection, doc, onSnapshot, query, where } from "firebase/firestore";
 import { motion } from "framer-motion";
 import {
   ArrowLeft,
@@ -36,16 +36,19 @@ interface ComboItem {
 export default function DiwaliKaDhamakaPage() {
   const router = useRouter();
   const [liveProducts, setLiveProducts] = useState<ComboItem[]>([]);
-  const [loaded, setLoaded] = useState(false);
+  const [productsLoaded, setProductsLoaded] = useState(false);
+  const [initialized, setInitialized] = useState(false);
+  const [initLoaded, setInitLoaded] = useState(false);
   const [quantities, setQuantities] = useState<Record<string, number>>({});
   const [expanded, setExpanded] = useState<Record<string, boolean>>({});
 
   useEffect(() => {
+    // 1) Live products in this category
     const q = query(
       collection(db, "products"),
       where("category", "==", "diwali-ka-dhamaka")
     );
-    const unsub = onSnapshot(q, (snap) => {
+    const unsubProd = onSnapshot(q, (snap) => {
       const list: ComboItem[] = snap.docs.map((d) => {
         const data = d.data();
         return {
@@ -62,13 +65,31 @@ export default function DiwaliKaDhamakaPage() {
         };
       });
       setLiveProducts(list);
-      setLoaded(true);
+      setProductsLoaded(true);
     });
-    return () => unsub();
+
+    // 2) "Catalog initialized" flag (set by the admin panel)
+    const unsubInit = onSnapshot(doc(db, "stats", "catalog"), (snap) => {
+      setInitialized(snap.exists() && !!snap.data()?.initialized);
+      setInitLoaded(true);
+    });
+
+    return () => {
+      unsubProd();
+      unsubInit();
+    };
   }, []);
 
-  const displayProducts: ComboItem[] =
-    loaded && liveProducts.length > 0 ? liveProducts : DIWALI_COMBOS;
+  // Wait until both Firebase reads are done, so defaults never flash on screen.
+  const ready = productsLoaded && initLoaded;
+
+  // Once the catalog is initialized, always show live data (even if empty).
+  // Defaults are used only for a brand-new store that was never initialized.
+  const displayProducts: ComboItem[] = !ready
+    ? []
+    : initialized || liveProducts.length > 0
+      ? liveProducts
+      : DIWALI_COMBOS;
 
   const updateQty = (id: string, delta: number) => {
     setQuantities((prev) => ({
@@ -159,6 +180,12 @@ export default function DiwaliKaDhamakaPage() {
       </section>
 
       <section className="mx-auto mt-12 max-w-7xl px-4 sm:px-8">
+        {ready && displayProducts.length === 0 && (
+          <p className="rounded-2xl border border-white/10 bg-zinc-900/60 p-8 text-center text-sm text-[#E1E0CC]/60">
+            No combos available right now. Please check back soon!
+          </p>
+        )}
+
         <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
           {displayProducts.map((combo, idx) => {
             const qty = quantities[combo.id] || 0;
