@@ -33,7 +33,6 @@ export const PrismaHero = () => {
         >
           <source src="/hero.mp4" type="video/mp4" />
         </video>
-        />
 
         <div className="pointer-events-none absolute inset-0 bg-gradient-to-b from-black/35 via-transparent to-black/75" />
 
