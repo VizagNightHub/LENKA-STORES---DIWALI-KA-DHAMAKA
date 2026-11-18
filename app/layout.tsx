@@ -12,7 +12,7 @@ const spaceGrotesk = Space_Grotesk({
 export const metadata: Metadata = {
   title: "LENKA STORE — Diwali Ka Dhamaka",
   description:
-    "LENKA STORE offers -direct Diwali firecracker combo packs, festive streetwear, ANC audio electronics, and limited-edition drops across Andhra Pradesh and Telangana.",
+    "LENKA STORE offers Diwali firecracker combo packs, festive streetwear, ANC audio electronics, and limited-edition drops across Andhra Pradesh and Telangana.",
   icons: {
     icon: "/favicon.svg",
     apple: "/images/diwali.png",
@@ -20,7 +20,7 @@ export const metadata: Metadata = {
   openGraph: {
     title: "LENKA STORE — Diwali Ka Dhamaka",
     description:
-      "Lenka Stores-direct Diwali cracker combos, festive fashion wear, ANC electronics, and limited drops across Andhra Pradesh & Telangana.",
+      "Sivakasi-direct Diwali cracker combos, festive fashion wear, ANC electronics, and limited drops across Andhra Pradesh & Telangana.",
     type: "website",
     images: [
       {
