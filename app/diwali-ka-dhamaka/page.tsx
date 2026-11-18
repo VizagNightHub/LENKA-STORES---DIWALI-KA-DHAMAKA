@@ -1,5 +1,6 @@
 "use client";
 
+import { collection, onSnapshot, query, where } from "firebase/firestore";
 import { motion } from "framer-motion";
 import {
   ArrowLeft,
@@ -14,29 +15,73 @@ import {
 } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { ProductViewer3D } from "@/components/product/ProductViewer3D";
-import { DIWALI_COMBOS, DiwaliCombo } from "@/data/diwaliCombos";
+import { DIWALI_COMBOS } from "@/data/diwaliCombos";
+import { db } from "@/lib/firebase";
+
+interface ComboItem {
+  id: string;
+  name: string;
+  tagline: string;
+  price: number;
+  mrp: number;
+  badge?: string;
+  itemCount?: string;
+  images: string[];
+  items?: string[];
+  accent: string;
+}
 
 export default function DiwaliKaDhamakaPage() {
   const router = useRouter();
+  const [liveProducts, setLiveProducts] = useState<ComboItem[]>([]);
+  const [loaded, setLoaded] = useState(false);
   const [quantities, setQuantities] = useState<Record<string, number>>({});
-  const [expanded, setExpanded] = useState<Record<string, boolean>>({
-    medium: true,
-  });
+  const [expanded, setExpanded] = useState<Record<string, boolean>>({});
+
+  useEffect(() => {
+    const q = query(
+      collection(db, "products"),
+      where("category", "==", "diwali-ka-dhamaka")
+    );
+    const unsub = onSnapshot(q, (snap) => {
+      const list: ComboItem[] = snap.docs.map((d) => {
+        const data = d.data();
+        return {
+          id: d.id,
+          name: data.name || "Untitled",
+          tagline: data.tagline || "",
+          price: Number(data.price) || 0,
+          mrp: Number(data.mrp) || Number(data.price) || 0,
+          badge: data.badge || undefined,
+          itemCount: data.itemCount || "DIWALI SPECIAL",
+          images: Array.isArray(data.images) ? data.images : ["/images/diwali.png"],
+          items: Array.isArray(data.items) ? data.items : [],
+          accent: "#FFD54A",
+        };
+      });
+      setLiveProducts(list);
+      setLoaded(true);
+    });
+    return () => unsub();
+  }, []);
+
+  const displayProducts: ComboItem[] =
+    loaded && liveProducts.length > 0 ? liveProducts : DIWALI_COMBOS;
 
   const updateQty = (id: string, delta: number) => {
-    setQuantities((prev) => {
-      const next = Math.max(0, (prev[id] || 0) + delta);
-      return { ...prev, [id]: next };
-    });
+    setQuantities((prev) => ({
+      ...prev,
+      [id]: Math.max(0, (prev[id] || 0) + delta),
+    }));
   };
 
   const toggleItems = (id: string) => {
     setExpanded((prev) => ({ ...prev, [id]: !prev[id] }));
   };
 
-  const selectedItems = DIWALI_COMBOS.filter((c) => (quantities[c.id] || 0) > 0);
+  const selectedItems = displayProducts.filter((c) => (quantities[c.id] || 0) > 0);
   const totalCount = selectedItems.reduce(
     (sum, c) => sum + (quantities[c.id] || 0),
     0
@@ -47,7 +92,7 @@ export default function DiwaliKaDhamakaPage() {
   );
 
   const handleProceedToCheckout = () => {
-    const cartPayload = selectedItems.map((c: DiwaliCombo) => ({
+    const cartPayload = selectedItems.map((c) => ({
       id: c.id,
       name: c.name,
       price: c.price,
@@ -59,7 +104,6 @@ export default function DiwaliKaDhamakaPage() {
 
   return (
     <main className="min-h-screen bg-[#09090b] pb-32 text-[#E1E0CC]">
-      {/* Top Bar */}
       <header className="sticky top-0 z-30 border-b border-white/10 bg-[#09090b]/85 backdrop-blur-md">
         <div className="mx-auto flex max-w-7xl items-center justify-between px-4 py-4 sm:px-8">
           <Link
@@ -75,7 +119,6 @@ export default function DiwaliKaDhamakaPage() {
         </div>
       </header>
 
-      {/* Hero Banner */}
       <section className="mx-auto max-w-7xl px-4 pt-10 sm:px-8 md:pt-14">
         <div className="grid items-center gap-8 rounded-3xl border border-white/10 bg-zinc-900/70 p-6 sm:p-10 lg:grid-cols-12">
           <div className="lg:col-span-7">
@@ -115,12 +158,12 @@ export default function DiwaliKaDhamakaPage() {
         </div>
       </section>
 
-      {/* Combo Cards */}
       <section className="mx-auto mt-12 max-w-7xl px-4 sm:px-8">
         <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
-          {DIWALI_COMBOS.map((combo, idx) => {
+          {displayProducts.map((combo, idx) => {
             const qty = quantities[combo.id] || 0;
             const isOpen = !!expanded[combo.id];
+            const hasItems = Array.isArray(combo.items) && combo.items.length > 0;
 
             return (
               <motion.div
@@ -143,7 +186,7 @@ export default function DiwaliKaDhamakaPage() {
                         color: combo.accent,
                       }}
                     >
-                      {combo.itemCount}
+                      {combo.itemCount || "DIWALI SPECIAL"}
                     </span>
                     {combo.badge && (
                       <span className="rounded-full bg-[#FFD54A] px-3 py-1 text-[10px] font-bold tracking-wider text-black">
@@ -152,7 +195,6 @@ export default function DiwaliKaDhamakaPage() {
                     )}
                   </div>
 
-                  {/* Interactive 3D Touch-Drag Viewer */}
                   <div className="mt-4">
                     <ProductViewer3D
                       images={combo.images}
@@ -177,36 +219,38 @@ export default function DiwaliKaDhamakaPage() {
                     </span>
                   </div>
 
-                  {/* Expandable Items List */}
-                  <button
-                    type="button"
-                    onClick={() => toggleItems(combo.id)}
-                    className="mt-5 flex w-full items-center justify-between rounded-xl border border-white/10 bg-black/35 px-4 py-2.5 text-xs font-medium text-[#E1E0CC]/85 hover:border-white/25"
-                  >
-                    <span>{isOpen ? "Hide" : "View"} Box Contents</span>
-                    {isOpen ? (
-                      <ChevronUp className="h-4 w-4" />
-                    ) : (
-                      <ChevronDown className="h-4 w-4" />
-                    )}
-                  </button>
+                  {hasItems && (
+                    <>
+                      <button
+                        type="button"
+                        onClick={() => toggleItems(combo.id)}
+                        className="mt-5 flex w-full items-center justify-between rounded-xl border border-white/10 bg-black/35 px-4 py-2.5 text-xs font-medium text-[#E1E0CC]/85 hover:border-white/25"
+                      >
+                        <span>{isOpen ? "Hide" : "View"} Box Contents</span>
+                        {isOpen ? (
+                          <ChevronUp className="h-4 w-4" />
+                        ) : (
+                          <ChevronDown className="h-4 w-4" />
+                        )}
+                      </button>
 
-                  {isOpen && (
-                    <ul className="mt-4 space-y-2 border-t border-white/10 pt-4 text-xs text-[#E1E0CC]/75">
-                      {combo.items.map((item) => (
-                        <li key={item} className="flex items-start gap-2">
-                          <Check
-                            className="mt-0.5 h-3.5 w-3.5 shrink-0"
-                            style={{ color: combo.accent }}
-                          />
-                          <span>{item}</span>
-                        </li>
-                      ))}
-                    </ul>
+                      {isOpen && (
+                        <ul className="mt-4 space-y-2 border-t border-white/10 pt-4 text-xs text-[#E1E0CC]/75">
+                          {combo.items!.map((item) => (
+                            <li key={item} className="flex items-start gap-2">
+                              <Check
+                                className="mt-0.5 h-3.5 w-3.5 shrink-0"
+                                style={{ color: combo.accent }}
+                              />
+                              <span>{item}</span>
+                            </li>
+                          ))}
+                        </ul>
+                      )}
+                    </>
                   )}
                 </div>
 
-                {/* Quantity Controls */}
                 <div className="mt-8 pt-4">
                   {qty === 0 ? (
                     <button
@@ -215,7 +259,7 @@ export default function DiwaliKaDhamakaPage() {
                       className="flex w-full cursor-pointer items-center justify-center gap-2 rounded-full bg-[#E1E0CC] py-3 text-sm font-semibold text-black transition-colors hover:bg-[#FFD54A]"
                     >
                       <Plus className="h-4 w-4" />
-                      Add Combo Box
+                      Add to Cart
                     </button>
                   ) : (
                     <div className="flex items-center justify-between rounded-full border border-[#FFD54A] bg-black/60 p-1.5">
@@ -244,7 +288,6 @@ export default function DiwaliKaDhamakaPage() {
           })}
         </div>
 
-        {/* Compliance Note */}
         <p className="mt-10 text-center text-xs text-[#E1E0CC]/50">
           Pre-booking is strictly for buyers aged 18+ in compliance with
           applicable fireworks safety and transport guidelines across Andhra
@@ -252,7 +295,6 @@ export default function DiwaliKaDhamakaPage() {
         </p>
       </section>
 
-      {/* Sticky Bottom Checkout Bar */}
       {totalCount > 0 && (
         <div className="fixed bottom-4 left-1/2 z-40 w-[94%] max-w-3xl -translate-x-1/2 rounded-2xl border border-[#FFD54A]/40 bg-zinc-950/95 p-4 shadow-[0_20px_60px_rgba(0,0,0,0.85)] backdrop-blur-lg">
           <div className="flex flex-col items-center justify-between gap-3 sm:flex-row">
@@ -262,7 +304,7 @@ export default function DiwaliKaDhamakaPage() {
               </div>
               <div>
                 <p className="text-xs text-[#E1E0CC]/65">
-                  {totalCount} Combo Box{totalCount > 1 ? "es" : ""} Selected
+                  {totalCount} Item{totalCount > 1 ? "s" : ""} Selected
                 </p>
                 <p className="text-lg font-bold text-white">
                   Total: ₹{totalAmount.toLocaleString("en-IN")}
