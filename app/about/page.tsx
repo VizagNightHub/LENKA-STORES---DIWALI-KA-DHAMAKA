@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { BrandSocialIcon } from "@/components/ui/pushpin-tear-footer";
 
 export default function AboutPage() {
   return (
@@ -16,7 +17,7 @@ export default function AboutPage() {
             About Lenka Ventures
           </p>
           <h1 className="mt-2 text-4xl font-semibold tracking-tight text-white">
-            Direct From Lenka Stores to AP & Telangana
+            Direct From Sivakasi to AP &amp; Telangana
           </h1>
         </div>
 
@@ -28,7 +29,7 @@ export default function AboutPage() {
           </p>
           <p>
             For <strong className="text-white">Diwali Ka Dhamaka</strong>, we
-            source genuine firecracker combo packs directly from Manufacturing Units, Tamil
+            source genuine firecracker combo packs directly from Sivakasi, Tamil
             Nadu, and dispatch pre-booked orders across Andhra Pradesh and
             Telangana without middleman markups.
           </p>
@@ -46,12 +47,34 @@ export default function AboutPage() {
           </div>
           <div className="rounded-2xl border border-white/10 bg-[#111114] p-5">
             <p className="text-xs text-[#E1E0CC]/55">Delivery Regions</p>
-            <p className="mt-1 font-semibold text-white">AP & Telangana</p>
+            <p className="mt-1 font-semibold text-white">AP &amp; Telangana</p>
           </div>
           <div className="rounded-2xl border border-white/10 bg-[#111114] p-5">
             <p className="text-xs text-[#E1E0CC]/55">Order Model</p>
             <p className="mt-1 font-semibold text-white">Prepaid UPI + UTR</p>
           </div>
+        </div>
+
+        <div className="flex flex-wrap items-center gap-4 border-t border-white/10 pt-6 text-xs font-semibold">
+          <span className="uppercase tracking-widest text-[#E1E0CC]/55">Follow us:</span>
+          <a
+            href="https://www.instagram.com/the_lenka_8116"
+            target="_blank"
+            rel="noreferrer"
+            className="inline-flex items-center gap-2 rounded-full border border-white/15 bg-[#111114] px-4 py-2 text-[#E1E0CC] hover:border-[#FFD54A] hover:text-[#FFD54A]"
+          >
+            <BrandSocialIcon name="ig" className="h-4 w-4" />
+            <span>Instagram</span>
+          </a>
+          <a
+            href="https://www.youtube.com/channel/UC0sC5Fil2UV9W24JKoafzpg"
+            target="_blank"
+            rel="noreferrer"
+            className="inline-flex items-center gap-2 rounded-full border border-white/15 bg-[#111114] px-4 py-2 text-[#E1E0CC] hover:border-[#FFD54A] hover:text-[#FFD54A]"
+          >
+            <BrandSocialIcon name="youtube" className="h-4 w-4" />
+            <span>YouTube</span>
+          </a>
         </div>
       </div>
     </main>
