@@ -81,27 +81,29 @@ function FooterLink({
   href,
   children,
   className = "",
+  style,
 }: {
   href: string;
   children: React.ReactNode;
   className?: string;
+  style?: React.CSSProperties;
 }) {
   if (href.startsWith("http")) {
     return (
-      <a href={href} target="_blank" rel="noreferrer" className={className}>
+      <a href={href} target="_blank" rel="noreferrer" className={className} style={style}>
         {children}
       </a>
     );
   }
   if (href.startsWith("mailto:") || href.startsWith("tel:")) {
     return (
-      <a href={href} className={className}>
+      <a href={href} className={className} style={style}>
         {children}
       </a>
     );
   }
   return (
-    <Link href={href} className={className}>
+    <Link href={href} className={className} style={style}>
       {children}
     </Link>
   );
