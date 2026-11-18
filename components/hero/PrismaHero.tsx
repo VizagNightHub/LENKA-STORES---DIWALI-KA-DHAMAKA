@@ -27,8 +27,12 @@ export const PrismaHero = () => {
           loop
           muted
           playsInline
+          preload="auto"
+          poster="/images/diwali.png"
           className="absolute inset-0 h-full w-full object-cover"
-          src="/hero.mp4"
+        >
+          <source src="/hero.mp4" type="video/mp4" />
+        </video>
         />
 
         <div className="pointer-events-none absolute inset-0 bg-gradient-to-b from-black/35 via-transparent to-black/75" />
