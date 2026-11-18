@@ -1,3 +1,4 @@
+<meta name="google-site-verification" content="00e3XDew4RnhIASrndRNGXt_R-sCiNf8GwL47ry1Dig" />
 import type { Metadata } from "next";
 import { Space_Grotesk } from "next/font/google";
 import { VisitorTracker } from "@/components/analytics/VisitorTracker";
