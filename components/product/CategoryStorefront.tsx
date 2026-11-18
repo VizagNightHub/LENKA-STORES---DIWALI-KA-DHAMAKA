@@ -25,6 +25,7 @@ export const CategoryStorefront = ({
   const router = useRouter();
   const baseProducts = STORE_PRODUCTS.filter((p) => p.category === category);
   const [liveProducts, setLiveProducts] = useState<StoreProduct[]>([]);
+  const [loaded, setLoaded] = useState(false);
   const [quantities, setQuantities] = useState<Record<string, number>>({});
 
   useEffect(() => {
@@ -45,11 +46,12 @@ export const CategoryStorefront = ({
         };
       });
       setLiveProducts(added);
+      setLoaded(true);
     });
     return () => unsub();
   }, [category, accent]);
 
-  const products = [...liveProducts, ...baseProducts];
+  const products = loaded && liveProducts.length > 0 ? liveProducts : baseProducts;
 
   const updateQty = (id: string, delta: number) => {
     setQuantities((prev) => ({
