@@ -9,9 +9,27 @@ const spaceGrotesk = Space_Grotesk({
 });
 
 export const metadata: Metadata = {
-  title: "LENKA STORE — Lenka Stores Diwali Ka Dhamaka",
+  title: "LENKA STORE — Diwali Ka Dhamaka",
   description:
-    "Official Lenka Store Diwali Ka Dhamaka — Sivakasi Direct Firecrackers, Fashion Wear, Electronics & New Launches.",
+    "LENKA STORE offers  Diwali firecracker combo packs, festive streetwear, ANC audio electronics, and limited-edition drops across Andhra Pradesh and Telangana.",
+  icons: {
+    icon: "/favicon.svg",
+    apple: "/images/diwali.png",
+  },
+  openGraph: {
+    title: "LENKA STORE — Diwali Ka Dhamaka",
+    description:
+      "Lenka Stores-direct Diwali cracker combos, festive fashion wear, ANC electronics, and limited drops across Andhra Pradesh & Telangana.",
+    type: "website",
+    images: [
+      {
+        url: "/images/diwali.png",
+        width: 1024,
+        height: 1024,
+        alt: "LENKA STORE Diwali Ka Dhamaka Combo Boxes",
+      },
+    ],
+  },
 };
 
 export default function RootLayout({
