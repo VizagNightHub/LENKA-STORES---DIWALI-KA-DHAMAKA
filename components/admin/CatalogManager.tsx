@@ -168,8 +168,6 @@ export const CatalogManager = () => {
           { merge: true }
         );
       }
-      // Remember that the catalog has been initialized,
-      // so deleted items stay deleted even after refresh.
       await setDoc(doc(db, "stats", "catalog"), { initialized: true }, { merge: true });
     } finally {
       setSyncing(false);
@@ -177,7 +175,6 @@ export const CatalogManager = () => {
   };
 
   const handleDeleteProduct = async (id: string) => {
-    // Mark catalog as initialized so the storefront never falls back to defaults.
     await setDoc(doc(db, "stats", "catalog"), { initialized: true }, { merge: true });
     await deleteDoc(doc(db, "products", id));
   };
@@ -255,7 +252,6 @@ export const CatalogManager = () => {
   return (
     <div className="mt-6 space-y-12">
       <div className="grid gap-8 lg:grid-cols-12">
-        {/* Add / Edit Product Form */}
         <form
           onSubmit={handleSaveProduct}
           className="space-y-4 rounded-2xl border border-white/10 bg-zinc-900/80 p-6 lg:col-span-5"
@@ -380,21 +376,22 @@ export const CatalogManager = () => {
           </button>
         </form>
 
-        {/* Live Products List */}
         <div className="space-y-3 lg:col-span-7">
           <div className="flex flex-wrap items-center justify-between gap-2">
             <h2 className="text-lg font-semibold text-white">
               All Store Products ({products.length})
             </h2>
-            <button
-              type="button"
-              onClick={syncDefaultsToFirebase}
-              disabled={syncing}
-              className="inline-flex cursor-pointer items-center gap-1.5 rounded-full border border-[#FFD54A]/40 px-3.5 py-1.5 text-xs font-semibold text-[#FFD54A] hover:bg-[#FFD54A]/10"
-            >
-              <RefreshCw className={`h-3.5 w-3.5 ${syncing ? "animate-spin" : ""}`} />
-              {syncing ? "Loading..." : "Load Default Combos & Items"}
-            </button>
+            {products.length === 0 && (
+              <button
+                type="button"
+                onClick={syncDefaultsToFirebase}
+                disabled={syncing}
+                className="inline-flex cursor-pointer items-center gap-1.5 rounded-full border border-[#FFD54A]/40 px-3.5 py-1.5 text-xs font-semibold text-[#FFD54A] hover:bg-[#FFD54A]/10"
+              >
+                <RefreshCw className={`h-3.5 w-3.5 ${syncing ? "animate-spin" : ""}`} />
+                {syncing ? "Loading..." : "Load Default Combos & Items"}
+              </button>
+            )}
           </div>
 
           {products.length === 0 ? (
@@ -447,7 +444,6 @@ export const CatalogManager = () => {
         </div>
       </div>
 
-      {/* Promo Ads Section */}
       <div className="grid gap-8 border-t border-white/10 pt-8 lg:grid-cols-12">
         <form
           onSubmit={handleAddAd}
