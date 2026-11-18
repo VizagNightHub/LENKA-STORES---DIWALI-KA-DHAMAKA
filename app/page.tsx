@@ -1,7 +1,6 @@
 import { PromoBanner } from "@/components/ads/PromoBanner";
 import { CategoryGrid } from "@/components/categories/CategoryGrid";
 import { PrismaHero } from "@/components/hero/PrismaHero";
-import { SiteFooter } from "@/components/layout/SiteFooter";
 
 export default function HomePage() {
   return (
@@ -9,7 +8,6 @@ export default function HomePage() {
       <PrismaHero />
       <PromoBanner />
       <CategoryGrid />
-      <SiteFooter />
     </main>
   );
 }
