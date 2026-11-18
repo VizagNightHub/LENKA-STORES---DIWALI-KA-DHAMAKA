@@ -1,8 +1,21 @@
 "use client";
 
-import { addDoc, collection, deleteDoc, doc, onSnapshot, orderBy, query, serverTimestamp } from "firebase/firestore";
-import { Megaphone, Plus, Trash2, Upload } from "lucide-react";
+import {
+  addDoc,
+  collection,
+  deleteDoc,
+  doc,
+  onSnapshot,
+  orderBy,
+  query,
+  serverTimestamp,
+  setDoc,
+  updateDoc,
+} from "firebase/firestore";
+import { Megaphone, Pencil, Plus, RefreshCw, Trash2, Upload, X } from "lucide-react";
 import { useEffect, useState } from "react";
+import { STORE_PRODUCTS } from "@/data/catalog";
+import { DIWALI_COMBOS } from "@/data/diwaliCombos";
 import { db } from "@/lib/firebase";
 
 interface LiveProduct {
@@ -13,6 +26,8 @@ interface LiveProduct {
   price: number;
   mrp: number;
   badge?: string;
+  itemCount?: string;
+  items?: string[];
   images: string[];
 }
 
@@ -50,14 +65,18 @@ function compressPhoto(file: File): Promise<string> {
 
 export const CatalogManager = () => {
   const [products, setProducts] = useState<LiveProduct[]>([]);
+  const [editingId, setEditingId] = useState<string | null>(null);
   const [category, setCategory] = useState("diwali-ka-dhamaka");
   const [name, setName] = useState("");
   const [tagline, setTagline] = useState("");
   const [price, setPrice] = useState("");
   const [mrp, setMrp] = useState("");
   const [badge, setBadge] = useState("");
+  const [itemCount, setItemCount] = useState("");
+  const [itemsText, setItemsText] = useState("");
   const [images, setImages] = useState<string[]>([]);
   const [saving, setSaving] = useState(false);
+  const [syncing, setSyncing] = useState(false);
 
   const [ads, setAds] = useState<LiveAd[]>([]);
   const [adTitle, setAdTitle] = useState("");
@@ -85,6 +104,75 @@ export const CatalogManager = () => {
     };
   }, []);
 
+  const resetForm = () => {
+    setEditingId(null);
+    setCategory("diwali-ka-dhamaka");
+    setName("");
+    setTagline("");
+    setPrice("");
+    setMrp("");
+    setBadge("");
+    setItemCount("");
+    setItemsText("");
+    setImages([]);
+  };
+
+  const startEdit = (p: LiveProduct) => {
+    setEditingId(p.id);
+    setCategory(p.category || "diwali-ka-dhamaka");
+    setName(p.name || "");
+    setTagline(p.tagline || "");
+    setPrice(String(p.price || ""));
+    setMrp(String(p.mrp || ""));
+    setBadge(p.badge || "");
+    setItemCount(p.itemCount || "");
+    setItemsText(Array.isArray(p.items) ? p.items.join("\n") : "");
+    setImages(Array.isArray(p.images) ? p.images : []);
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  };
+
+  const syncDefaultsToFirebase = async () => {
+    setSyncing(true);
+    try {
+      for (const combo of DIWALI_COMBOS) {
+        await setDoc(
+          doc(db, "products", `combo-${combo.id}`),
+          {
+            category: "diwali-ka-dhamaka",
+            name: combo.name,
+            tagline: combo.tagline,
+            price: combo.price,
+            mrp: combo.mrp,
+            badge: combo.badge || null,
+            itemCount: combo.itemCount,
+            items: combo.items,
+            images: combo.images,
+            createdAt: serverTimestamp(),
+          },
+          { merge: true }
+        );
+      }
+      for (const prod of STORE_PRODUCTS) {
+        await setDoc(
+          doc(db, "products", prod.id),
+          {
+            category: prod.category,
+            name: prod.name,
+            tagline: prod.tagline,
+            price: prod.price,
+            mrp: prod.mrp,
+            badge: prod.badge || null,
+            images: prod.images,
+            createdAt: serverTimestamp(),
+          },
+          { merge: true }
+        );
+      }
+    } finally {
+      setSyncing(false);
+    }
+  };
+
   const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = Array.from(e.target.files || []);
     if (files.length === 0) return;
@@ -99,27 +187,37 @@ export const CatalogManager = () => {
     setAdImage(compressed);
   };
 
-  const handleAddProduct = async (e: React.FormEvent) => {
+  const handleSaveProduct = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!name.trim() || !price) return;
     setSaving(true);
+    const parsedItems = itemsText
+      .split("\n")
+      .map((s) => s.trim())
+      .filter(Boolean);
+
+    const payload = {
+      category,
+      name: name.trim(),
+      tagline: tagline.trim(),
+      price: Number(price),
+      mrp: Number(mrp) || Number(price),
+      badge: badge.trim() || null,
+      itemCount: itemCount.trim() || null,
+      items: parsedItems.length > 0 ? parsedItems : null,
+      images: images.length > 0 ? images : ["/images/new-launch.png"],
+    };
+
     try {
-      await addDoc(collection(db, "products"), {
-        category,
-        name: name.trim(),
-        tagline: tagline.trim(),
-        price: Number(price),
-        mrp: Number(mrp) || Number(price),
-        badge: badge.trim() || null,
-        images: images.length > 0 ? images : ["/images/new-launch.png"],
-        createdAt: serverTimestamp(),
-      });
-      setName("");
-      setTagline("");
-      setPrice("");
-      setMrp("");
-      setBadge("");
-      setImages([]);
+      if (editingId) {
+        await updateDoc(doc(db, "products", editingId), payload);
+      } else {
+        await addDoc(collection(db, "products"), {
+          ...payload,
+          createdAt: serverTimestamp(),
+        });
+      }
+      resetForm();
     } finally {
       setSaving(false);
     }
@@ -147,13 +245,27 @@ export const CatalogManager = () => {
 
   return (
     <div className="mt-6 space-y-12">
-      {/* Products Section */}
       <div className="grid gap-8 lg:grid-cols-12">
+        {/* Add / Edit Product Form */}
         <form
-          onSubmit={handleAddProduct}
+          onSubmit={handleSaveProduct}
           className="space-y-4 rounded-2xl border border-white/10 bg-zinc-900/80 p-6 lg:col-span-5"
         >
-          <h2 className="text-lg font-semibold text-white">Add New Product</h2>
+          <div className="flex items-center justify-between">
+            <h2 className="text-lg font-semibold text-white">
+              {editingId ? "Edit Product" : "Add New Product"}
+            </h2>
+            {editingId && (
+              <button
+                type="button"
+                onClick={resetForm}
+                className="inline-flex cursor-pointer items-center gap-1 text-xs text-red-400 hover:underline"
+              >
+                <X className="h-3.5 w-3.5" /> Cancel Edit
+              </button>
+            )}
+          </div>
+
           <select
             value={category}
             onChange={(e) => setCategory(e.target.value)}
@@ -164,9 +276,10 @@ export const CatalogManager = () => {
             <option value="electronics" className="bg-zinc-900">Electronics</option>
             <option value="new-launch" className="bg-zinc-900">New Launch</option>
           </select>
+
           <input
             type="text"
-            placeholder="Product Name"
+            placeholder="Product / Combo Name"
             value={name}
             onChange={(e) => setName(e.target.value)}
             className="w-full rounded-xl border border-white/15 bg-black/50 px-4 py-3 text-sm outline-none focus:border-[#FFD54A]"
@@ -178,6 +291,7 @@ export const CatalogManager = () => {
             onChange={(e) => setTagline(e.target.value)}
             className="w-full rounded-xl border border-white/15 bg-black/50 px-4 py-3 text-sm outline-none focus:border-[#FFD54A]"
           />
+
           <div className="grid grid-cols-2 gap-3">
             <input
               type="number"
@@ -194,33 +308,89 @@ export const CatalogManager = () => {
               className="w-full rounded-xl border border-white/15 bg-black/50 px-4 py-3 text-sm outline-none focus:border-[#FFD54A]"
             />
           </div>
-          <input
-            type="text"
-            placeholder="Badge (optional, e.g. NEW / HOT)"
-            value={badge}
-            onChange={(e) => setBadge(e.target.value)}
-            className="w-full rounded-xl border border-white/15 bg-black/50 px-4 py-3 text-sm outline-none focus:border-[#FFD54A]"
+
+          <div className="grid grid-cols-2 gap-3">
+            <input
+              type="text"
+              placeholder="Badge (e.g. POPULAR)"
+              value={badge}
+              onChange={(e) => setBadge(e.target.value)}
+              className="w-full rounded-xl border border-white/15 bg-black/50 px-4 py-3 text-sm outline-none focus:border-[#FFD54A]"
+            />
+            <input
+              type="text"
+              placeholder="Count (e.g. 36 Items)"
+              value={itemCount}
+              onChange={(e) => setItemCount(e.target.value)}
+              className="w-full rounded-xl border border-white/15 bg-black/50 px-4 py-3 text-sm outline-none focus:border-[#FFD54A]"
+            />
+          </div>
+
+          <textarea
+            rows={3}
+            placeholder="Combo Contents (one item per line — optional)"
+            value={itemsText}
+            onChange={(e) => setItemsText(e.target.value)}
+            className="w-full rounded-xl border border-white/15 bg-black/50 px-4 py-2.5 text-xs outline-none focus:border-[#FFD54A]"
           />
+
           <label className="flex cursor-pointer items-center justify-center gap-2 rounded-xl border border-dashed border-white/25 bg-black/40 px-4 py-3 text-xs hover:border-[#FFD54A]">
             <Upload className="h-4 w-4 text-[#FFD54A]" />
             <span>Upload 1–4 Photos for 3D Viewer ({images.length}/4)</span>
             <input type="file" accept="image/*" multiple onChange={handleImageUpload} className="hidden" />
           </label>
+
+          {images.length > 0 && (
+            <div className="flex flex-wrap gap-2">
+              {images.map((src, i) => (
+                <div key={i} className="relative">
+                  <img
+                    src={src}
+                    alt="Preview"
+                    className="h-12 w-12 rounded-lg border border-white/20 object-cover"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setImages((prev) => prev.filter((_, idx) => idx !== i))}
+                    className="absolute -right-1.5 -top-1.5 rounded-full bg-red-600 p-0.5 text-white"
+                  >
+                    <X className="h-2.5 w-2.5" />
+                  </button>
+                </div>
+              ))}
+            </div>
+          )}
+
           <button
             type="submit"
             disabled={saving}
             className="flex w-full cursor-pointer items-center justify-center gap-2 rounded-full bg-[#FFD54A] py-3 text-sm font-bold text-black hover:bg-[#ffe27a] disabled:opacity-50"
           >
             <Plus className="h-4 w-4" />
-            {saving ? "Publishing..." : "Publish Product Live"}
+            {saving ? "Saving..." : editingId ? "Save Changes" : "Publish Product Live"}
           </button>
         </form>
 
+        {/* Live Products List */}
         <div className="space-y-3 lg:col-span-7">
-          <h2 className="text-lg font-semibold text-white">Live Admin Products ({products.length})</h2>
+          <div className="flex flex-wrap items-center justify-between gap-2">
+            <h2 className="text-lg font-semibold text-white">
+              All Store Products ({products.length})
+            </h2>
+            <button
+              type="button"
+              onClick={syncDefaultsToFirebase}
+              disabled={syncing}
+              className="inline-flex cursor-pointer items-center gap-1.5 rounded-full border border-[#FFD54A]/40 px-3.5 py-1.5 text-xs font-semibold text-[#FFD54A] hover:bg-[#FFD54A]/10"
+            >
+              <RefreshCw className={`h-3.5 w-3.5 ${syncing ? "animate-spin" : ""}`} />
+              {syncing ? "Loading..." : "Load Default Combos & Items"}
+            </button>
+          </div>
+
           {products.length === 0 ? (
             <p className="rounded-2xl border border-white/10 bg-zinc-900/60 p-6 text-xs text-[#E1E0CC]/60">
-              No extra products added from Admin yet.
+              Click <strong>Load Default Combos &amp; Items</strong> above to bring your Small/Medium/Large combos and default products here to edit!
             </p>
           ) : (
             products.map((p) => (
@@ -235,18 +405,33 @@ export const CatalogManager = () => {
                     className="h-14 w-14 rounded-xl border border-white/15 object-cover"
                   />
                   <div className="text-xs">
-                    <span className="text-[10px] uppercase tracking-wider text-[#FFD54A]">{p.category}</span>
+                    <span className="text-[10px] uppercase tracking-wider text-[#FFD54A]">
+                      {p.category}
+                    </span>
                     <p className="text-sm font-semibold text-white">{p.name}</p>
-                    <p className="text-[#E1E0CC]/70">₹{p.price.toLocaleString("en-IN")}</p>
+                    <p className="text-[#E1E0CC]/70">
+                      ₹{p.price.toLocaleString("en-IN")} • {p.images?.length || 1} photo(s)
+                    </p>
                   </div>
                 </div>
-                <button
-                  type="button"
-                  onClick={() => deleteDoc(doc(db, "products", p.id))}
-                  className="cursor-pointer rounded-xl bg-red-600/20 p-2.5 text-red-400 hover:bg-red-600 hover:text-white"
-                >
-                  <Trash2 className="h-4 w-4" />
-                </button>
+                <div className="flex items-center gap-2">
+                  <button
+                    type="button"
+                    onClick={() => startEdit(p)}
+                    className="cursor-pointer rounded-xl bg-white/10 p-2.5 text-[#FFD54A] hover:bg-white/20"
+                    title="Edit Product"
+                  >
+                    <Pencil className="h-4 w-4" />
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => deleteDoc(doc(db, "products", p.id))}
+                    className="cursor-pointer rounded-xl bg-red-600/20 p-2.5 text-red-400 hover:bg-red-600 hover:text-white"
+                    title="Delete Product"
+                  >
+                    <Trash2 className="h-4 w-4" />
+                  </button>
+                </div>
               </div>
             ))
           )}
@@ -265,14 +450,14 @@ export const CatalogManager = () => {
           </div>
           <input
             type="text"
-            placeholder="Ad Headline (e.g. Early Bird Diwali Combo Offer)"
+            placeholder="Ad Headline"
             value={adTitle}
             onChange={(e) => setAdTitle(e.target.value)}
             className="w-full rounded-xl border border-white/15 bg-black/50 px-4 py-3 text-sm outline-none focus:border-[#FFD54A]"
           />
           <input
             type="text"
-            placeholder="Ad Subtitle (e.g. Pre-book before Oct 15 for free gift)"
+            placeholder="Ad Subtitle"
             value={adSubtitle}
             onChange={(e) => setAdSubtitle(e.target.value)}
             className="w-full rounded-xl border border-white/15 bg-black/50 px-4 py-3 text-sm outline-none focus:border-[#FFD54A]"
