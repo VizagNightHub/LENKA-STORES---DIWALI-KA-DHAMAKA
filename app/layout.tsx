@@ -1,5 +1,7 @@
 import type { Metadata } from "next";
 import { Space_Grotesk } from "next/font/google";
+import { VisitorTracker } from "@/components/analytics/VisitorTracker";
+import { PushpinTearFooter } from "@/components/ui/pushpin-tear-footer";
 import "./globals.css";
 
 const spaceGrotesk = Space_Grotesk({
@@ -10,7 +12,25 @@ const spaceGrotesk = Space_Grotesk({
 export const metadata: Metadata = {
   title: "LENKA STORE — Diwali Ka Dhamaka",
   description:
-    "Official Lenka Store Diwali Ka Dhamaka —   Firecrackers, Fashion Wear, Electronics & New Launches.",
+    "LENKA STORE offers -direct Diwali firecracker combo packs, festive streetwear, ANC audio electronics, and limited-edition drops across Andhra Pradesh and Telangana.",
+  icons: {
+    icon: "/favicon.svg",
+    apple: "/images/diwali.png",
+  },
+  openGraph: {
+    title: "LENKA STORE — Diwali Ka Dhamaka",
+    description:
+      "Lenka Stores-direct Diwali cracker combos, festive fashion wear, ANC electronics, and limited drops across Andhra Pradesh & Telangana.",
+    type: "website",
+    images: [
+      {
+        url: "/images/diwali.png",
+        width: 1024,
+        height: 1024,
+        alt: "LENKA STORE Diwali Ka Dhamaka Combo Boxes",
+      },
+    ],
+  },
 };
 
 export default function RootLayout({
@@ -21,7 +41,9 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body className={`${spaceGrotesk.className} bg-[#09090b] antialiased`}>
+        <VisitorTracker />
         {children}
+        <PushpinTearFooter />
       </body>
     </html>
   );
