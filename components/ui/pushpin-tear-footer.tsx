@@ -223,11 +223,8 @@ export function PushpinTearFooter({
       className="relative w-full overflow-x-clip"
       style={{ backgroundColor: sheet, color: sheetInk }}
     >
-      {/* Torn Paper Sheet Container */}
       <div className="relative flex min-h-[620px] w-full flex-col justify-between md:h-[100svh]">
-        {/* Top Pushpin Drop + L Monogram */}
         <div className="relative flex w-full items-center justify-between px-5 pt-6 sm:px-10 md:px-14">
-          {/* Top-left Social Icons */}
           <div className="flex items-center gap-2.5">
             <FooterLink
               href="https://www.instagram.com/the_lenka_8116"
@@ -243,7 +240,6 @@ export function PushpinTearFooter({
             </FooterLink>
           </div>
 
-          {/* Center Animated Pushpin + L Monogram */}
           <motion.div
             initial={{ y: -28, opacity: 0 }}
             animate={inView ? { y: 0, opacity: 1 } : {}}
@@ -262,8 +258,9 @@ export function PushpinTearFooter({
                 r="5"
                 stroke="currentColor"
                 strokeWidth="2"
-                initial={{ pathLength: 0 }}
-                animate={inView ? { pathLength: 1 } : {}}
+                strokeDasharray="34"
+                initial={{ strokeDashoffset: 34 }}
+                animate={inView ? { strokeDashoffset: 0 } : {}}
                 transition={{ duration: 0.6, delay: 0.25 }}
               />
               <motion.path
@@ -272,23 +269,21 @@ export function PushpinTearFooter({
                 strokeWidth="2.4"
                 strokeLinecap="round"
                 strokeLinejoin="round"
-                initial={{ pathLength: 0 }}
-                animate={inView ? { pathLength: 1 } : {}}
+                strokeDasharray="40"
+                initial={{ strokeDashoffset: 40 }}
+                animate={inView ? { strokeDashoffset: 0 } : {}}
                 transition={{ duration: 0.8, delay: 0.35 }}
               />
             </svg>
           </motion.div>
 
-          {/* Status Pill */}
           <div className="hidden items-center gap-2 rounded-full border border-current/20 px-3.5 py-1.5 text-[11px] font-semibold tracking-wide sm:inline-flex">
             <span className="h-2 w-2 rounded-full bg-emerald-700" />
             <span>pre-booking open · AP &amp; Telangana</span>
           </div>
         </div>
 
-        {/* Main Sheet Body */}
         <div className="mx-auto grid w-full max-w-7xl flex-1 grid-cols-1 gap-8 px-5 py-8 sm:px-10 md:grid-cols-12 md:items-center md:px-14">
-          {/* Left: Email Copy + Newsletter */}
           <div className="space-y-6 md:col-span-5">
             <div>
               <p className="text-[11px] font-bold uppercase tracking-[0.2em] opacity-70">
@@ -345,9 +340,7 @@ export function PushpinTearFooter({
             </form>
           </div>
 
-          {/* Right: 2 Navigation Columns */}
           <div className="grid grid-cols-2 gap-8 md:col-span-7 md:pl-8">
-            {/* Column 1: Shop */}
             <div className="space-y-3">
               <p className="text-xs font-bold uppercase tracking-[0.2em] opacity-65">
                 shop
@@ -372,7 +365,6 @@ export function PushpinTearFooter({
               </FooterLink>
             </div>
 
-            {/* Column 2: Follow */}
             <div className="space-y-3">
               <p className="text-xs font-bold uppercase tracking-[0.2em] opacity-65">
                 follow
@@ -390,7 +382,6 @@ export function PushpinTearFooter({
                 ))}
               </ul>
 
-              {/* Second place for Follow Us icons */}
               <div className="flex flex-wrap items-center gap-3 pt-1 text-xs font-semibold">
                 <FooterLink
                   href="https://www.instagram.com/the_lenka_8116"
@@ -418,14 +409,12 @@ export function PushpinTearFooter({
           </div>
         </div>
 
-        {/* Torn Edge + Curled Corner Flaps + Cream Paper Underneath */}
         <motion.div
           initial={{ y: 24, opacity: 0 }}
           animate={inView ? { y: 0, opacity: 1 } : {}}
           transition={{ duration: 0.7, delay: 0.2, ease: [0.16, 1, 0.3, 1] }}
           className="relative w-full"
         >
-          {/* Left & Right Subtle Curled Flaps */}
           <div
             className="pointer-events-none absolute -top-3 left-4 h-4 w-10 -rotate-3 opacity-35"
             style={{ backgroundColor: sheetInk }}
@@ -435,7 +424,6 @@ export function PushpinTearFooter({
             style={{ backgroundColor: sheetInk }}
           />
 
-          {/* Torn SVG Divider */}
           <svg
             viewBox="0 0 1440 32"
             preserveAspectRatio="none"
@@ -445,13 +433,11 @@ export function PushpinTearFooter({
             <path d={tearPath} fill={paper} />
           </svg>
 
-          {/* Cream Paper Base */}
           <div
             className="px-5 pb-6 pt-3 sm:px-10 md:px-14"
             style={{ backgroundColor: paper, color: paperInk }}
           >
             <div className="mx-auto max-w-7xl">
-              {/* Subtitle + Big Brand Wordmark */}
               <div className="flex flex-col justify-between gap-4 border-b border-current/15 pb-5 md:flex-row md:items-end">
                 <div>
                   <p className="bg-gradient-to-r from-[#2B1400] via-[#7A3B00] to-[#2B1400] bg-clip-text text-xs font-bold tracking-wide text-transparent sm:text-sm">
@@ -462,7 +448,6 @@ export function PushpinTearFooter({
                   </p>
                 </div>
 
-                {/* Live IST Clock + Handle + WhatsApp */}
                 <div className="flex flex-wrap items-center gap-3 text-xs font-semibold">
                   {clock && (
                     <span className="rounded-full border border-current/20 px-3 py-1 font-mono">
@@ -486,7 +471,6 @@ export function PushpinTearFooter({
                 </div>
               </div>
 
-              {/* Bottom Bar: Copyright | Credit | Side Links */}
               <div className="mt-4 flex flex-col items-start justify-between gap-2 text-[11px] font-medium opacity-80 sm:flex-row sm:items-center">
                 <span>{copyright}</span>
                 <span className="font-bold">{credit}</span>
