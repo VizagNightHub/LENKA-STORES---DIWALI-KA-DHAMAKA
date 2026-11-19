@@ -372,7 +372,6 @@ export default function AdminDashboardPage() {
 
         {tab === "orders" && (
           <div className="mt-8 space-y-5">
-            {/* Order Status Sub-Tabs */}
             <div className="flex flex-wrap gap-2">
               {[
                 { id: "PROCESSING", label: `Processing (${processingOrders.length})` },
@@ -447,7 +446,6 @@ export default function AdminDashboardPage() {
                       </p>
                     </div>
 
-                    {/* Screenshot Thumbnail + Quick Actions */}
                     <div className="flex flex-wrap items-center gap-2">
                       {order.screenshot && (
                         <button
@@ -496,7 +494,6 @@ export default function AdminDashboardPage() {
                     </div>
                   </div>
 
-                  {/* Delivery Stage Controls */}
                   <div className="mt-4 flex flex-wrap items-center gap-2 border-t border-white/10 pt-3">
                     <span className="text-[11px] font-semibold text-zinc-400">
                       Update Stage:
@@ -548,7 +545,6 @@ export default function AdminDashboardPage() {
                     </div>
                   )}
 
-                  {/* Courier Tracking ID + Expected Delivery Date */}
                   <div className="mt-3 flex flex-wrap items-center gap-3">
                     <div className="flex flex-1 flex-wrap items-center gap-2">
                       <Truck className="h-4 w-4 text-[#FFD54A]" />
@@ -598,7 +594,6 @@ export default function AdminDashboardPage() {
         {tab === "coupons" && <CouponsAndCharges />}
       </div>
 
-      {/* Fullscreen Payment Screenshot Lightbox */}
       {previewImage && (
         <div
           onClick={() => setPreviewImage(null)}
