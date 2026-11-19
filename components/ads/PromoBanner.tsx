@@ -1,24 +1,54 @@
 "use client";
 
 import { collection, getDocs, orderBy, query } from "firebase/firestore";
-import { Megaphone } from "lucide-react";
+import {
+  ChevronLeft,
+  ChevronRight,
+  Clock,
+  Copy,
+  Megaphone,
+  X,
+} from "lucide-react";
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import { db } from "@/lib/firebase";
 
+type AdFormat = "BANNER" | "TICKER" | "COUNTDOWN" | "POPUP" | "VIDEO";
+
 interface LiveAd {
   id: string;
+  format?: AdFormat;
   title: string;
   subtitle?: string;
+  couponCode?: string | null;
   href?: string;
   image?: string | null;
+  videoUrl?: string | null;
+  endsAt?: string | null;
+  active?: boolean;
 }
 
 const ADS_CACHE_KEY = "lenka_home_ads";
 const CACHE_TTL_MS = 2 * 60 * 1000;
 
+function formatTimeLeft(endsAt: string, now: number) {
+  const diff = new Date(endsAt).getTime() - now;
+  if (Number.isNaN(diff) || diff <= 0) return null;
+  const d = Math.floor(diff / 86_400_000);
+  const h = Math.floor((diff % 86_400_000) / 3_600_000);
+  const m = Math.floor((diff % 3_600_000) / 60_000);
+  const s = Math.floor((diff % 60_000) / 1000);
+  return `${d > 0 ? `${d}d ` : ""}${String(h).padStart(2, "0")}h : ${String(
+    m
+  ).padStart(2, "0")}m : ${String(s).padStart(2, "0")}s`;
+}
+
 export const PromoBanner = () => {
   const [ads, setAds] = useState<LiveAd[]>([]);
+  const [slideIdx, setSlideIdx] = useState(0);
+  const [copiedId, setCopiedId] = useState<string | null>(null);
+  const [now, setNow] = useState(Date.now());
+  const [showPopup, setShowPopup] = useState(false);
 
   useEffect(() => {
     let active = true;
@@ -44,19 +74,17 @@ export const PromoBanner = () => {
           id: d.id,
           ...(d.data() as Omit<LiveAd, "id">),
         }));
-
         if (active) setAds(list);
-
         try {
           sessionStorage.setItem(
             ADS_CACHE_KEY,
             JSON.stringify({ ts: Date.now(), data: list })
           );
         } catch {
-          // Ignore quota errors
+          // Ignore quota
         }
       } catch {
-        // Silently ignore ad fetch errors so homepage never breaks
+        // Ignore fetch errors
       }
     };
 
@@ -66,42 +94,311 @@ export const PromoBanner = () => {
     };
   }, []);
 
-  if (ads.length === 0) return null;
+  const activeAds = ads.filter((a) => a.active !== false);
+  const tickers = activeAds.filter((a) => a.format === "TICKER");
+  const banners = activeAds.filter((a) => !a.format || a.format === "BANNER");
+  const countdowns = activeAds.filter((a) => a.format === "COUNTDOWN");
+  const videos = activeAds.filter((a) => a.format === "VIDEO");
+  const popupAd = activeAds.find((a) => a.format === "POPUP");
+
+  useEffect(() => {
+    if (banners.length <= 1) return;
+    const t = setInterval(
+      () => setSlideIdx((i) => (i + 1) % banners.length),
+      4000
+    );
+    return () => clearInterval(t);
+  }, [banners.length]);
+
+  useEffect(() => {
+    if (countdowns.length === 0) return;
+    const t = setInterval(() => setNow(Date.now()), 1000);
+    return () => clearInterval(t);
+  }, [countdowns.length]);
+
+  useEffect(() => {
+    if (!popupAd) return;
+    try {
+      if (sessionStorage.getItem("lenka_popup_seen")) return;
+      const t = setTimeout(() => {
+        setShowPopup(true);
+        sessionStorage.setItem("lenka_popup_seen", "1");
+      }, 2500);
+      return () => clearTimeout(t);
+    } catch {
+      // Ignore
+    }
+  }, [popupAd]);
+
+  const copyCode = (id: string, code: string) => {
+    navigator.clipboard.writeText(code);
+    setCopiedId(id);
+    setTimeout(() => setCopiedId(null), 2000);
+  };
+
+  if (activeAds.length === 0) return null;
+
+  const currentBanner = banners[slideIdx % Math.max(1, banners.length)];
 
   return (
-    <section className="mx-auto max-w-6xl px-4 py-6 sm:px-6">
-      <div className="grid gap-4 sm:grid-cols-2">
-        {ads.map((ad) => (
-          <Link
-            key={ad.id}
-            href={ad.href || "/diwali-ka-dhamaka"}
-            className="group flex items-center gap-4 rounded-2xl border border-[#FFD54A]/30 bg-[#111114] p-4 transition hover:border-[#FFD54A]"
-          >
-            {ad.image ? (
-              <img
-                src={ad.image}
-                alt={ad.title}
-                className="h-16 w-16 shrink-0 rounded-xl object-cover"
-              />
-            ) : (
-              <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-[#FFD54A]/15 text-[#FFD54A]">
-                <Megaphone className="h-5 w-5" />
+    <>
+      {/* 1. Top Scrolling Ticker */}
+      {tickers.length > 0 && (
+        <div className="w-full overflow-hidden border-y border-[#FFD54A]/30 bg-[#FFD54A] py-2 text-black">
+          <div className="mx-auto flex max-w-6xl flex-wrap items-center justify-center gap-4 px-4 text-xs font-bold">
+            {tickers.map((t) => (
+              <div key={t.id} className="flex items-center gap-2">
+                <span>🔥 {t.title}</span>
+                {t.subtitle && <span className="font-medium">• {t.subtitle}</span>}
+                {t.couponCode && (
+                  <button
+                    type="button"
+                    onClick={() => copyCode(t.id, t.couponCode!)}
+                    className="inline-flex cursor-pointer items-center gap-1 rounded-full bg-black px-2.5 py-0.5 font-mono text-[11px] text-[#FFD54A]"
+                  >
+                    <Copy className="h-3 w-3" />
+                    {copiedId === t.id ? "Copied!" : t.couponCode}
+                  </button>
+                )}
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      <section className="mx-auto max-w-6xl space-y-6 px-4 py-6 sm:px-6">
+        {/* 2. Auto-Sliding Banner Carousel */}
+        {currentBanner && (
+          <div className="relative overflow-hidden rounded-2xl border border-[#FFD54A]/35 bg-[#111114] p-5 sm:p-6">
+            <div className="flex flex-col items-start justify-between gap-4 sm:flex-row sm:items-center">
+              <div className="flex items-center gap-4">
+                {currentBanner.image ? (
+                  <img
+                    src={currentBanner.image}
+                    alt={currentBanner.title}
+                    className="h-20 w-20 shrink-0 rounded-xl object-cover"
+                  />
+                ) : (
+                  <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-xl bg-[#FFD54A]/15 text-[#FFD54A]">
+                    <Megaphone className="h-6 w-6" />
+                  </div>
+                )}
+                <div>
+                  <p className="text-base font-bold text-[#FFD54A] sm:text-lg">
+                    {currentBanner.title}
+                  </p>
+                  {currentBanner.subtitle && (
+                    <p className="mt-0.5 text-xs text-zinc-300 sm:text-sm">
+                      {currentBanner.subtitle}
+                    </p>
+                  )}
+                </div>
+              </div>
+
+              <div className="flex flex-wrap items-center gap-2">
+                {currentBanner.couponCode && (
+                  <button
+                    type="button"
+                    onClick={() =>
+                      copyCode(currentBanner.id, currentBanner.couponCode!)
+                    }
+                    className="inline-flex cursor-pointer items-center gap-1.5 rounded-full border border-[#FFD54A]/40 bg-black/50 px-3.5 py-2 font-mono text-xs font-bold text-[#FFD54A]"
+                  >
+                    <Copy className="h-3.5 w-3.5" />
+                    {copiedId === currentBanner.id
+                      ? "Copied!"
+                      : currentBanner.couponCode}
+                  </button>
+                )}
+                <Link
+                  href={currentBanner.href || "/diwali-ka-dhamaka"}
+                  className="rounded-full bg-[#FFD54A] px-5 py-2 text-xs font-bold text-black hover:bg-[#ffdf70]"
+                >
+                  Shop Now
+                </Link>
+              </div>
+            </div>
+
+            {banners.length > 1 && (
+              <div className="mt-4 flex items-center justify-between">
+                <div className="flex gap-1.5">
+                  {banners.map((b, i) => (
+                    <button
+                      key={b.id}
+                      type="button"
+                      onClick={() => setSlideIdx(i)}
+                      className={`h-1.5 cursor-pointer rounded-full transition-all ${
+                        i === slideIdx % banners.length
+                          ? "w-6 bg-[#FFD54A]"
+                          : "w-2 bg-zinc-700"
+                      }`}
+                    />
+                  ))}
+                </div>
+                <div className="flex gap-1.5">
+                  <button
+                    type="button"
+                    onClick={() =>
+                      setSlideIdx(
+                        (i) => (i - 1 + banners.length) % banners.length
+                      )
+                    }
+                    className="cursor-pointer rounded-full border border-white/10 p-1 text-zinc-400 hover:text-white"
+                  >
+                    <ChevronLeft className="h-4 w-4" />
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() =>
+                      setSlideIdx((i) => (i + 1) % banners.length)
+                    }
+                    className="cursor-pointer rounded-full border border-white/10 p-1 text-zinc-400 hover:text-white"
+                  >
+                    <ChevronRight className="h-4 w-4" />
+                  </button>
+                </div>
               </div>
             )}
-            <div className="min-w-0 flex-1">
-              <p className="truncate text-sm font-bold text-[#FFD54A] group-hover:underline">
-                {ad.title}
-              </p>
-              {ad.subtitle && (
-                <p className="mt-0.5 line-clamp-2 text-xs text-zinc-300">
-                  {ad.subtitle}
-                </p>
+          </div>
+        )}
+
+        {/* 3. Flash Deal Countdown Ads */}
+        {countdowns.length > 0 && (
+          <div className="grid gap-4 sm:grid-cols-2">
+            {countdowns.map((c) => {
+              const left = c.endsAt ? formatTimeLeft(c.endsAt, now) : null;
+              if (!left) return null;
+              return (
+                <div
+                  key={c.id}
+                  className="flex flex-col justify-between gap-3 rounded-2xl border border-red-500/35 bg-gradient-to-br from-red-950/30 to-zinc-900 p-5"
+                >
+                  <div className="flex items-center justify-between gap-2">
+                    <span className="inline-flex items-center gap-1.5 rounded-full bg-red-500/20 px-3 py-1 font-mono text-xs font-bold text-red-300">
+                      <Clock className="h-3.5 w-3.5" />
+                      {left}
+                    </span>
+                    {c.couponCode && (
+                      <button
+                        type="button"
+                        onClick={() => copyCode(c.id, c.couponCode!)}
+                        className="cursor-pointer rounded-full bg-black/50 px-2.5 py-1 font-mono text-[11px] font-bold text-[#FFD54A]"
+                      >
+                        {copiedId === c.id ? "Copied!" : c.couponCode}
+                      </button>
+                    )}
+                  </div>
+                  <div>
+                    <p className="text-base font-bold text-white">{c.title}</p>
+                    {c.subtitle && (
+                      <p className="mt-1 text-xs text-zinc-300">{c.subtitle}</p>
+                    )}
+                  </div>
+                  <Link
+                    href={c.href || "/diwali-ka-dhamaka"}
+                    className="inline-block w-fit rounded-full bg-[#FFD54A] px-4 py-1.5 text-xs font-bold text-black"
+                  >
+                    Grab Deal
+                  </Link>
+                </div>
+              );
+            })}
+          </div>
+        )}
+
+        {/* 4. Video / Reel Ads */}
+        {videos.length > 0 && (
+          <div className="grid gap-4 sm:grid-cols-2">
+            {videos.map((v) => (
+              <div
+                key={v.id}
+                className="overflow-hidden rounded-2xl border border-white/10 bg-[#111114]"
+              >
+                <video
+                  src={v.videoUrl || "/hero.mp4.mp4"}
+                  autoPlay
+                  muted
+                  loop
+                  playsInline
+                  className="h-48 w-full object-cover"
+                />
+                <div className="flex items-center justify-between gap-3 p-4">
+                  <div className="min-w-0">
+                    <p className="truncate text-sm font-bold text-[#FFD54A]">
+                      {v.title}
+                    </p>
+                    {v.subtitle && (
+                      <p className="truncate text-xs text-zinc-400">
+                        {v.subtitle}
+                      </p>
+                    )}
+                  </div>
+                  <Link
+                    href={v.href || "/diwali-ka-dhamaka"}
+                    className="shrink-0 rounded-full bg-[#FFD54A] px-4 py-1.5 text-xs font-bold text-black"
+                  >
+                    Explore
+                  </Link>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+      </section>
+
+      {/* 5. Welcome Offer Popup (Once per Session) */}
+      {showPopup && popupAd && (
+        <div
+          onClick={() => setShowPopup(false)}
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 p-4"
+        >
+          <div
+            onClick={(e) => e.stopPropagation()}
+            className="relative w-full max-w-md rounded-3xl border border-[#FFD54A]/40 bg-zinc-950 p-6 text-center shadow-2xl"
+          >
+            <button
+              type="button"
+              onClick={() => setShowPopup(false)}
+              className="absolute right-4 top-4 cursor-pointer rounded-full bg-white/10 p-1.5 text-zinc-300 hover:bg-red-600 hover:text-white"
+            >
+              <X className="h-4 w-4" />
+            </button>
+            {popupAd.image && (
+              <img
+                src={popupAd.image}
+                alt={popupAd.title}
+                className="mx-auto mb-4 h-40 w-full rounded-2xl object-cover"
+              />
+            )}
+            <p className="text-xl font-bold text-[#FFD54A]">{popupAd.title}</p>
+            {popupAd.subtitle && (
+              <p className="mt-2 text-sm text-zinc-300">{popupAd.subtitle}</p>
+            )}
+            <div className="mt-5 flex flex-wrap justify-center gap-2">
+              {popupAd.couponCode && (
+                <button
+                  type="button"
+                  onClick={() => copyCode(popupAd.id, popupAd.couponCode!)}
+                  className="inline-flex cursor-pointer items-center gap-1.5 rounded-full border border-[#FFD54A] px-4 py-2 font-mono text-xs font-bold text-[#FFD54A]"
+                >
+                  <Copy className="h-3.5 w-3.5" />
+                  {copiedId === popupAd.id
+                    ? "Copied!"
+                    : `Copy ${popupAd.couponCode}`}
+                </button>
               )}
+              <Link
+                href={popupAd.href || "/diwali-ka-dhamaka"}
+                onClick={() => setShowPopup(false)}
+                className="rounded-full bg-[#FFD54A] px-6 py-2 text-xs font-bold text-black"
+              >
+                Shop Now
+              </Link>
             </div>
-          </Link>
-        ))}
-      </div>
-    </section>
+          </div>
+        </div>
+      )}
+    </>
   );
 };
 
