@@ -2,6 +2,7 @@
 
 import { motion } from "framer-motion";
 import Link from "next/link";
+import { ShareMenuButton } from "@/components/ui/ShareMenuButton";
 import { WordsPullUp } from "./WordsPullUp";
 
 const navItems = [
@@ -48,6 +49,10 @@ export const PrismaHero = () => {
             ))}
           </div>
         </nav>
+
+        <div className="absolute right-4 top-3 z-30 sm:right-6 md:right-8">
+          <ShareMenuButton />
+        </div>
 
         <div className="absolute bottom-0 left-0 right-0 z-10 px-4 pb-5 sm:px-6 md:px-10 md:pb-8">
           <div className="grid grid-cols-12 items-end gap-4">
