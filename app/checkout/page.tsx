@@ -381,7 +381,7 @@ export default function CheckoutPage() {
                   <span>₹{packingCharge.toLocaleString("en-IN")}</span>
                 </div>
                 <div className="flex justify-between text-[#E1E0CC]/75">
-                  <span>Delivery (from KPHB, Hyd)</span>
+                  <span>Delivery Charges</span>
                   <span>
                     {deliveryInfo.valid ? `₹${deliveryCharge.toLocaleString("en-IN")}` : "Enter pincode"}
                   </span>
