@@ -61,6 +61,9 @@ export const ShareMenuButton = () => {
             <Link href="/new-launch" onClick={() => setOpen(false)} className="block rounded-lg px-3 py-2 hover:bg-white/10 hover:text-[#FFD54A]">
               New Launch
             </Link>
+            <Link href="/track-order" onClick={() => setOpen(false)} className="block rounded-lg px-3 py-2 hover:bg-white/10 hover:text-[#FFD54A]">
+              Track Order
+            </Link>
             <Link href="/about" onClick={() => setOpen(false)} className="block rounded-lg px-3 py-2 hover:bg-white/10 hover:text-[#FFD54A]">
               About
             </Link>
