@@ -129,7 +129,6 @@ export const CategoryStorefront = ({
       id: p.id,
       name: p.name,
       price: Number(p.price) || 0,
-      image: p.images?.[0] || "/images/new-launch.png",
       variant: chosenVariant,
       category: p.category,
     });
