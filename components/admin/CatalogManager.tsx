@@ -12,8 +12,9 @@ import {
   setDoc,
   updateDoc,
 } from "firebase/firestore";
-import { Megaphone, Pencil, Plus, Trash2, Upload, X } from "lucide-react";
+import { Pencil, Plus, Trash2, Upload, X } from "lucide-react";
 import { useEffect, useState } from "react";
+import { AdsManager } from "@/components/admin/AdsManager";
 import { SUBCATEGORIES } from "@/data/subcategories";
 import { db } from "@/lib/firebase";
 
@@ -35,14 +36,6 @@ interface LiveProduct {
   items?: string[];
   images: string[];
   variants?: VariantOption[];
-}
-
-interface LiveAd {
-  id: string;
-  title: string;
-  subtitle: string;
-  href: string;
-  image?: string;
 }
 
 const QUICK_SIZES = ["XS", "S", "M", "L", "XL", "XXL", "Free Size"];
@@ -90,13 +83,6 @@ export const CatalogManager = () => {
   const [customVariantStock, setCustomVariantStock] = useState("10");
   const [saving, setSaving] = useState(false);
 
-  const [ads, setAds] = useState<LiveAd[]>([]);
-  const [adTitle, setAdTitle] = useState("");
-  const [adSubtitle, setAdSubtitle] = useState("");
-  const [adHref, setAdHref] = useState("/diwali-ka-dhamaka");
-  const [adImage, setAdImage] = useState("");
-  const [savingAd, setSavingAd] = useState(false);
-
   useEffect(() => {
     const q1 = query(collection(db, "products"), orderBy("createdAt", "desc"));
     const unsub1 = onSnapshot(q1, (snap) => {
@@ -107,21 +93,7 @@ export const CatalogManager = () => {
         }))
       );
     });
-
-    const q2 = query(collection(db, "ads"), orderBy("createdAt", "desc"));
-    const unsub2 = onSnapshot(q2, (snap) => {
-      setAds(
-        snap.docs.map((d) => ({
-          id: d.id,
-          ...(d.data() as Omit<LiveAd, "id">),
-        }))
-      );
-    });
-
-    return () => {
-      unsub1();
-      unsub2();
-    };
+    return () => unsub1();
   }, []);
 
   const resetForm = () => {
@@ -208,24 +180,11 @@ export const CatalogManager = () => {
     await deleteDoc(doc(db, "products", id));
   };
 
-  const handleDeleteAd = async (id: string) => {
-    await deleteDoc(doc(db, "ads", id));
-  };
-
   const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = Array.from(e.target.files || []);
     if (files.length === 0) return;
     const compressed = await Promise.all(files.slice(0, 4).map(compressPhoto));
     setImages((prev) => [...prev, ...compressed].slice(0, 4));
-  };
-
-  const handleAdImageUpload = async (
-    e: React.ChangeEvent<HTMLInputElement>
-  ) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-    const compressed = await compressPhoto(file);
-    setAdImage(compressed);
   };
 
   const handleSaveProduct = async (e: React.FormEvent) => {
@@ -264,26 +223,6 @@ export const CatalogManager = () => {
       resetForm();
     } finally {
       setSaving(false);
-    }
-  };
-
-  const handleAddAd = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!adTitle.trim()) return;
-    setSavingAd(true);
-    try {
-      await addDoc(collection(db, "ads"), {
-        title: adTitle.trim(),
-        subtitle: adSubtitle.trim(),
-        href: adHref,
-        image: adImage || null,
-        createdAt: serverTimestamp(),
-      });
-      setAdTitle("");
-      setAdSubtitle("");
-      setAdImage("");
-    } finally {
-      setSavingAd(false);
     }
   };
 
@@ -402,7 +341,6 @@ export const CatalogManager = () => {
             />
           </div>
 
-          {/* Size & Colour Stock Builder */}
           <div className="space-y-3 rounded-xl border border-white/10 bg-black/40 p-3.5">
             <p className="text-xs font-semibold text-[#FFD54A]">
               Sizes, Colours &amp; Stock Quantity
@@ -627,106 +565,7 @@ export const CatalogManager = () => {
         </div>
       </div>
 
-      {/* Homepage Promo Ads */}
-      <div className="grid gap-8 lg:grid-cols-12">
-        <form
-          onSubmit={handleAddAd}
-          className="space-y-4 rounded-2xl border border-white/10 bg-zinc-900/80 p-6 lg:col-span-5"
-        >
-          <h2 className="flex items-center gap-2 text-lg font-semibold text-white">
-            <Megaphone className="h-5 w-5 text-[#FFD54A]" /> Add Homepage Promo
-            Ad
-          </h2>
-
-          <input
-            type="text"
-            placeholder="Ad Headline"
-            value={adTitle}
-            onChange={(e) => setAdTitle(e.target.value)}
-            required
-            className="w-full rounded-xl border border-white/15 bg-black/50 px-4 py-3 text-sm text-white outline-none focus:border-[#FFD54A]"
-          />
-
-          <input
-            type="text"
-            placeholder="Ad Subtitle"
-            value={adSubtitle}
-            onChange={(e) => setAdSubtitle(e.target.value)}
-            className="w-full rounded-xl border border-white/15 bg-black/50 px-4 py-3 text-sm text-white outline-none focus:border-[#FFD54A]"
-          />
-
-          <select
-            value={adHref}
-            onChange={(e) => setAdHref(e.target.value)}
-            className="w-full rounded-xl border border-white/15 bg-black/50 px-4 py-3 text-sm text-white outline-none focus:border-[#FFD54A]"
-          >
-            <option value="/diwali-ka-dhamaka" className="bg-zinc-900">
-              Link to: Diwali Ka Dhamaka
-            </option>
-            <option value="/fashion-wear" className="bg-zinc-900">
-              Link to: Fashion Wear
-            </option>
-            <option value="/electronics" className="bg-zinc-900">
-              Link to: Electronics
-            </option>
-            <option value="/new-launch" className="bg-zinc-900">
-              Link to: New Launch
-            </option>
-          </select>
-
-          <label className="flex cursor-pointer items-center justify-center gap-2 rounded-xl border border-dashed border-white/20 bg-black/30 px-4 py-3 text-xs text-zinc-300 hover:border-[#FFD54A]">
-            <Upload className="h-4 w-4 text-[#FFD54A]" />
-            <span>
-              {adImage ? "Ad Image Selected" : "Upload Ad Image (Optional)"}
-            </span>
-            <input
-              type="file"
-              accept="image/*"
-              onChange={handleAdImageUpload}
-              className="hidden"
-            />
-          </label>
-
-          <button
-            type="submit"
-            disabled={savingAd}
-            className="w-full cursor-pointer rounded-xl bg-[#FFD54A] py-3 text-sm font-bold text-black hover:bg-[#ffdf70] disabled:opacity-50"
-          >
-            {savingAd ? "Publishing..." : "Publish Promo Ad"}
-          </button>
-        </form>
-
-        <div className="space-y-3 lg:col-span-7">
-          <h2 className="text-lg font-semibold text-white">
-            Active Promo Ads ({ads.length})
-          </h2>
-          {ads.map((ad) => (
-            <div
-              key={ad.id}
-              className="flex items-center justify-between gap-4 rounded-2xl border border-white/10 bg-zinc-900/70 p-4"
-            >
-              <div className="min-w-0">
-                <p className="truncate text-sm font-bold text-white">
-                  {ad.title}
-                </p>
-                {ad.subtitle && (
-                  <p className="truncate text-xs text-zinc-400">
-                    {ad.subtitle}
-                  </p>
-                )}
-                <p className="text-xs text-[#FFD54A]">{ad.href}</p>
-              </div>
-              <button
-                type="button"
-                onClick={() => handleDeleteAd(ad.id)}
-                className="cursor-pointer rounded-lg border border-red-500/20 bg-red-500/10 p-2 text-red-400 hover:bg-red-500/20"
-              >
-                <Trash2 className="h-4 w-4" />
-              </button>
-            </div>
-          ))}
-        </div>
-      </div>
+      <AdsManager />
     </div>
   );
 };
