@@ -28,7 +28,7 @@ export function calculateDeliveryFromKPHB(
   const prefix3 = Number(clean.slice(0, 3));
 
   if (prefix3 === 500) {
-    return { charge: rates.hyderabadLocal, zoneLabel: "Hyderabad Local (from KPHB)", valid: true };
+    return { charge: rates.hyderabadLocal, zoneLabel: "Hyderabad Local", valid: true };
   }
   if ([501, 502, 508, 509].includes(prefix3)) {
     return { charge: rates.telanganaNear, zoneLabel: "Telangana Metro & Outskirts", valid: true };
