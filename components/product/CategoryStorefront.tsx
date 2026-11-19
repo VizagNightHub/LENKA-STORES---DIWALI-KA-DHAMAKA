@@ -145,7 +145,7 @@ export const CategoryStorefront = ({
   };
 
   return (
-    <section className="mx-auto max-w-7xl px-4 py-10 sm:px-6">
+    <section className="mx-auto max-w-7xl overflow-x-hidden px-4 py-10 sm:px-6">
       <div className="flex flex-col gap-4 border-b border-white/10 pb-6 sm:flex-row sm:items-end sm:justify-between">
         <div>
           <h1 className="text-3xl font-bold tracking-tight text-white sm:text-4xl">
@@ -168,11 +168,11 @@ export const CategoryStorefront = ({
         </div>
       </div>
 
-      <div className="mt-8 grid gap-6 lg:grid-cols-12">
+      <div className="mt-8 grid min-w-0 gap-6 lg:grid-cols-12">
         {/* Left Sidebar: Subcategories (Instamart / Flipkart style) */}
         {subList.length > 0 && (
-          <aside className="lg:col-span-3">
-            <div className="flex gap-2 overflow-x-auto pb-2 lg:sticky lg:top-6 lg:flex-col lg:overflow-visible lg:rounded-2xl lg:border lg:border-white/10 lg:bg-[#111114] lg:p-3">
+          <aside className="min-w-0 lg:col-span-3">
+            <div className="flex w-full max-w-full gap-2 overflow-x-auto pb-2 lg:sticky lg:top-6 lg:flex-col lg:overflow-visible lg:rounded-2xl lg:border lg:border-white/10 lg:bg-[#111114] lg:p-3">
               <button
                 type="button"
                 onClick={() => setSelectedSub("all")}
@@ -219,7 +219,7 @@ export const CategoryStorefront = ({
         )}
 
         {/* Right Side: Filtered Product Grid */}
-        <div className={subList.length > 0 ? "lg:col-span-9" : "lg:col-span-12"}>
+        <div className={subList.length > 0 ? "min-w-0 lg:col-span-9" : "min-w-0 lg:col-span-12"}>
           {loading ? (
             <div className="grid gap-6 sm:grid-cols-2 xl:grid-cols-3">
               {[1, 2, 3].map((n) => (
