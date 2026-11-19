@@ -18,6 +18,11 @@ import { STORE_PRODUCTS } from "@/data/catalog";
 import { DIWALI_COMBOS } from "@/data/diwaliCombos";
 import { db } from "@/lib/firebase";
 
+interface VariantStock {
+  label: string;
+  stock: number;
+}
+
 interface LiveProduct {
   id: string;
   category: string;
@@ -28,6 +33,7 @@ interface LiveProduct {
   badge?: string;
   itemCount?: string;
   items?: string[];
+  variants?: VariantStock[];
   images: string[];
 }
 
@@ -73,6 +79,7 @@ export const CatalogManager = () => {
   const [mrp, setMrp] = useState("");
   const [badge, setBadge] = useState("");
   const [itemCount, setItemCount] = useState("");
+  const [variantsText, setVariantsText] = useState("");
   const [itemsText, setItemsText] = useState("");
   const [images, setImages] = useState<string[]>([]);
   const [saving, setSaving] = useState(false);
@@ -113,6 +120,7 @@ export const CatalogManager = () => {
     setMrp("");
     setBadge("");
     setItemCount("");
+    setVariantsText("");
     setItemsText("");
     setImages([]);
   };
@@ -126,6 +134,11 @@ export const CatalogManager = () => {
     setMrp(String(p.mrp || ""));
     setBadge(p.badge || "");
     setItemCount(p.itemCount || "");
+    setVariantsText(
+      Array.isArray(p.variants)
+        ? p.variants.map((v) => `${v.label}:${v.stock}`).join(", ")
+        : ""
+    );
     setItemsText(Array.isArray(p.items) ? p.items.join("\n") : "");
     setImages(Array.isArray(p.images) ? p.images : []);
     window.scrollTo({ top: 0, behavior: "smooth" });
@@ -202,6 +215,16 @@ export const CatalogManager = () => {
       .map((s) => s.trim())
       .filter(Boolean);
 
+    const parsedVariants: VariantStock[] = variantsText
+      .split(",")
+      .map((part) => part.trim())
+      .filter(Boolean)
+      .map((part) => {
+        const [lbl, qty] = part.split(":");
+        return { label: (lbl || "").trim(), stock: Math.max(0, Number(qty) || 0) };
+      })
+      .filter((v) => v.label.length > 0);
+
     const payload = {
       category,
       name: name.trim(),
@@ -210,6 +233,7 @@ export const CatalogManager = () => {
       mrp: Number(mrp) || Number(price),
       badge: badge.trim() || null,
       itemCount: itemCount.trim() || null,
+      variants: parsedVariants.length > 0 ? parsedVariants : null,
       items: parsedItems.length > 0 ? parsedItems : null,
       images: images.length > 0 ? images : ["/images/new-launch.png"],
     };
@@ -330,6 +354,14 @@ export const CatalogManager = () => {
               className="w-full rounded-xl border border-white/15 bg-black/50 px-4 py-3 text-sm outline-none focus:border-[#FFD54A]"
             />
           </div>
+
+          <input
+            type="text"
+            placeholder="Variants & Stock (e.g. S:5, M:10, L:0 or Black:4, Gold:2)"
+            value={variantsText}
+            onChange={(e) => setVariantsText(e.target.value)}
+            className="w-full rounded-xl border border-white/15 bg-black/50 px-4 py-3 text-xs outline-none focus:border-[#FFD54A]"
+          />
 
           <textarea
             rows={3}
