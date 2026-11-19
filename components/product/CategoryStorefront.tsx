@@ -1,7 +1,8 @@
 "use client";
 
 import { collection, getDocs, query, where } from "firebase/firestore";
-import { LayoutGrid, Search, ShoppingBag } from "lucide-react";
+import { ArrowLeft, LayoutGrid, Search, ShoppingBag } from "lucide-react";
+import Link from "next/link";
 import { useEffect, useState } from "react";
 import { useCart } from "@/components/cart/CartProvider";
 import { ProductViewer3D } from "@/components/product/ProductViewer3D";
@@ -146,6 +147,14 @@ export const CategoryStorefront = ({
 
   return (
     <section className="mx-auto max-w-7xl overflow-x-hidden px-4 py-10 sm:px-6">
+      <Link
+        href="/"
+        className="mb-4 inline-flex items-center gap-2 text-sm text-zinc-400 transition hover:text-[#FFD54A]"
+      >
+        <ArrowLeft className="h-4 w-4" />
+        Back to Lenka Store
+      </Link>
+
       <div className="flex flex-col gap-4 border-b border-white/10 pb-6 sm:flex-row sm:items-end sm:justify-between">
         <div>
           <h1 className="text-3xl font-bold tracking-tight text-white sm:text-4xl">
