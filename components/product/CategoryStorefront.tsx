@@ -1,11 +1,12 @@
 "use client";
 
 import { collection, getDocs, query, where } from "firebase/firestore";
-import { Search, ShoppingBag } from "lucide-react";
+import { LayoutGrid, Search, ShoppingBag } from "lucide-react";
 import { useEffect, useState } from "react";
 import { useCart } from "@/components/cart/CartProvider";
 import { ProductViewer3D } from "@/components/product/ProductViewer3D";
 import { ShareProductButton } from "@/components/product/ShareProductButton";
+import { SUBCATEGORIES } from "@/data/subcategories";
 import { db } from "@/lib/firebase";
 
 interface VariantOption {
@@ -16,6 +17,7 @@ interface VariantOption {
 interface StoreProduct {
   id: string;
   category: string;
+  subcategory?: string | null;
   name: string;
   tagline: string;
   price: number;
@@ -43,13 +45,17 @@ export const CategoryStorefront = ({
   accent = "#FFD54A",
 }: CategoryStorefrontProps) => {
   const activeCategory = category || categorySlug || "";
+  const subList = SUBCATEGORIES[activeCategory] || [];
+
   const [products, setProducts] = useState<StoreProduct[]>([]);
   const [loading, setLoading] = useState(true);
+  const [selectedSub, setSelectedSub] = useState<string>("all");
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedVariants, setSelectedVariants] = useState<Record<string, string>>({});
   const { addItem } = useCart();
 
   useEffect(() => {
+    setSelectedSub("all");
     if (!activeCategory) {
       setLoading(false);
       return;
@@ -111,6 +117,10 @@ export const CategoryStorefront = ({
   }, [activeCategory]);
 
   const filtered = products.filter((p) => {
+    const matchesSub =
+      selectedSub === "all" || p.subcategory === selectedSub;
+    if (!matchesSub) return false;
+
     const q = searchTerm.trim().toLowerCase();
     if (!q) return true;
     return (
@@ -135,8 +145,8 @@ export const CategoryStorefront = ({
   };
 
   return (
-    <section className="mx-auto max-w-6xl px-4 py-12 sm:px-6">
-      <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
+    <section className="mx-auto max-w-7xl px-4 py-10 sm:px-6">
+      <div className="flex flex-col gap-4 border-b border-white/10 pb-6 sm:flex-row sm:items-end sm:justify-between">
         <div>
           <h1 className="text-3xl font-bold tracking-tight text-white sm:text-4xl">
             {title}
@@ -158,126 +168,180 @@ export const CategoryStorefront = ({
         </div>
       </div>
 
-      {loading ? (
-        <div className="mt-10 grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
-          {[1, 2, 3].map((n) => (
-            <div
-              key={n}
-              className="h-80 animate-pulse rounded-2xl border border-white/10 bg-zinc-900/60"
-            />
-          ))}
-        </div>
-      ) : filtered.length === 0 ? (
-        <div className="mt-12 rounded-2xl border border-white/10 bg-zinc-900/60 p-10 text-center text-sm text-zinc-400">
-          No products found in this category right now. Check back soon!
-        </div>
-      ) : (
-        <div className="mt-8 grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
-          {filtered.map((p) => {
-            const variants = Array.isArray(p.variants) ? p.variants : [];
-            const availableVariants = variants.filter((v) => v.stock > 0);
-            const activeVariant =
-              selectedVariants[p.id] || availableVariants[0]?.label || "";
-            const isOutOfStock =
-              variants.length > 0 && availableVariants.length === 0;
-
-            return (
-              <div
-                key={p.id}
-                id={`product-${p.id}`}
-                className="flex flex-col justify-between rounded-2xl border border-white/10 bg-[#111114] p-4 transition hover:border-[#FFD54A]/40"
+      <div className="mt-8 grid gap-6 lg:grid-cols-12">
+        {/* Left Sidebar: Subcategories (Instamart / Flipkart style) */}
+        {subList.length > 0 && (
+          <aside className="lg:col-span-3">
+            <div className="flex gap-2 overflow-x-auto pb-2 lg:sticky lg:top-6 lg:flex-col lg:overflow-visible lg:rounded-2xl lg:border lg:border-white/10 lg:bg-[#111114] lg:p-3">
+              <button
+                type="button"
+                onClick={() => setSelectedSub("all")}
+                className={`flex shrink-0 cursor-pointer items-center justify-between gap-2 rounded-xl px-3.5 py-2.5 text-left text-xs font-semibold transition ${
+                  selectedSub === "all"
+                    ? "text-black"
+                    : "border border-white/10 bg-zinc-900/60 text-zinc-300 hover:bg-zinc-800 lg:border-transparent lg:bg-transparent"
+                }`}
+                style={selectedSub === "all" ? { backgroundColor: accent } : undefined}
               >
-                <div>
-                  <div className="relative">
-                    <ProductViewer3D
-                      images={
-                        p.images?.length ? p.images : ["/images/new-launch.png"]
-                      }
-                      alt={p.name}
-                    />
-                    {p.badge && (
-                      <span
-                        style={{ backgroundColor: accent }}
-                        className="absolute left-3 top-3 rounded-full px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-wider text-black"
-                      >
-                        {p.badge}
-                      </span>
-                    )}
-                    <div className="absolute right-2 top-2">
-                    <ShareProductButton
-  productId={p.id}
-  productName={p.name}
-  price={Number(p.price) || 0}
-  categoryPath={`/${activeCategory}`}
-/>
-                    </div>
-                  </div>
+                <span className="inline-flex items-center gap-2">
+                  <LayoutGrid className="h-3.5 w-3.5" />
+                  All Items
+                </span>
+                <span className="rounded-full bg-black/15 px-2 py-0.5 text-[10px]">
+                  {products.length}
+                </span>
+              </button>
 
-                  <h2 className="mt-4 text-lg font-bold text-white">{p.name}</h2>
-                  {p.tagline && (
-                    <p className="mt-1 text-xs text-zinc-400">{p.tagline}</p>
-                  )}
-
-                  <div className="mt-3 flex items-baseline gap-2">
-                    <span
-                      style={{ color: accent }}
-                      className="text-xl font-bold"
-                    >
-                      ₹{Number(p.price).toLocaleString("en-IN")}
+              {subList.map((sub) => {
+                const count = products.filter((p) => p.subcategory === sub.slug).length;
+                const isSelected = selectedSub === sub.slug;
+                return (
+                  <button
+                    key={sub.slug}
+                    type="button"
+                    onClick={() => setSelectedSub(sub.slug)}
+                    className={`flex shrink-0 cursor-pointer items-center justify-between gap-2 rounded-xl px-3.5 py-2.5 text-left text-xs font-semibold transition ${
+                      isSelected
+                        ? "text-black"
+                        : "border border-white/10 bg-zinc-900/60 text-zinc-300 hover:bg-zinc-800 lg:border-transparent lg:bg-transparent"
+                    }`}
+                    style={isSelected ? { backgroundColor: accent } : undefined}
+                  >
+                    <span>{sub.label}</span>
+                    <span className="rounded-full bg-black/15 px-2 py-0.5 text-[10px]">
+                      {count}
                     </span>
-                    {p.mrp > p.price && (
-                      <span className="text-xs text-zinc-500 line-through">
-                        ₹{Number(p.mrp).toLocaleString("en-IN")}
-                      </span>
-                    )}
-                  </div>
+                  </button>
+                );
+              })}
+            </div>
+          </aside>
+        )}
 
-                  {variants.length > 0 && (
-                    <div className="mt-3 flex flex-wrap gap-1.5">
-                      {variants.map((v) => {
-                        const out = v.stock <= 0;
-                        const selected = activeVariant === v.label;
-                        return (
-                          <button
-                            key={v.label}
-                            type="button"
-                            disabled={out}
-                            onClick={() =>
-                              setSelectedVariants((prev) => ({
-                                ...prev,
-                                [p.id]: v.label,
-                              }))
-                            }
-                            className={`rounded-lg border px-2.5 py-1 text-xs font-semibold transition ${
-                              out
-                                ? "cursor-not-allowed border-white/5 bg-zinc-900/40 text-zinc-600 line-through"
-                                : selected
-                                ? "cursor-pointer border-[#FFD54A] bg-[#FFD54A]/15 text-[#FFD54A]"
-                                : "cursor-pointer border-white/15 bg-black/40 text-zinc-300 hover:border-white/30"
-                            }`}
+        {/* Right Side: Filtered Product Grid */}
+        <div className={subList.length > 0 ? "lg:col-span-9" : "lg:col-span-12"}>
+          {loading ? (
+            <div className="grid gap-6 sm:grid-cols-2 xl:grid-cols-3">
+              {[1, 2, 3].map((n) => (
+                <div
+                  key={n}
+                  className="h-80 animate-pulse rounded-2xl border border-white/10 bg-zinc-900/60"
+                />
+              ))}
+            </div>
+          ) : filtered.length === 0 ? (
+            <div className="rounded-2xl border border-white/10 bg-zinc-900/60 p-10 text-center text-sm text-zinc-400">
+              No products in this section yet. Check another category on the left or check back soon!
+            </div>
+          ) : (
+            <div className="grid gap-6 sm:grid-cols-2 xl:grid-cols-3">
+              {filtered.map((p) => {
+                const variants = Array.isArray(p.variants) ? p.variants : [];
+                const availableVariants = variants.filter((v) => v.stock > 0);
+                const activeVariant =
+                  selectedVariants[p.id] || availableVariants[0]?.label || "";
+                const isOutOfStock =
+                  variants.length > 0 && availableVariants.length === 0;
+
+                return (
+                  <div
+                    key={p.id}
+                    id={`product-${p.id}`}
+                    className="flex flex-col justify-between rounded-2xl border border-white/10 bg-[#111114] p-4 transition hover:border-[#FFD54A]/40"
+                  >
+                    <div>
+                      <div className="relative">
+                        <ProductViewer3D
+                          images={
+                            p.images?.length ? p.images : ["/images/new-launch.png"]
+                          }
+                          alt={p.name}
+                        />
+                        {p.badge && (
+                          <span
+                            style={{ backgroundColor: accent }}
+                            className="absolute left-3 top-3 rounded-full px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-wider text-black"
                           >
-                            {v.label} ({v.stock})
-                          </button>
-                        );
-                      })}
-                    </div>
-                  )}
-                </div>
+                            {p.badge}
+                          </span>
+                        )}
+                        <div className="absolute right-2 top-2">
+                          <ShareProductButton
+                            productId={p.id}
+                            productName={p.name}
+                            price={Number(p.price) || 0}
+                            categoryPath={`/${activeCategory}`}
+                          />
+                        </div>
+                      </div>
 
-                <button
-                  type="button"
-                  disabled={isOutOfStock}
-                  onClick={() => handleAdd(p)}
-                  className="mt-4 inline-flex w-full cursor-pointer items-center justify-center gap-2 rounded-xl bg-[#FFD54A] py-2.5 text-sm font-bold text-black transition hover:bg-[#ffdf70] disabled:cursor-not-allowed disabled:bg-zinc-800 disabled:text-zinc-500"
-                >
-                  <ShoppingBag className="h-4 w-4" />
-                  {isOutOfStock ? "Out of Stock" : "Add to Cart"}
-                </button>
-              </div>
-            );
-          })}
+                      <h2 className="mt-4 text-lg font-bold text-white">{p.name}</h2>
+                      {p.tagline && (
+                        <p className="mt-1 text-xs text-zinc-400">{p.tagline}</p>
+                      )}
+
+                      <div className="mt-3 flex items-baseline gap-2">
+                        <span
+                          style={{ color: accent }}
+                          className="text-xl font-bold"
+                        >
+                          ₹{Number(p.price).toLocaleString("en-IN")}
+                        </span>
+                        {p.mrp > p.price && (
+                          <span className="text-xs text-zinc-500 line-through">
+                            ₹{Number(p.mrp).toLocaleString("en-IN")}
+                          </span>
+                        )}
+                      </div>
+
+                      {variants.length > 0 && (
+                        <div className="mt-3 flex flex-wrap gap-1.5">
+                          {variants.map((v) => {
+                            const out = v.stock <= 0;
+                            const selected = activeVariant === v.label;
+                            return (
+                              <button
+                                key={v.label}
+                                type="button"
+                                disabled={out}
+                                onClick={() =>
+                                  setSelectedVariants((prev) => ({
+                                    ...prev,
+                                    [p.id]: v.label,
+                                  }))
+                                }
+                                className={`rounded-lg border px-2.5 py-1 text-xs font-semibold transition ${
+                                  out
+                                    ? "cursor-not-allowed border-white/5 bg-zinc-900/40 text-zinc-600 line-through"
+                                    : selected
+                                    ? "cursor-pointer border-[#FFD54A] bg-[#FFD54A]/15 text-[#FFD54A]"
+                                    : "cursor-pointer border-white/15 bg-black/40 text-zinc-300 hover:border-white/30"
+                                }`}
+                              >
+                                {v.label} ({v.stock})
+                              </button>
+                            );
+                          })}
+                        </div>
+                      )}
+                    </div>
+
+                    <button
+                      type="button"
+                      disabled={isOutOfStock}
+                      onClick={() => handleAdd(p)}
+                      className="mt-4 inline-flex w-full cursor-pointer items-center justify-center gap-2 rounded-xl bg-[#FFD54A] py-2.5 text-sm font-bold text-black transition hover:bg-[#ffdf70] disabled:cursor-not-allowed disabled:bg-zinc-800 disabled:text-zinc-500"
+                    >
+                      <ShoppingBag className="h-4 w-4" />
+                      {isOutOfStock ? "Out of Stock" : "Add to Cart"}
+                    </button>
+                  </div>
+                );
+              })}
+            </div>
+          )}
         </div>
-      )}
+      </div>
     </section>
   );
 };
