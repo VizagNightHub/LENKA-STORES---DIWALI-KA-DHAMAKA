@@ -7,8 +7,24 @@ import { useEffect, useState } from "react";
 import { useCart } from "@/components/cart/CartProvider";
 import { ProductViewer3D } from "@/components/product/ProductViewer3D";
 import { ShareProductButton } from "@/components/product/ShareProductButton";
-import { StoreProduct } from "@/data/catalog";
 import { db } from "@/lib/firebase";
+
+interface VariantStock {
+  label: string;
+  stock: number;
+}
+
+interface LiveStoreProduct {
+  id: string;
+  category: "fashion-wear" | "electronics" | "new-launch";
+  name: string;
+  tagline: string;
+  price: number;
+  mrp: number;
+  badge?: string;
+  images: string[];
+  variants?: VariantStock[];
+}
 
 interface CategoryStorefrontProps {
   category: "fashion-wear" | "electronics" | "new-launch";
@@ -17,8 +33,6 @@ interface CategoryStorefrontProps {
   accent: string;
 }
 
-const FASHION_SIZES = ["S", "M", "L", "XL"];
-
 export const CategoryStorefront = ({
   category,
   title,
@@ -26,14 +40,14 @@ export const CategoryStorefront = ({
   accent,
 }: CategoryStorefrontProps) => {
   const { addItem, openDrawer } = useCart();
-  const [liveProducts, setLiveProducts] = useState<StoreProduct[]>([]);
+  const [liveProducts, setLiveProducts] = useState<LiveStoreProduct[]>([]);
   const [search, setSearch] = useState("");
-  const [selectedSizes, setSelectedSizes] = useState<Record<string, string>>({});
+  const [selectedVar, setSelectedVar] = useState<Record<string, string>>({});
 
   useEffect(() => {
     const q = query(collection(db, "products"), where("category", "==", category));
     const unsubProd = onSnapshot(q, (snap) => {
-      const added: StoreProduct[] = snap.docs.map((d) => {
+      const added: LiveStoreProduct[] = snap.docs.map((d) => {
         const data = d.data();
         return {
           id: d.id,
@@ -44,13 +58,13 @@ export const CategoryStorefront = ({
           mrp: Number(data.mrp) || Number(data.price) || 0,
           badge: data.badge || undefined,
           images: Array.isArray(data.images) ? data.images : [],
-          accent,
+          variants: Array.isArray(data.variants) ? data.variants : undefined,
         };
       });
       setLiveProducts(added);
     });
     return () => unsubProd();
-  }, [category, accent]);
+  }, [category]);
 
   const filtered = liveProducts.filter((p) =>
     `${p.name} ${p.tagline}`.toLowerCase().includes(search.trim().toLowerCase())
@@ -106,8 +120,11 @@ export const CategoryStorefront = ({
             </p>
           ) : (
             filtered.map((product) => {
-              const size = selectedSizes[product.id] || "M";
-              const variant = category === "fashion-wear" ? `Size: ${size}` : undefined;
+              const variants = product.variants || [];
+              const firstInStock = variants.find((v) => v.stock > 0)?.label || "";
+              const currentLabel = selectedVar[product.id] ?? firstInStock;
+              const currentObj = variants.find((v) => v.label === currentLabel);
+              const outOfStock = variants.length > 0 && (!currentObj || currentObj.stock <= 0);
 
               return (
                 <div
@@ -155,25 +172,34 @@ export const CategoryStorefront = ({
                       </span>
                     </div>
 
-                    {category === "fashion-wear" && (
-                      <div className="mt-4 flex items-center gap-2">
-                        <span className="text-[11px] text-[#E1E0CC]/60">Size:</span>
-                        {FASHION_SIZES.map((s) => (
-                          <button
-                            key={s}
-                            type="button"
-                            onClick={() =>
-                              setSelectedSizes((prev) => ({ ...prev, [product.id]: s }))
-                            }
-                            className={`h-7 w-7 cursor-pointer rounded-lg text-[11px] font-bold ${
-                              size === s
-                                ? "bg-[#FFD54A] text-black"
-                                : "border border-white/15 text-[#E1E0CC]/75 hover:border-white/40"
-                            }`}
-                          >
-                            {s}
-                          </button>
-                        ))}
+                    {variants.length > 0 && (
+                      <div className="mt-4 flex flex-wrap items-center gap-2">
+                        {variants.map((v) => {
+                          const active = currentLabel === v.label;
+                          const empty = v.stock <= 0;
+                          return (
+                            <button
+                              key={v.label}
+                              type="button"
+                              disabled={empty}
+                              onClick={() =>
+                                setSelectedVar((prev) => ({
+                                  ...prev,
+                                  [product.id]: v.label,
+                                }))
+                              }
+                              className={`cursor-pointer rounded-lg px-2.5 py-1 text-[11px] font-semibold ${
+                                empty
+                                  ? "cursor-not-allowed border border-white/10 text-white/30 line-through"
+                                  : active
+                                  ? "bg-[#FFD54A] text-black"
+                                  : "border border-white/15 text-[#E1E0CC]/80 hover:border-white/40"
+                              }`}
+                            >
+                              {v.label} ({v.stock})
+                            </button>
+                          );
+                        })}
                       </div>
                     )}
                   </div>
@@ -181,20 +207,21 @@ export const CategoryStorefront = ({
                   <div className="mt-6">
                     <button
                       type="button"
+                      disabled={outOfStock}
                       onClick={() => {
                         addItem({
                           id: product.id,
                           name: product.name,
                           price: product.price,
                           category,
-                          variant,
+                          variant: currentLabel || undefined,
                         });
                         openDrawer();
                       }}
-                      className="flex w-full cursor-pointer items-center justify-center gap-2 rounded-full bg-[#E1E0CC] py-3 text-sm font-semibold text-black hover:bg-[#FFD54A]"
+                      className="flex w-full cursor-pointer items-center justify-center gap-2 rounded-full bg-[#E1E0CC] py-3 text-sm font-semibold text-black hover:bg-[#FFD54A] disabled:cursor-not-allowed disabled:opacity-40"
                     >
                       <Plus className="h-4 w-4" />
-                      Add to Cart
+                      {outOfStock ? "Out of Stock" : "Add to Cart"}
                     </button>
                   </div>
                 </div>
