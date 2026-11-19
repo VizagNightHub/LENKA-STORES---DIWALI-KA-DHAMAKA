@@ -15,6 +15,7 @@ import {
   ShoppingBag,
   Tag,
   Trash2,
+  Truck,
   XCircle,
 } from "lucide-react";
 import { useEffect, useState } from "react";
@@ -35,7 +36,7 @@ interface OrderRecord {
   streetRoad?: string;
   landmark?: string;
   address: string;
-  items: { name: string; price: number; qty: number }[];
+  items: { name: string; price: number; qty: number; variant?: string }[];
   subtotal?: number;
   packingCharge?: number;
   deliveryCharge?: number;
@@ -44,6 +45,7 @@ interface OrderRecord {
   totalAmount: number;
   utr: string;
   screenshot?: string;
+  trackingNumber?: string;
   status: "PENDING_VERIFICATION" | "CONFIRMED" | "CANCELLED";
 }
 
@@ -58,6 +60,7 @@ export default function AdminDashboardPage() {
   const [visitorCount, setVisitorCount] = useState(0);
   const [filter, setFilter] = useState<"ALL" | "PENDING_VERIFICATION" | "CONFIRMED" | "CANCELLED">("ALL");
   const [previewImg, setPreviewImg] = useState<string | null>(null);
+  const [trackingInputs, setTrackingInputs] = useState<Record<string, string>>({});
 
   useEffect(() => {
     const unsub = onAuthStateChanged(auth, (u) => {
@@ -102,6 +105,12 @@ export default function AdminDashboardPage() {
 
   const updateStatus = async (id: string, status: "CONFIRMED" | "CANCELLED") => {
     await updateDoc(doc(db, "orders", id), { status });
+  };
+
+  const saveTracking = async (id: string) => {
+    const val = (trackingInputs[id] || "").trim();
+    if (!val) return;
+    await updateDoc(doc(db, "orders", id), { trackingNumber: val });
   };
 
   const deleteOrder = async (id: string, utr: string) => {
@@ -332,7 +341,7 @@ export default function AdminDashboardPage() {
                       <div className="pt-2 text-[#E1E0CC]/85">
                         {order.items?.map((it, i) => (
                           <div key={i}>
-                            • {it.name} × {it.qty} (₹{(it.price * it.qty).toLocaleString("en-IN")})
+                            • {it.name} {it.variant ? `(${it.variant})` : ""} × {it.qty} (₹{(it.price * it.qty).toLocaleString("en-IN")})
                           </div>
                         ))}
                         {order.couponCode && (
@@ -340,6 +349,27 @@ export default function AdminDashboardPage() {
                             Coupon {order.couponCode}: -₹{(order.discountAmount || 0).toLocaleString("en-IN")}
                           </div>
                         )}
+                      </div>
+
+                      {/* Courier Tracking ID */}
+                      <div className="flex gap-2 pt-3">
+                        <input
+                          type="text"
+                          placeholder={order.trackingNumber || "Courier Tracking ID"}
+                          value={trackingInputs[order.id] ?? order.trackingNumber ?? ""}
+                          onChange={(e) =>
+                            setTrackingInputs((prev) => ({ ...prev, [order.id]: e.target.value }))
+                          }
+                          className="w-full rounded-lg border border-white/15 bg-black/50 px-3 py-1.5 font-mono text-[11px] outline-none focus:border-[#FFD54A]"
+                        />
+                        <button
+                          type="button"
+                          onClick={() => saveTracking(order.id)}
+                          className="inline-flex shrink-0 cursor-pointer items-center gap-1 rounded-lg bg-white/15 px-3 py-1.5 text-[11px] font-semibold hover:bg-[#FFD54A] hover:text-black"
+                        >
+                          <Truck className="h-3.5 w-3.5" />
+                          Save
+                        </button>
                       </div>
                     </div>
 
@@ -391,7 +421,7 @@ export default function AdminDashboardPage() {
                       </button>
                       <a
                         href={`https://wa.me/91${order.phone}?text=${encodeURIComponent(
-                          `Hi ${order.customerName}, your Lenka Store order ${order.orderId} (UTR ${order.utr}) status is: ${order.status}.`
+                          `Hi ${order.customerName}, your Lenka Store order ${order.orderId} (UTR ${order.utr}) status is: ${order.status}.${order.trackingNumber ? ` Tracking ID: ${order.trackingNumber}` : ""}`
                         )}`}
                         target="_blank"
                         rel="noreferrer"
