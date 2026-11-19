@@ -204,7 +204,12 @@ export const CategoryStorefront = ({
                       </span>
                     )}
                     <div className="absolute right-2 top-2">
-                      <ShareProductButton productId={p.id} productName={p.name} />
+                    <ShareProductButton
+  productId={p.id}
+  productName={p.name}
+  price={Number(p.price) || 0}
+  categoryPath={`/${activeCategory}`}
+/>
                     </div>
                   </div>
 
