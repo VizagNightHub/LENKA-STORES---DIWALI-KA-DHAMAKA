@@ -10,6 +10,7 @@ const spaceGrotesk = Space_Grotesk({
 });
 
 export const metadata: Metadata = {
+  metadataBase: new URL("https://lenka-stores-diwali-ka-dhamaka.vercel.app"),
   title: "LENKA STORE — Diwali Ka Dhamaka",
   description:
     "LENKA STORE offers Diwali firecracker combo packs, festive streetwear, ANC audio electronics, and limited-edition drops across Andhra Pradesh and Telangana.",
@@ -18,19 +19,19 @@ export const metadata: Metadata = {
   },
   icons: {
     icon: "/favicon.svg",
-    apple: "/images/diwali.png",
+    apple: "/images/logo.png",
   },
   openGraph: {
     title: "LENKA STORE — Diwali Ka Dhamaka",
     description:
-      "Sivakasi-direct Diwali cracker combos, festive fashion wear, ANC electronics, and limited drops across Andhra Pradesh & Telangana.",
+      "Lenka Stores-direct Diwali cracker combos, festive fashion wear, ANC electronics, and limited drops across Andhra Pradesh & Telangana.",
     type: "website",
     images: [
       {
-        url: "/images/diwali.png",
+        url: "/images/logo.png",
         width: 1024,
         height: 1024,
-        alt: "LENKA STORE Diwali Ka Dhamaka Combo Boxes",
+        alt: "LENKA STORE Logo",
       },
     ],
   },
