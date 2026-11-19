@@ -5,15 +5,19 @@ export interface DeliveryRates {
   telanganaRest: number;
   apCentral: number;
   apNorthVizag: number;
+  southIndia: number;
+  restOfIndia: number;
 }
 
 export const DEFAULT_RATES: DeliveryRates = {
   packingCharge: 50,
-  hyderabadLocal: 79,   // 500xxx (KPHB / Hyderabad)
+  hyderabadLocal: 79,   // 500xxx
   telanganaNear: 149,   // 501, 502, 508, 509
   telanganaRest: 199,   // 503 - 507
-  apCentral: 249,       // 515 - 524 (Vijayawada, Guntur, Tirupati, etc.)
-  apNorthVizag: 299,    // 530 - 535 (Visakhapatnam, Rajahmundry, Srikakulam)
+  apCentral: 249,       // 515 - 524
+  apNorthVizag: 299,    // 530 - 535
+  southIndia: 249,      // 560-699 (BLR, Chennai, Kochi)
+  restOfIndia: 349,     // All other Indian pincodes (110xxx - 855xxx)
 };
 
 export function calculateDeliveryFromKPHB(
@@ -21,8 +25,8 @@ export function calculateDeliveryFromKPHB(
   rates: DeliveryRates = DEFAULT_RATES
 ): { charge: number; zoneLabel: string; valid: boolean } {
   const clean = pincode.trim();
-  if (!/^\d{6}$/.test(clean)) {
-    return { charge: 0, zoneLabel: "Enter 6-digit pincode", valid: false };
+  if (!/^\d{6}$/.test(clean) || clean.startsWith("0")) {
+    return { charge: 0, zoneLabel: "Enter valid 6-digit Indian pincode", valid: false };
   }
 
   const prefix3 = Number(clean.slice(0, 3));
@@ -42,6 +46,9 @@ export function calculateDeliveryFromKPHB(
   if (prefix3 >= 530 && prefix3 <= 535) {
     return { charge: rates.apNorthVizag, zoneLabel: "Visakhapatnam & North Coastal AP", valid: true };
   }
+  if (prefix3 >= 560 && prefix3 <= 699) {
+    return { charge: rates.southIndia, zoneLabel: "South India (KA / TN / KL)", valid: true };
+  }
 
-  return { charge: rates.apNorthVizag, zoneLabel: "Outside AP/TS Standard Zone", valid: true };
+  return { charge: rates.restOfIndia, zoneLabel: "Pan-India National Express", valid: true };
 }
