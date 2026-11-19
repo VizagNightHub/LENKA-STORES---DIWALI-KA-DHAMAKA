@@ -17,7 +17,7 @@ export default function AboutPage() {
             About Lenka Ventures
           </p>
           <h1 className="mt-2 text-4xl font-semibold tracking-tight text-white">
-            Direct From Sivakasi to AP &amp; Telangana
+            Direct From Lenka Stores to AP &amp; Telangana
           </h1>
         </div>
 
@@ -29,8 +29,8 @@ export default function AboutPage() {
           </p>
           <p>
             For <strong className="text-white">Diwali Ka Dhamaka</strong>, we
-            source genuine firecracker combo packs directly from Sivakasi, Tamil
-            Nadu, and dispatch pre-booked orders across Andhra Pradesh and
+            source genuine firecracker combo packs directly from Lenka Stores,
+            and dispatch pre-booked orders across Andhra Pradesh and
             Telangana without middleman markups.
           </p>
           <p>
@@ -43,7 +43,7 @@ export default function AboutPage() {
         <div className="grid gap-4 border-t border-white/10 pt-8 sm:grid-cols-3">
           <div className="rounded-2xl border border-white/10 bg-[#111114] p-5">
             <p className="text-xs text-[#E1E0CC]/55">Sourcing Hub</p>
-            <p className="mt-1 font-semibold text-white">Sivakasi, TN</p>
+            <p className="mt-1 font-semibold text-white">Lenka Stores, AP</p>
           </div>
           <div className="rounded-2xl border border-white/10 bg-[#111114] p-5">
             <p className="text-xs text-[#E1E0CC]/55">Delivery Regions</p>
