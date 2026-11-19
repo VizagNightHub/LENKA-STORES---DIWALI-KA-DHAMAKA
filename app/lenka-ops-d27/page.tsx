@@ -1,7 +1,7 @@
 "use client";
 
 import { onAuthStateChanged, signInWithEmailAndPassword, signOut, User } from "firebase/auth";
-import { collection, doc, onSnapshot, orderBy, query, updateDoc } from "firebase/firestore";
+import { collection, deleteDoc, doc, onSnapshot, orderBy, query, updateDoc } from "firebase/firestore";
 import {
   CheckCircle2,
   ExternalLink,
@@ -13,10 +13,13 @@ import {
   Package,
   Receipt,
   ShoppingBag,
+  Tag,
+  Trash2,
   XCircle,
 } from "lucide-react";
 import { useEffect, useState } from "react";
 import { CatalogManager } from "@/components/admin/CatalogManager";
+import { CouponsAndCharges } from "@/components/admin/CouponsAndCharges";
 import { auth, db } from "@/lib/firebase";
 
 interface OrderRecord {
@@ -24,10 +27,20 @@ interface OrderRecord {
   orderId: string;
   customerName: string;
   phone: string;
+  altPhone?: string;
+  pincode?: string;
   state: string;
+  district?: string;
   city: string;
+  streetRoad?: string;
+  landmark?: string;
   address: string;
   items: { name: string; price: number; qty: number }[];
+  subtotal?: number;
+  packingCharge?: number;
+  deliveryCharge?: number;
+  couponCode?: string | null;
+  discountAmount?: number;
   totalAmount: number;
   utr: string;
   screenshot?: string;
@@ -40,7 +53,7 @@ export default function AdminDashboardPage() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [loginError, setLoginError] = useState("");
-  const [section, setSection] = useState<"orders" | "products">("orders");
+  const [section, setSection] = useState<"orders" | "products" | "charges">("orders");
   const [orders, setOrders] = useState<OrderRecord[]>([]);
   const [visitorCount, setVisitorCount] = useState(0);
   const [filter, setFilter] = useState<"ALL" | "PENDING_VERIFICATION" | "CONFIRMED" | "CANCELLED">("ALL");
@@ -89,6 +102,13 @@ export default function AdminDashboardPage() {
 
   const updateStatus = async (id: string, status: "CONFIRMED" | "CANCELLED") => {
     await updateDoc(doc(db, "orders", id), { status });
+  };
+
+  const deleteOrder = async (id: string, utr: string) => {
+    await deleteDoc(doc(db, "orders", id));
+    if (utr) {
+      await deleteDoc(doc(db, "used_utrs", utr)).catch(() => {});
+    }
   };
 
   const confirmedCash = orders
@@ -150,7 +170,6 @@ export default function AdminDashboardPage() {
   return (
     <main className="min-h-screen bg-[#09090b] px-4 py-8 text-[#E1E0CC] sm:px-8">
       <div className="mx-auto max-w-6xl">
-        {/* Header */}
         <div className="flex flex-wrap items-center justify-between gap-4 border-b border-white/10 pb-5">
           <div>
             <p className="text-xs font-semibold uppercase tracking-widest text-[#FFD54A]">
@@ -161,7 +180,7 @@ export default function AdminDashboardPage() {
             </h1>
           </div>
 
-          <div className="flex items-center gap-2">
+          <div className="flex flex-wrap items-center gap-2">
             <button
               type="button"
               onClick={() => setSection("orders")}
@@ -184,7 +203,19 @@ export default function AdminDashboardPage() {
               }`}
             >
               <Package className="h-3.5 w-3.5" />
-              Products & Ads
+              Products &amp; Ads
+            </button>
+            <button
+              type="button"
+              onClick={() => setSection("charges")}
+              className={`inline-flex cursor-pointer items-center gap-1.5 rounded-full px-4 py-2 text-xs font-semibold ${
+                section === "charges"
+                  ? "bg-[#FFD54A] text-black"
+                  : "border border-white/15 text-[#E1E0CC]"
+              }`}
+            >
+              <Tag className="h-3.5 w-3.5" />
+              Coupons &amp; Charges
             </button>
             <button
               type="button"
@@ -238,6 +269,8 @@ export default function AdminDashboardPage() {
 
         {section === "products" ? (
           <CatalogManager />
+        ) : section === "charges" ? (
+          <CouponsAndCharges />
         ) : (
           <>
             <div className="mt-6 flex flex-wrap gap-2">
@@ -287,9 +320,14 @@ export default function AdminDashboardPage() {
                       </div>
                       <p className="text-sm font-semibold text-white">
                         {order.customerName} • {order.phone}
+                        {order.altPhone ? ` / Alt: ${order.altPhone}` : ""}
                       </p>
                       <p className="text-[#E1E0CC]/75">
-                        {order.address}, {order.city}, {order.state}
+                        {order.streetRoad ? `${order.streetRoad}, ` : ""}
+                        {order.landmark ? `Near ${order.landmark}, ` : ""}
+                        {order.address}, {order.city}
+                        {order.district ? `, ${order.district}` : ""}, {order.state}
+                        {order.pincode ? ` - ${order.pincode}` : ""}
                       </p>
                       <div className="pt-2 text-[#E1E0CC]/85">
                         {order.items?.map((it, i) => (
@@ -297,6 +335,11 @@ export default function AdminDashboardPage() {
                             • {it.name} × {it.qty} (₹{(it.price * it.qty).toLocaleString("en-IN")})
                           </div>
                         ))}
+                        {order.couponCode && (
+                          <div className="mt-1 text-[#4ADE80]">
+                            Coupon {order.couponCode}: -₹{(order.discountAmount || 0).toLocaleString("en-IN")}
+                          </div>
+                        )}
                       </div>
                     </div>
 
@@ -318,7 +361,7 @@ export default function AdminDashboardPage() {
                         </button>
                       )}
                       <div className="text-xs">
-                        <p className="text-[#E1E0CC]/60">Amount Paid</p>
+                        <p className="text-[#E1E0CC]/60">Grand Total</p>
                         <p className="text-lg font-bold text-white">
                           ₹{order.totalAmount?.toLocaleString("en-IN")}
                         </p>
@@ -357,6 +400,14 @@ export default function AdminDashboardPage() {
                         <MessageCircle className="h-4 w-4 text-[#4ADE80]" />
                         WhatsApp Buyer
                       </a>
+                      <button
+                        type="button"
+                        onClick={() => deleteOrder(order.id, order.utr)}
+                        className="flex cursor-pointer items-center justify-center gap-1.5 rounded-xl border border-red-500/30 py-2 text-xs font-semibold text-red-400 hover:bg-red-600 hover:text-white"
+                      >
+                        <Trash2 className="h-4 w-4" />
+                        Delete Order
+                      </button>
                     </div>
                   </div>
                 ))
