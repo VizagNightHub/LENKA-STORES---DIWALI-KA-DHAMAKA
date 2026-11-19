@@ -3,7 +3,6 @@
 import { motion } from "framer-motion";
 import Link from "next/link";
 import { ShareMenuButton } from "@/components/ui/ShareMenuButton";
-import { DiwaliSky } from "./DiwaliSky";
 import { WordsPullUp } from "./WordsPullUp";
 
 const navItems = [
@@ -24,20 +23,16 @@ export const PrismaHero = () => {
   return (
     <section className="h-screen w-full p-2 sm:p-3">
       <div className="relative h-full w-full overflow-hidden rounded-2xl md:rounded-[2rem]">
-        {/* Crisp Ayodhya-style drone shot with subtle slow-zoom */}
-        <motion.img
-          src="/images/hero-temple.png"
-          alt="LENKA STORE Diwali Ka Dhamaka"
-          initial={{ scale: 1 }}
-          animate={{ scale: [1, 1.07, 1] }}
-          transition={{ duration: 24, repeat: Infinity, ease: "easeInOut" }}
+        <video
+          autoPlay
+          loop
+          muted
+          playsInline
+          preload="auto"
           className="absolute inset-0 h-full w-full object-cover"
-        />
-
-        {/* Animated rockets & fireworks bursting in the top night sky */}
-        <div className="pointer-events-none absolute inset-x-0 top-0 h-[55%]">
-          <DiwaliSky />
-        </div>
+        >
+          <source src="/hero.mp4" type="video/mp4" />
+        </video>
 
         <div className="pointer-events-none absolute inset-0 bg-gradient-to-b from-black/35 via-transparent to-black/75" />
 
