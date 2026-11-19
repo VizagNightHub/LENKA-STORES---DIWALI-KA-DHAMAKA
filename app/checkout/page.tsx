@@ -12,7 +12,18 @@ interface CartItem {
   id: string;
   name: string;
   price: number;
-  qty: number;
+  qty?: number;
+  quantity?: number;
+  variant?: string;
+}
+
+type CouponType = "FLAT" | "PERCENT" | "FREE_DELIVERY" | "FREE_PACKING";
+
+interface AppliedCoupon {
+  code: string;
+  type: CouponType;
+  value: number;
+  offerNote?: string | null;
 }
 
 function compressImage(file: File): Promise<string> {
@@ -55,7 +66,7 @@ export default function CheckoutPage() {
   const [address, setAddress] = useState("");
 
   const [couponInput, setCouponInput] = useState("");
-  const [appliedCoupon, setAppliedCoupon] = useState<{ code: string; discount: number } | null>(null);
+  const [appliedCoupon, setAppliedCoupon] = useState<AppliedCoupon | null>(null);
   const [couponMsg, setCouponMsg] = useState("");
 
   const [utr, setUtr] = useState("");
@@ -81,11 +92,26 @@ export default function CheckoutPage() {
     return () => unsub();
   }, []);
 
-  const subtotal = cart.reduce((s, item) => s + item.price * item.qty, 0);
+  const getItemQty = (item: CartItem) => Number(item.qty ?? item.quantity ?? 1);
+
+  const subtotal = cart.reduce((s, item) => s + item.price * getItemQty(item), 0);
   const packingCharge = cart.length > 0 ? rates.packingCharge : 0;
   const deliveryInfo = calculateDeliveryFromKPHB(pincode, rates);
   const deliveryCharge = cart.length > 0 && deliveryInfo.valid ? deliveryInfo.charge : 0;
-  const discountAmount = appliedCoupon ? appliedCoupon.discount : 0;
+
+  let discountAmount = 0;
+  if (appliedCoupon) {
+    if (appliedCoupon.type === "FREE_DELIVERY") {
+      discountAmount = deliveryCharge;
+    } else if (appliedCoupon.type === "FREE_PACKING") {
+      discountAmount = packingCharge;
+    } else if (appliedCoupon.type === "PERCENT") {
+      discountAmount = Math.round((subtotal * Math.min(100, appliedCoupon.value)) / 100);
+    } else {
+      discountAmount = appliedCoupon.value;
+    }
+  }
+
   const grandTotal = Math.max(1, subtotal + packingCharge + deliveryCharge - discountAmount);
 
   const upiLink = `upi://pay?pa=${encodeURIComponent(STORE_CONFIG.upiId)}&pn=${encodeURIComponent(
@@ -109,9 +135,19 @@ export default function CheckoutPage() {
         setCouponMsg("Invalid or inactive coupon code.");
         return;
       }
-      const disc = Number(snap.data().discountAmount) || 0;
-      setAppliedCoupon({ code: clean, discount: disc });
-      setCouponMsg(`Coupon ${clean} applied (-₹${disc.toLocaleString("en-IN")})`);
+      const data = snap.data();
+      const cType = (data.type as CouponType) || "FLAT";
+      const val = Number(data.discount ?? data.discountAmount ?? 0);
+      const note = (data.offerNote as string) || null;
+
+      setAppliedCoupon({ code: clean, type: cType, value: val, offerNote: note });
+
+      let label = `₹${val.toLocaleString("en-IN")} off`;
+      if (cType === "FREE_DELIVERY") label = "Free Delivery applied";
+      else if (cType === "FREE_PACKING") label = "Free Packaging applied";
+      else if (cType === "PERCENT") label = `${val}% off products`;
+
+      setCouponMsg(note ? `${clean}: ${label} + ${note}` : `${clean}: ${label}`);
     } catch {
       setCouponMsg("Could not verify coupon right now.");
     }
@@ -188,11 +224,18 @@ export default function CheckoutPage() {
         streetRoad: streetRoad.trim(),
         landmark: landmark.trim() || null,
         address: address.trim(),
-        items: cart,
+        items: cart.map((c) => ({
+          id: c.id,
+          name: c.name,
+          price: c.price,
+          quantity: getItemQty(c),
+          variant: c.variant || null,
+        })),
         subtotal,
         packingCharge,
         deliveryCharge,
         couponCode: appliedCoupon ? appliedCoupon.code : null,
+        couponOfferNote: appliedCoupon?.offerNote || null,
         discountAmount,
         totalAmount: grandTotal,
         utr: cleanUtr,
@@ -366,10 +409,13 @@ export default function CheckoutPage() {
               <h2 className="text-lg font-semibold text-white">2. Summary, Coupon &amp; Pay</h2>
 
               <div className="space-y-2 border-b border-white/10 pb-4 text-xs">
-                {cart.map((c) => (
-                  <div key={c.id} className="flex justify-between">
-                    <span>{c.name} × {c.qty}</span>
-                    <span>₹{(c.price * c.qty).toLocaleString("en-IN")}</span>
+                {cart.map((c, idx) => (
+                  <div key={`${c.id}-${c.variant || idx}`} className="flex justify-between">
+                    <span>
+                      {c.name}
+                      {c.variant ? ` (${c.variant})` : ""} × {getItemQty(c)}
+                    </span>
+                    <span>₹{(c.price * getItemQty(c)).toLocaleString("en-IN")}</span>
                   </div>
                 ))}
                 <div className="flex justify-between pt-2 text-[#E1E0CC]/75">
@@ -388,7 +434,10 @@ export default function CheckoutPage() {
                 </div>
                 {appliedCoupon && (
                   <div className="flex justify-between font-semibold text-[#4ADE80]">
-                    <span>Coupon ({appliedCoupon.code})</span>
+                    <span>
+                      Coupon ({appliedCoupon.code})
+                      {appliedCoupon.offerNote ? ` • ${appliedCoupon.offerNote}` : ""}
+                    </span>
                     <span>-₹{discountAmount.toLocaleString("en-IN")}</span>
                   </div>
                 )}
