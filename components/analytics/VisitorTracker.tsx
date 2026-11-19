@@ -4,16 +4,33 @@ import { doc, increment, setDoc } from "firebase/firestore";
 import { useEffect } from "react";
 import { db } from "@/lib/firebase";
 
-export const VisitorTracker = () => {
+const SHARD_COUNT = 20;
+const SESSION_KEY = "lenka_d27_visited";
+
+export function VisitorTracker() {
   useEffect(() => {
-    if (sessionStorage.getItem("lenka_visited")) return;
-    sessionStorage.setItem("lenka_visited", "1");
-    setDoc(
-      doc(db, "stats", "visitors"),
-      { count: increment(1) },
-      { merge: true }
-    ).catch(() => {});
+    const trackVisit = async () => {
+      try {
+        if (typeof window === "undefined") return;
+        if (sessionStorage.getItem(SESSION_KEY)) return;
+
+        sessionStorage.setItem(SESSION_KEY, "1");
+
+        const shardId = Math.floor(Math.random() * SHARD_COUNT);
+        await setDoc(
+          doc(db, "stats", `visitors_shard_${shardId}`),
+          { count: increment(1) },
+          { merge: true }
+        );
+      } catch {
+        // Silently ignore tracking errors so the storefront never glitches
+      }
+    };
+
+    trackVisit();
   }, []);
 
   return null;
-};
+}
+
+export default VisitorTracker;
