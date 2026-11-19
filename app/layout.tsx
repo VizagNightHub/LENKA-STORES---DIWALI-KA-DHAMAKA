@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Space_Grotesk } from "next/font/google";
 import { VisitorTracker } from "@/components/analytics/VisitorTracker";
+import { CartProvider } from "@/components/cart/CartProvider";
 import { PushpinTearFooter } from "@/components/ui/pushpin-tear-footer";
 import "./globals.css";
 
@@ -46,8 +47,10 @@ export default function RootLayout({
     <html lang="en">
       <body className={`${spaceGrotesk.className} bg-[#09090b] antialiased`}>
         <VisitorTracker />
-        {children}
-        <PushpinTearFooter />
+        <CartProvider>
+          {children}
+          <PushpinTearFooter />
+        </CartProvider>
       </body>
     </html>
   );
