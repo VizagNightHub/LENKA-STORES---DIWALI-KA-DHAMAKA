@@ -14,6 +14,7 @@ import {
 } from "firebase/firestore";
 import { Megaphone, Pencil, Plus, Trash2, Upload, X } from "lucide-react";
 import { useEffect, useState } from "react";
+import { SUBCATEGORIES } from "@/data/subcategories";
 import { db } from "@/lib/firebase";
 
 interface VariantOption {
@@ -24,6 +25,7 @@ interface VariantOption {
 interface LiveProduct {
   id: string;
   category: string;
+  subcategory?: string | null;
   name: string;
   tagline: string;
   price: number;
@@ -74,6 +76,7 @@ export const CatalogManager = () => {
   const [products, setProducts] = useState<LiveProduct[]>([]);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [category, setCategory] = useState("diwali-ka-dhamaka");
+  const [subcategory, setSubcategory] = useState("");
   const [name, setName] = useState("");
   const [tagline, setTagline] = useState("");
   const [price, setPrice] = useState("");
@@ -124,6 +127,7 @@ export const CatalogManager = () => {
   const resetForm = () => {
     setEditingId(null);
     setCategory("diwali-ka-dhamaka");
+    setSubcategory("");
     setName("");
     setTagline("");
     setPrice("");
@@ -140,6 +144,7 @@ export const CatalogManager = () => {
   const startEdit = (p: LiveProduct) => {
     setEditingId(p.id);
     setCategory(p.category || "diwali-ka-dhamaka");
+    setSubcategory(p.subcategory || "");
     setName(p.name || "");
     setTagline(p.tagline || "");
     setPrice(String(p.price || ""));
@@ -235,6 +240,7 @@ export const CatalogManager = () => {
 
     const payload = {
       category,
+      subcategory: subcategory || null,
       name: name.trim(),
       tagline: tagline.trim(),
       price: Number(price),
@@ -281,6 +287,8 @@ export const CatalogManager = () => {
     }
   };
 
+  const subOptions = SUBCATEGORIES[category] || [];
+
   return (
     <div className="mt-6 space-y-12">
       <div className="grid gap-8 lg:grid-cols-12">
@@ -305,7 +313,10 @@ export const CatalogManager = () => {
 
           <select
             value={category}
-            onChange={(e) => setCategory(e.target.value)}
+            onChange={(e) => {
+              setCategory(e.target.value);
+              setSubcategory("");
+            }}
             className="w-full rounded-xl border border-white/15 bg-black/50 px-4 py-3 text-sm text-white outline-none focus:border-[#FFD54A]"
           >
             <option value="diwali-ka-dhamaka" className="bg-zinc-900">
@@ -321,6 +332,23 @@ export const CatalogManager = () => {
               New Launch
             </option>
           </select>
+
+          {subOptions.length > 0 && (
+            <select
+              value={subcategory}
+              onChange={(e) => setSubcategory(e.target.value)}
+              className="w-full rounded-xl border border-[#FFD54A]/30 bg-black/50 px-4 py-3 text-sm text-white outline-none focus:border-[#FFD54A]"
+            >
+              <option value="" className="bg-zinc-900">
+                Select Subcategory (e.g. {subOptions[0]?.label})
+              </option>
+              {subOptions.map((sub) => (
+                <option key={sub.slug} value={sub.slug} className="bg-zinc-900">
+                  {sub.label}
+                </option>
+              ))}
+            </select>
+          )}
 
           <input
             type="text"
@@ -561,6 +589,7 @@ export const CatalogManager = () => {
                 <div className="min-w-0">
                   <p className="text-[10px] font-bold uppercase tracking-wider text-[#FFD54A]">
                     {p.category}
+                    {p.subcategory ? ` • ${p.subcategory}` : ""}
                   </p>
                   <p className="truncate text-sm font-bold text-white">
                     {p.name}
@@ -647,7 +676,9 @@ export const CatalogManager = () => {
 
           <label className="flex cursor-pointer items-center justify-center gap-2 rounded-xl border border-dashed border-white/20 bg-black/30 px-4 py-3 text-xs text-zinc-300 hover:border-[#FFD54A]">
             <Upload className="h-4 w-4 text-[#FFD54A]" />
-            <span>{adImage ? "Ad Image Selected" : "Upload Ad Image (Optional)"}</span>
+            <span>
+              {adImage ? "Ad Image Selected" : "Upload Ad Image (Optional)"}
+            </span>
             <input
               type="file"
               accept="image/*"
