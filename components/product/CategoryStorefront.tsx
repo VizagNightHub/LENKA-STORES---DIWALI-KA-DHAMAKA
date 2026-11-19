@@ -1,12 +1,13 @@
 "use client";
 
-import { collection, doc, onSnapshot, query, where } from "firebase/firestore";
-import { ArrowLeft, Minus, Plus, ShoppingBag } from "lucide-react";
+import { collection, onSnapshot, query, where } from "firebase/firestore";
+import { ArrowLeft, Plus, Search } from "lucide-react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
+import { useCart } from "@/components/cart/CartProvider";
 import { ProductViewer3D } from "@/components/product/ProductViewer3D";
-import { STORE_PRODUCTS, StoreProduct } from "@/data/catalog";
+import { ShareProductButton } from "@/components/product/ShareProductButton";
+import { StoreProduct } from "@/data/catalog";
 import { db } from "@/lib/firebase";
 
 interface CategoryStorefrontProps {
@@ -16,18 +17,18 @@ interface CategoryStorefrontProps {
   accent: string;
 }
 
+const FASHION_SIZES = ["S", "M", "L", "XL"];
+
 export const CategoryStorefront = ({
   category,
   title,
   subtitle,
   accent,
 }: CategoryStorefrontProps) => {
-  const router = useRouter();
-  const baseProducts = STORE_PRODUCTS.filter((p) => p.category === category);
+  const { addItem, openDrawer } = useCart();
   const [liveProducts, setLiveProducts] = useState<StoreProduct[]>([]);
-  const [loaded, setLoaded] = useState(false);
-  const [initialized, setInitialized] = useState(false);
-  const [quantities, setQuantities] = useState<Record<string, number>>({});
+  const [search, setSearch] = useState("");
+  const [selectedSizes, setSelectedSizes] = useState<Record<string, string>>({});
 
   useEffect(() => {
     const q = query(collection(db, "products"), where("category", "==", category));
@@ -47,45 +48,13 @@ export const CategoryStorefront = ({
         };
       });
       setLiveProducts(added);
-      setLoaded(true);
     });
-
-    const unsubInit = onSnapshot(doc(db, "stats", "catalog"), (snap) => {
-      setInitialized(snap.exists() && !!snap.data()?.initialized);
-    });
-
-    return () => {
-      unsubProd();
-      unsubInit();
-    };
+    return () => unsubProd();
   }, [category, accent]);
 
-  const products = liveProducts;
-
-  const updateQty = (id: string, delta: number) => {
-    setQuantities((prev) => ({
-      ...prev,
-      [id]: Math.max(0, (prev[id] || 0) + delta),
-    }));
-  };
-
-  const selected = products.filter((p) => (quantities[p.id] || 0) > 0);
-  const totalCount = selected.reduce((s, p) => s + (quantities[p.id] || 0), 0);
-  const totalAmount = selected.reduce(
-    (s, p) => s + p.price * (quantities[p.id] || 0),
-    0
+  const filtered = liveProducts.filter((p) =>
+    `${p.name} ${p.tagline}`.toLowerCase().includes(search.trim().toLowerCase())
   );
-
-  const handleCheckout = () => {
-    const payload = selected.map((p: StoreProduct) => ({
-      id: p.id,
-      name: p.name,
-      price: p.price,
-      qty: quantities[p.id] || 0,
-    }));
-    localStorage.setItem("lenka_d27_cart", JSON.stringify(payload));
-    router.push("/checkout");
-  };
 
   return (
     <main className="min-h-screen bg-[#09090b] pb-32 text-[#E1E0CC]">
@@ -108,127 +77,132 @@ export const CategoryStorefront = ({
       </header>
 
       <section className="mx-auto max-w-7xl px-4 pt-10 sm:px-8">
-        <h1 className="text-4xl font-semibold tracking-tight sm:text-5xl">
-          {title}
-        </h1>
-        <p className="mt-2 max-w-xl text-sm text-[#E1E0CC]/65 sm:text-base">
-          {subtitle}
-        </p>
+        <div className="flex flex-col justify-between gap-4 md:flex-row md:items-end">
+          <div>
+            <h1 className="text-4xl font-semibold tracking-tight sm:text-5xl">
+              {title}
+            </h1>
+            <p className="mt-2 max-w-xl text-sm text-[#E1E0CC]/65 sm:text-base">
+              {subtitle}
+            </p>
+          </div>
+
+          <div className="relative w-full md:w-72">
+            <Search className="absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-[#E1E0CC]/50" />
+            <input
+              type="text"
+              placeholder={`Search ${title}...`}
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              className="w-full rounded-full border border-white/15 bg-zinc-900 py-2.5 pl-10 pr-4 text-xs text-white outline-none focus:border-[#FFD54A]"
+            />
+          </div>
+        </div>
 
         <div className="mt-10 grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
-          {products.map((product) => {
-            const qty = quantities[product.id] || 0;
-            return (
-              <div
-                key={product.id}
-                className={`flex flex-col justify-between rounded-3xl border p-6 transition-all ${
-                  qty > 0
-                    ? "border-[#FFD54A] bg-zinc-900"
-                    : "border-white/10 bg-zinc-900/75 hover:border-white/25"
-                }`}
-              >
-                <div>
-                  <div className="mb-3 flex items-center justify-between">
-                    <span className="text-[11px] font-medium uppercase tracking-widest text-[#E1E0CC]/50">
-                      LENKA STORE
-                    </span>
-                    {product.badge && (
-                      <span
-                        className="rounded-full px-2.5 py-0.5 text-[10px] font-bold text-black"
-                        style={{ backgroundColor: accent }}
-                      >
-                        {product.badge}
+          {filtered.length === 0 ? (
+            <p className="col-span-full rounded-2xl border border-white/10 bg-zinc-900/60 p-8 text-center text-sm text-[#E1E0CC]/60">
+              No products found.
+            </p>
+          ) : (
+            filtered.map((product) => {
+              const size = selectedSizes[product.id] || "M";
+              const variant = category === "fashion-wear" ? `Size: ${size}` : undefined;
+
+              return (
+                <div
+                  key={product.id}
+                  id={`product-${product.id}`}
+                  className="flex flex-col justify-between rounded-3xl border border-white/10 bg-zinc-900/75 p-6 transition-all hover:border-white/25"
+                >
+                  <div>
+                    <div className="mb-3 flex items-center justify-between gap-2">
+                      <ShareProductButton
+                        productId={product.id}
+                        productName={product.name}
+                        price={product.price}
+                        categoryPath={`/${category}`}
+                      />
+                      {product.badge && (
+                        <span
+                          className="rounded-full px-2.5 py-0.5 text-[10px] font-bold text-black"
+                          style={{ backgroundColor: accent }}
+                        >
+                          {product.badge}
+                        </span>
+                      )}
+                    </div>
+
+                    <ProductViewer3D
+                      images={product.images}
+                      alt={product.name}
+                      accent={accent}
+                    />
+
+                    <h2 className="mt-5 text-xl font-semibold text-white">
+                      {product.name}
+                    </h2>
+                    <p className="mt-1 text-xs text-[#E1E0CC]/65">
+                      {product.tagline}
+                    </p>
+
+                    <div className="mt-4 flex items-baseline gap-2.5">
+                      <span className="text-2xl font-bold text-white">
+                        ₹{product.price.toLocaleString("en-IN")}
                       </span>
+                      <span className="text-xs text-[#E1E0CC]/45 line-through">
+                        ₹{product.mrp.toLocaleString("en-IN")}
+                      </span>
+                    </div>
+
+                    {category === "fashion-wear" && (
+                      <div className="mt-4 flex items-center gap-2">
+                        <span className="text-[11px] text-[#E1E0CC]/60">Size:</span>
+                        {FASHION_SIZES.map((s) => (
+                          <button
+                            key={s}
+                            type="button"
+                            onClick={() =>
+                              setSelectedSizes((prev) => ({ ...prev, [product.id]: s }))
+                            }
+                            className={`h-7 w-7 cursor-pointer rounded-lg text-[11px] font-bold ${
+                              size === s
+                                ? "bg-[#FFD54A] text-black"
+                                : "border border-white/15 text-[#E1E0CC]/75 hover:border-white/40"
+                            }`}
+                          >
+                            {s}
+                          </button>
+                        ))}
+                      </div>
                     )}
                   </div>
 
-                  <ProductViewer3D
-                    images={product.images}
-                    alt={product.name}
-                    accent={accent}
-                  />
-
-                  <h2 className="mt-5 text-xl font-semibold text-white">
-                    {product.name}
-                  </h2>
-                  <p className="mt-1 text-xs text-[#E1E0CC]/65">
-                    {product.tagline}
-                  </p>
-
-                  <div className="mt-4 flex items-baseline gap-2.5">
-                    <span className="text-2xl font-bold text-white">
-                      ₹{product.price.toLocaleString("en-IN")}
-                    </span>
-                    <span className="text-xs text-[#E1E0CC]/45 line-through">
-                      ₹{product.mrp.toLocaleString("en-IN")}
-                    </span>
-                  </div>
-                </div>
-
-                <div className="mt-6">
-                  {qty === 0 ? (
+                  <div className="mt-6">
                     <button
                       type="button"
-                      onClick={() => updateQty(product.id, 1)}
+                      onClick={() => {
+                        addItem({
+                          id: product.id,
+                          name: product.name,
+                          price: product.price,
+                          category,
+                          variant,
+                        });
+                        openDrawer();
+                      }}
                       className="flex w-full cursor-pointer items-center justify-center gap-2 rounded-full bg-[#E1E0CC] py-3 text-sm font-semibold text-black hover:bg-[#FFD54A]"
                     >
                       <Plus className="h-4 w-4" />
                       Add to Cart
                     </button>
-                  ) : (
-                    <div className="flex items-center justify-between rounded-full border border-[#FFD54A] bg-black/60 p-1.5">
-                      <button
-                        type="button"
-                        onClick={() => updateQty(product.id, -1)}
-                        className="flex h-9 w-9 cursor-pointer items-center justify-center rounded-full bg-white/10 text-white"
-                      >
-                        <Minus className="h-4 w-4" />
-                      </button>
-                      <span className="text-sm font-semibold text-[#FFD54A]">
-                        {qty} Selected
-                      </span>
-                      <button
-                        type="button"
-                        onClick={() => updateQty(product.id, 1)}
-                        className="flex h-9 w-9 cursor-pointer items-center justify-center rounded-full bg-[#FFD54A] text-black"
-                      >
-                        <Plus className="h-4 w-4" />
-                      </button>
-                    </div>
-                  )}
+                  </div>
                 </div>
-              </div>
-            );
-          })}
+              );
+            })
+          )}
         </div>
       </section>
-
-      {totalCount > 0 && (
-        <div className="fixed bottom-4 left-1/2 z-40 w-[94%] max-w-3xl -translate-x-1/2 rounded-2xl border border-[#FFD54A]/40 bg-zinc-950/95 p-4 shadow-2xl backdrop-blur-lg">
-          <div className="flex flex-col items-center justify-between gap-3 sm:flex-row">
-            <div className="flex items-center gap-3">
-              <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-[#FFD54A]/15 text-[#FFD54A]">
-                <ShoppingBag className="h-5 w-5" />
-              </div>
-              <div>
-                <p className="text-xs text-[#E1E0CC]/65">
-                  {totalCount} Item{totalCount > 1 ? "s" : ""} Selected
-                </p>
-                <p className="text-lg font-bold text-white">
-                  Total: ₹{totalAmount.toLocaleString("en-IN")}
-                </p>
-              </div>
-            </div>
-            <button
-              type="button"
-              onClick={handleCheckout}
-              className="w-full cursor-pointer rounded-full bg-[#FFD54A] px-7 py-3 text-sm font-bold text-black sm:w-auto"
-            >
-              Proceed to UPI Checkout →
-            </button>
-          </div>
-        </div>
-      )}
     </main>
   );
 };
