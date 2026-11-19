@@ -12,13 +12,11 @@ import {
   setDoc,
   updateDoc,
 } from "firebase/firestore";
-import { Megaphone, Pencil, Plus, RefreshCw, Trash2, Upload, X } from "lucide-react";
+import { Megaphone, Pencil, Plus, Trash2, Upload, X } from "lucide-react";
 import { useEffect, useState } from "react";
-import { STORE_PRODUCTS } from "@/data/catalog";
-import { DIWALI_COMBOS } from "@/data/diwaliCombos";
 import { db } from "@/lib/firebase";
 
-interface VariantStock {
+interface VariantOption {
   label: string;
   stock: number;
 }
@@ -33,8 +31,8 @@ interface LiveProduct {
   badge?: string;
   itemCount?: string;
   items?: string[];
-  variants?: VariantStock[];
   images: string[];
+  variants?: VariantOption[];
 }
 
 interface LiveAd {
@@ -44,6 +42,9 @@ interface LiveAd {
   href: string;
   image?: string;
 }
+
+const QUICK_SIZES = ["XS", "S", "M", "L", "XL", "XXL", "Free Size"];
+const QUICK_COLOURS = ["Black", "White", "Red", "Blue", "Gold", "Green"];
 
 function compressPhoto(file: File): Promise<string> {
   return new Promise((resolve, reject) => {
@@ -79,11 +80,12 @@ export const CatalogManager = () => {
   const [mrp, setMrp] = useState("");
   const [badge, setBadge] = useState("");
   const [itemCount, setItemCount] = useState("");
-  const [variantsText, setVariantsText] = useState("");
   const [itemsText, setItemsText] = useState("");
   const [images, setImages] = useState<string[]>([]);
+  const [variants, setVariants] = useState<VariantOption[]>([]);
+  const [customVariantLabel, setCustomVariantLabel] = useState("");
+  const [customVariantStock, setCustomVariantStock] = useState("10");
   const [saving, setSaving] = useState(false);
-  const [syncing, setSyncing] = useState(false);
 
   const [ads, setAds] = useState<LiveAd[]>([]);
   const [adTitle, setAdTitle] = useState("");
@@ -96,13 +98,21 @@ export const CatalogManager = () => {
     const q1 = query(collection(db, "products"), orderBy("createdAt", "desc"));
     const unsub1 = onSnapshot(q1, (snap) => {
       setProducts(
-        snap.docs.map((d) => ({ id: d.id, ...(d.data() as Omit<LiveProduct, "id">) }))
+        snap.docs.map((d) => ({
+          id: d.id,
+          ...(d.data() as Omit<LiveProduct, "id">),
+        }))
       );
     });
 
     const q2 = query(collection(db, "ads"), orderBy("createdAt", "desc"));
     const unsub2 = onSnapshot(q2, (snap) => {
-      setAds(snap.docs.map((d) => ({ id: d.id, ...(d.data() as Omit<LiveAd, "id">) })));
+      setAds(
+        snap.docs.map((d) => ({
+          id: d.id,
+          ...(d.data() as Omit<LiveAd, "id">),
+        }))
+      );
     });
 
     return () => {
@@ -120,9 +130,11 @@ export const CatalogManager = () => {
     setMrp("");
     setBadge("");
     setItemCount("");
-    setVariantsText("");
     setItemsText("");
     setImages([]);
+    setVariants([]);
+    setCustomVariantLabel("");
+    setCustomVariantStock("10");
   };
 
   const startEdit = (p: LiveProduct) => {
@@ -134,62 +146,65 @@ export const CatalogManager = () => {
     setMrp(String(p.mrp || ""));
     setBadge(p.badge || "");
     setItemCount(p.itemCount || "");
-    setVariantsText(
-      Array.isArray(p.variants)
-        ? p.variants.map((v) => `${v.label}:${v.stock}`).join(", ")
-        : ""
-    );
     setItemsText(Array.isArray(p.items) ? p.items.join("\n") : "");
     setImages(Array.isArray(p.images) ? p.images : []);
+    setVariants(Array.isArray(p.variants) ? p.variants : []);
     window.scrollTo({ top: 0, behavior: "smooth" });
   };
 
-  const syncDefaultsToFirebase = async () => {
-    setSyncing(true);
-    try {
-      for (const combo of DIWALI_COMBOS) {
-        await setDoc(
-          doc(db, "products", `combo-${combo.id}`),
-          {
-            category: "diwali-ka-dhamaka",
-            name: combo.name,
-            tagline: combo.tagline,
-            price: combo.price,
-            mrp: combo.mrp,
-            badge: combo.badge || null,
-            itemCount: combo.itemCount,
-            items: combo.items,
-            images: combo.images,
-            createdAt: serverTimestamp(),
-          },
-          { merge: true }
+  const toggleVariantOption = (label: string) => {
+    setVariants((prev) => {
+      const exists = prev.some(
+        (v) => v.label.toLowerCase() === label.toLowerCase()
+      );
+      if (exists) {
+        return prev.filter(
+          (v) => v.label.toLowerCase() !== label.toLowerCase()
         );
       }
-      for (const prod of STORE_PRODUCTS) {
-        await setDoc(
-          doc(db, "products", prod.id),
-          {
-            category: prod.category,
-            name: prod.name,
-            tagline: prod.tagline,
-            price: prod.price,
-            mrp: prod.mrp,
-            badge: prod.badge || null,
-            images: prod.images,
-            createdAt: serverTimestamp(),
-          },
-          { merge: true }
+      return [...prev, { label, stock: 10 }];
+    });
+  };
+
+  const updateVariantStock = (label: string, stockValue: string) => {
+    const parsed = Math.max(0, Number(stockValue) || 0);
+    setVariants((prev) =>
+      prev.map((v) => (v.label === label ? { ...v, stock: parsed } : v))
+    );
+  };
+
+  const addCustomVariant = () => {
+    const clean = customVariantLabel.trim();
+    if (!clean) return;
+    const stockNum = Math.max(0, Number(customVariantStock) || 0);
+    setVariants((prev) => {
+      const exists = prev.some(
+        (v) => v.label.toLowerCase() === clean.toLowerCase()
+      );
+      if (exists) {
+        return prev.map((v) =>
+          v.label.toLowerCase() === clean.toLowerCase()
+            ? { ...v, stock: stockNum }
+            : v
         );
       }
-      await setDoc(doc(db, "stats", "catalog"), { initialized: true }, { merge: true });
-    } finally {
-      setSyncing(false);
-    }
+      return [...prev, { label: clean, stock: stockNum }];
+    });
+    setCustomVariantLabel("");
+    setCustomVariantStock("10");
   };
 
   const handleDeleteProduct = async (id: string) => {
-    await setDoc(doc(db, "stats", "catalog"), { initialized: true }, { merge: true });
+    await setDoc(
+      doc(db, "stats", "catalog"),
+      { initialized: true },
+      { merge: true }
+    );
     await deleteDoc(doc(db, "products", id));
+  };
+
+  const handleDeleteAd = async (id: string) => {
+    await deleteDoc(doc(db, "ads", id));
   };
 
   const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -199,7 +214,9 @@ export const CatalogManager = () => {
     setImages((prev) => [...prev, ...compressed].slice(0, 4));
   };
 
-  const handleAdImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleAdImageUpload = async (
+    e: React.ChangeEvent<HTMLInputElement>
+  ) => {
     const file = e.target.files?.[0];
     if (!file) return;
     const compressed = await compressPhoto(file);
@@ -210,20 +227,11 @@ export const CatalogManager = () => {
     e.preventDefault();
     if (!name.trim() || !price) return;
     setSaving(true);
+
     const parsedItems = itemsText
       .split("\n")
       .map((s) => s.trim())
       .filter(Boolean);
-
-    const parsedVariants: VariantStock[] = variantsText
-      .split(",")
-      .map((part) => part.trim())
-      .filter(Boolean)
-      .map((part) => {
-        const [lbl, qty] = part.split(":");
-        return { label: (lbl || "").trim(), stock: Math.max(0, Number(qty) || 0) };
-      })
-      .filter((v) => v.label.length > 0);
 
     const payload = {
       category,
@@ -233,8 +241,8 @@ export const CatalogManager = () => {
       mrp: Number(mrp) || Number(price),
       badge: badge.trim() || null,
       itemCount: itemCount.trim() || null,
-      variants: parsedVariants.length > 0 ? parsedVariants : null,
       items: parsedItems.length > 0 ? parsedItems : null,
+      variants: variants.length > 0 ? variants : [],
       images: images.length > 0 ? images : ["/images/new-launch.png"],
     };
 
@@ -298,12 +306,20 @@ export const CatalogManager = () => {
           <select
             value={category}
             onChange={(e) => setCategory(e.target.value)}
-            className="w-full rounded-xl border border-white/15 bg-black/50 px-4 py-3 text-sm outline-none focus:border-[#FFD54A]"
+            className="w-full rounded-xl border border-white/15 bg-black/50 px-4 py-3 text-sm text-white outline-none focus:border-[#FFD54A]"
           >
-            <option value="diwali-ka-dhamaka" className="bg-zinc-900">Diwali Ka Dhamaka</option>
-            <option value="fashion-wear" className="bg-zinc-900">Fashion Wear</option>
-            <option value="electronics" className="bg-zinc-900">Electronics</option>
-            <option value="new-launch" className="bg-zinc-900">New Launch</option>
+            <option value="diwali-ka-dhamaka" className="bg-zinc-900">
+              Diwali Ka Dhamaka
+            </option>
+            <option value="fashion-wear" className="bg-zinc-900">
+              Fashion Wear
+            </option>
+            <option value="electronics" className="bg-zinc-900">
+              Electronics
+            </option>
+            <option value="new-launch" className="bg-zinc-900">
+              New Launch
+            </option>
           </select>
 
           <input
@@ -311,14 +327,16 @@ export const CatalogManager = () => {
             placeholder="Product / Combo Name"
             value={name}
             onChange={(e) => setName(e.target.value)}
-            className="w-full rounded-xl border border-white/15 bg-black/50 px-4 py-3 text-sm outline-none focus:border-[#FFD54A]"
+            required
+            className="w-full rounded-xl border border-white/15 bg-black/50 px-4 py-3 text-sm text-white outline-none focus:border-[#FFD54A]"
           />
+
           <input
             type="text"
             placeholder="Short Tagline / Description"
             value={tagline}
             onChange={(e) => setTagline(e.target.value)}
-            className="w-full rounded-xl border border-white/15 bg-black/50 px-4 py-3 text-sm outline-none focus:border-[#FFD54A]"
+            className="w-full rounded-xl border border-white/15 bg-black/50 px-4 py-3 text-sm text-white outline-none focus:border-[#FFD54A]"
           />
 
           <div className="grid grid-cols-2 gap-3">
@@ -327,14 +345,15 @@ export const CatalogManager = () => {
               placeholder="Price (₹)"
               value={price}
               onChange={(e) => setPrice(e.target.value)}
-              className="w-full rounded-xl border border-white/15 bg-black/50 px-4 py-3 text-sm outline-none focus:border-[#FFD54A]"
+              required
+              className="w-full rounded-xl border border-white/15 bg-black/50 px-4 py-3 text-sm text-white outline-none focus:border-[#FFD54A]"
             />
             <input
               type="number"
               placeholder="MRP (₹)"
               value={mrp}
               onChange={(e) => setMrp(e.target.value)}
-              className="w-full rounded-xl border border-white/15 bg-black/50 px-4 py-3 text-sm outline-none focus:border-[#FFD54A]"
+              className="w-full rounded-xl border border-white/15 bg-black/50 px-4 py-3 text-sm text-white outline-none focus:border-[#FFD54A]"
             />
           </div>
 
@@ -344,54 +363,166 @@ export const CatalogManager = () => {
               placeholder="Badge (e.g. POPULAR)"
               value={badge}
               onChange={(e) => setBadge(e.target.value)}
-              className="w-full rounded-xl border border-white/15 bg-black/50 px-4 py-3 text-sm outline-none focus:border-[#FFD54A]"
+              className="w-full rounded-xl border border-white/15 bg-black/50 px-4 py-3 text-sm text-white outline-none focus:border-[#FFD54A]"
             />
             <input
               type="text"
               placeholder="Count (e.g. 36 Items)"
               value={itemCount}
               onChange={(e) => setItemCount(e.target.value)}
-              className="w-full rounded-xl border border-white/15 bg-black/50 px-4 py-3 text-sm outline-none focus:border-[#FFD54A]"
+              className="w-full rounded-xl border border-white/15 bg-black/50 px-4 py-3 text-sm text-white outline-none focus:border-[#FFD54A]"
             />
           </div>
 
-          <input
-            type="text"
-            placeholder="Variants & Stock (e.g. S:5, M:10, L:0 or Black:4, Gold:2)"
-            value={variantsText}
-            onChange={(e) => setVariantsText(e.target.value)}
-            className="w-full rounded-xl border border-white/15 bg-black/50 px-4 py-3 text-xs outline-none focus:border-[#FFD54A]"
-          />
+          {/* Size & Colour Stock Builder */}
+          <div className="space-y-3 rounded-xl border border-white/10 bg-black/40 p-3.5">
+            <p className="text-xs font-semibold text-[#FFD54A]">
+              Sizes, Colours &amp; Stock Quantity
+            </p>
+
+            <div>
+              <p className="mb-1.5 text-[11px] text-zinc-400">Quick Sizes</p>
+              <div className="flex flex-wrap gap-1.5">
+                {QUICK_SIZES.map((sz) => {
+                  const active = variants.some((v) => v.label === sz);
+                  return (
+                    <button
+                      key={sz}
+                      type="button"
+                      onClick={() => toggleVariantOption(sz)}
+                      className={`cursor-pointer rounded-lg border px-2.5 py-1 text-xs font-semibold transition ${
+                        active
+                          ? "border-[#FFD54A] bg-[#FFD54A] text-black"
+                          : "border-white/15 bg-zinc-900 text-zinc-300 hover:border-white/30"
+                      }`}
+                    >
+                      {sz}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+
+            <div>
+              <p className="mb-1.5 text-[11px] text-zinc-400">Quick Colours</p>
+              <div className="flex flex-wrap gap-1.5">
+                {QUICK_COLOURS.map((col) => {
+                  const active = variants.some((v) => v.label === col);
+                  return (
+                    <button
+                      key={col}
+                      type="button"
+                      onClick={() => toggleVariantOption(col)}
+                      className={`cursor-pointer rounded-lg border px-2.5 py-1 text-xs font-semibold transition ${
+                        active
+                          ? "border-[#FFD54A] bg-[#FFD54A] text-black"
+                          : "border-white/15 bg-zinc-900 text-zinc-300 hover:border-white/30"
+                      }`}
+                    >
+                      {col}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+
+            <div className="flex gap-2">
+              <input
+                type="text"
+                placeholder="Custom (e.g. Black - L or 128GB)"
+                value={customVariantLabel}
+                onChange={(e) => setCustomVariantLabel(e.target.value)}
+                className="flex-1 rounded-lg border border-white/15 bg-zinc-900 px-3 py-1.5 text-xs text-white outline-none focus:border-[#FFD54A]"
+              />
+              <input
+                type="number"
+                min={0}
+                placeholder="Qty"
+                value={customVariantStock}
+                onChange={(e) => setCustomVariantStock(e.target.value)}
+                className="w-16 rounded-lg border border-white/15 bg-zinc-900 px-2.5 py-1.5 text-xs text-white outline-none focus:border-[#FFD54A]"
+              />
+              <button
+                type="button"
+                onClick={addCustomVariant}
+                className="cursor-pointer rounded-lg bg-white/10 px-3 py-1.5 text-xs font-semibold text-white hover:bg-white/20"
+              >
+                + Add
+              </button>
+            </div>
+
+            {variants.length > 0 && (
+              <div className="space-y-2 pt-1">
+                {variants.map((v) => (
+                  <div
+                    key={v.label}
+                    className="flex items-center justify-between gap-2 rounded-lg border border-white/10 bg-zinc-900/80 px-3 py-1.5"
+                  >
+                    <span className="text-xs font-semibold text-white">
+                      {v.label}
+                    </span>
+                    <div className="flex items-center gap-2">
+                      <span className="text-[11px] text-zinc-400">Stock:</span>
+                      <input
+                        type="number"
+                        min={0}
+                        value={v.stock}
+                        onChange={(e) =>
+                          updateVariantStock(v.label, e.target.value)
+                        }
+                        className="w-16 rounded border border-white/15 bg-black/60 px-2 py-1 text-xs text-white outline-none focus:border-[#FFD54A]"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => toggleVariantOption(v.label)}
+                        className="cursor-pointer text-red-400 hover:text-red-300"
+                      >
+                        <X className="h-3.5 w-3.5" />
+                      </button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
 
           <textarea
             rows={3}
             placeholder="Combo Contents (one item per line — optional)"
             value={itemsText}
             onChange={(e) => setItemsText(e.target.value)}
-            className="w-full rounded-xl border border-white/15 bg-black/50 px-4 py-2.5 text-xs outline-none focus:border-[#FFD54A]"
+            className="w-full rounded-xl border border-white/15 bg-black/50 px-4 py-3 text-sm text-white outline-none focus:border-[#FFD54A]"
           />
 
-          <label className="flex cursor-pointer items-center justify-center gap-2 rounded-xl border border-dashed border-white/25 bg-black/40 px-4 py-3 text-xs hover:border-[#FFD54A]">
+          <label className="flex cursor-pointer items-center justify-center gap-2 rounded-xl border border-dashed border-white/20 bg-black/30 px-4 py-3 text-xs text-zinc-300 hover:border-[#FFD54A]">
             <Upload className="h-4 w-4 text-[#FFD54A]" />
             <span>Upload 1–4 Photos for 3D Viewer ({images.length}/4)</span>
-            <input type="file" accept="image/*" multiple onChange={handleImageUpload} className="hidden" />
+            <input
+              type="file"
+              accept="image/*"
+              multiple
+              onChange={handleImageUpload}
+              className="hidden"
+            />
           </label>
 
           {images.length > 0 && (
             <div className="flex flex-wrap gap-2">
-              {images.map((src, i) => (
-                <div key={i} className="relative">
+              {images.map((src, idx) => (
+                <div key={idx} className="relative h-14 w-14">
                   <img
                     src={src}
-                    alt="Preview"
-                    className="h-12 w-12 rounded-lg border border-white/20 object-cover"
+                    alt={`Preview ${idx + 1}`}
+                    className="h-full w-full rounded-lg object-cover"
                   />
                   <button
                     type="button"
-                    onClick={() => setImages((prev) => prev.filter((_, idx) => idx !== i))}
-                    className="absolute -right-1.5 -top-1.5 rounded-full bg-red-600 p-0.5 text-white"
+                    onClick={() =>
+                      setImages((prev) => prev.filter((_, i) => i !== idx))
+                    }
+                    className="absolute -right-1.5 -top-1.5 cursor-pointer rounded-full bg-red-600 p-0.5 text-white"
                   >
-                    <X className="h-2.5 w-2.5" />
+                    <X className="h-3 w-3" />
                   </button>
                 </div>
               ))}
@@ -401,158 +532,172 @@ export const CatalogManager = () => {
           <button
             type="submit"
             disabled={saving}
-            className="flex w-full cursor-pointer items-center justify-center gap-2 rounded-full bg-[#FFD54A] py-3 text-sm font-bold text-black hover:bg-[#ffe27a] disabled:opacity-50"
+            className="inline-flex w-full cursor-pointer items-center justify-center gap-2 rounded-xl bg-[#FFD54A] py-3 text-sm font-bold text-black hover:bg-[#ffdf70] disabled:opacity-50"
           >
             <Plus className="h-4 w-4" />
-            {saving ? "Saving..." : editingId ? "Save Changes" : "Publish Product Live"}
+            {saving
+              ? "Saving..."
+              : editingId
+              ? "Update Product"
+              : "Publish Product Live"}
           </button>
         </form>
 
         <div className="space-y-3 lg:col-span-7">
-          <div className="flex flex-wrap items-center justify-between gap-2">
-            <h2 className="text-lg font-semibold text-white">
-              All Store Products ({products.length})
-            </h2>
-            {products.length === 0 && (
-              <button
-                type="button"
-                onClick={syncDefaultsToFirebase}
-                disabled={syncing}
-                className="inline-flex cursor-pointer items-center gap-1.5 rounded-full border border-[#FFD54A]/40 px-3.5 py-1.5 text-xs font-semibold text-[#FFD54A] hover:bg-[#FFD54A]/10"
-              >
-                <RefreshCw className={`h-3.5 w-3.5 ${syncing ? "animate-spin" : ""}`} />
-                {syncing ? "Loading..." : "Load Default Combos & Items"}
-              </button>
-            )}
-          </div>
-
-          {products.length === 0 ? (
-            <p className="rounded-2xl border border-white/10 bg-zinc-900/60 p-6 text-xs text-[#E1E0CC]/60">
-              Click <strong>Load Default Combos &amp; Items</strong> above to bring your Small/Medium/Large combos and default products here to edit!
-            </p>
-          ) : (
-            products.map((p) => (
-              <div
-                key={p.id}
-                className="flex items-center justify-between gap-4 rounded-2xl border border-white/10 bg-zinc-900/80 p-4"
-              >
-                <div className="flex items-center gap-3">
-                  <img
-                    src={p.images?.[0] || "/images/new-launch.png"}
-                    alt={p.name}
-                    className="h-14 w-14 rounded-xl border border-white/15 object-cover"
-                  />
-                  <div className="text-xs">
-                    <span className="text-[10px] uppercase tracking-wider text-[#FFD54A]">
-                      {p.category}
-                    </span>
-                    <p className="text-sm font-semibold text-white">{p.name}</p>
-                    <p className="text-[#E1E0CC]/70">
-                      ₹{p.price.toLocaleString("en-IN")} • {p.images?.length || 1} photo(s)
-                    </p>
-                  </div>
-                </div>
-                <div className="flex items-center gap-2">
-                  <button
-                    type="button"
-                    onClick={() => startEdit(p)}
-                    className="cursor-pointer rounded-xl bg-white/10 p-2.5 text-[#FFD54A] hover:bg-white/20"
-                    title="Edit Product"
-                  >
-                    <Pencil className="h-4 w-4" />
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => handleDeleteProduct(p.id)}
-                    className="cursor-pointer rounded-xl bg-red-600/20 p-2.5 text-red-400 hover:bg-red-600 hover:text-white"
-                    title="Delete Product"
-                  >
-                    <Trash2 className="h-4 w-4" />
-                  </button>
+          <h2 className="text-lg font-semibold text-white">
+            All Store Products ({products.length})
+          </h2>
+          {products.map((p) => (
+            <div
+              key={p.id}
+              className="flex items-center justify-between gap-4 rounded-2xl border border-white/10 bg-zinc-900/70 p-4"
+            >
+              <div className="flex min-w-0 items-center gap-3">
+                <img
+                  src={p.images?.[0] || "/images/new-launch.png"}
+                  alt={p.name}
+                  className="h-12 w-12 shrink-0 rounded-xl object-cover"
+                />
+                <div className="min-w-0">
+                  <p className="text-[10px] font-bold uppercase tracking-wider text-[#FFD54A]">
+                    {p.category}
+                  </p>
+                  <p className="truncate text-sm font-bold text-white">
+                    {p.name}
+                  </p>
+                  <p className="text-xs text-zinc-400">
+                    ₹{Number(p.price).toLocaleString("en-IN")} •{" "}
+                    {p.images?.length || 1} photo(s)
+                    {Array.isArray(p.variants) && p.variants.length > 0
+                      ? ` • ${p.variants
+                          .map((v) => `${v.label}:${v.stock}`)
+                          .join(", ")}`
+                      : ""}
+                  </p>
                 </div>
               </div>
-            ))
-          )}
+
+              <div className="flex shrink-0 items-center gap-2">
+                <button
+                  type="button"
+                  onClick={() => startEdit(p)}
+                  className="cursor-pointer rounded-lg border border-white/10 bg-white/5 p-2 text-[#FFD54A] hover:bg-white/10"
+                >
+                  <Pencil className="h-4 w-4" />
+                </button>
+                <button
+                  type="button"
+                  onClick={() => handleDeleteProduct(p.id)}
+                  className="cursor-pointer rounded-lg border border-red-500/20 bg-red-500/10 p-2 text-red-400 hover:bg-red-500/20"
+                >
+                  <Trash2 className="h-4 w-4" />
+                </button>
+              </div>
+            </div>
+          ))}
         </div>
       </div>
 
-      <div className="grid gap-8 border-t border-white/10 pt-8 lg:grid-cols-12">
+      {/* Homepage Promo Ads */}
+      <div className="grid gap-8 lg:grid-cols-12">
         <form
           onSubmit={handleAddAd}
-          className="space-y-4 rounded-2xl border border-[#FFD54A]/25 bg-zinc-900/80 p-6 lg:col-span-5"
+          className="space-y-4 rounded-2xl border border-white/10 bg-zinc-900/80 p-6 lg:col-span-5"
         >
-          <div className="flex items-center gap-2 text-[#FFD54A]">
-            <Megaphone className="h-5 w-5" />
-            <h2 className="text-lg font-semibold text-white">Add Homepage Promo Ad</h2>
-          </div>
+          <h2 className="flex items-center gap-2 text-lg font-semibold text-white">
+            <Megaphone className="h-5 w-5 text-[#FFD54A]" /> Add Homepage Promo
+            Ad
+          </h2>
+
           <input
             type="text"
             placeholder="Ad Headline"
             value={adTitle}
             onChange={(e) => setAdTitle(e.target.value)}
-            className="w-full rounded-xl border border-white/15 bg-black/50 px-4 py-3 text-sm outline-none focus:border-[#FFD54A]"
+            required
+            className="w-full rounded-xl border border-white/15 bg-black/50 px-4 py-3 text-sm text-white outline-none focus:border-[#FFD54A]"
           />
+
           <input
             type="text"
             placeholder="Ad Subtitle"
             value={adSubtitle}
             onChange={(e) => setAdSubtitle(e.target.value)}
-            className="w-full rounded-xl border border-white/15 bg-black/50 px-4 py-3 text-sm outline-none focus:border-[#FFD54A]"
+            className="w-full rounded-xl border border-white/15 bg-black/50 px-4 py-3 text-sm text-white outline-none focus:border-[#FFD54A]"
           />
+
           <select
             value={adHref}
             onChange={(e) => setAdHref(e.target.value)}
-            className="w-full rounded-xl border border-white/15 bg-black/50 px-4 py-3 text-sm outline-none focus:border-[#FFD54A]"
+            className="w-full rounded-xl border border-white/15 bg-black/50 px-4 py-3 text-sm text-white outline-none focus:border-[#FFD54A]"
           >
-            <option value="/diwali-ka-dhamaka" className="bg-zinc-900">Link to: Diwali Ka Dhamaka</option>
-            <option value="/fashion-wear" className="bg-zinc-900">Link to: Fashion Wear</option>
-            <option value="/electronics" className="bg-zinc-900">Link to: Electronics</option>
-            <option value="/new-launch" className="bg-zinc-900">Link to: New Launch</option>
+            <option value="/diwali-ka-dhamaka" className="bg-zinc-900">
+              Link to: Diwali Ka Dhamaka
+            </option>
+            <option value="/fashion-wear" className="bg-zinc-900">
+              Link to: Fashion Wear
+            </option>
+            <option value="/electronics" className="bg-zinc-900">
+              Link to: Electronics
+            </option>
+            <option value="/new-launch" className="bg-zinc-900">
+              Link to: New Launch
+            </option>
           </select>
-          <label className="flex cursor-pointer items-center justify-center gap-2 rounded-xl border border-dashed border-white/25 bg-black/40 px-4 py-3 text-xs hover:border-[#FFD54A]">
+
+          <label className="flex cursor-pointer items-center justify-center gap-2 rounded-xl border border-dashed border-white/20 bg-black/30 px-4 py-3 text-xs text-zinc-300 hover:border-[#FFD54A]">
             <Upload className="h-4 w-4 text-[#FFD54A]" />
-            <span>{adImage ? "Ad Banner Uploaded ✓" : "Upload Ad Image (Optional)"}</span>
-            <input type="file" accept="image/*" onChange={handleAdImageUpload} className="hidden" />
+            <span>{adImage ? "Ad Image Selected" : "Upload Ad Image (Optional)"}</span>
+            <input
+              type="file"
+              accept="image/*"
+              onChange={handleAdImageUpload}
+              className="hidden"
+            />
           </label>
+
           <button
             type="submit"
             disabled={savingAd}
-            className="flex w-full cursor-pointer items-center justify-center gap-2 rounded-full bg-[#FFD54A] py-3 text-sm font-bold text-black hover:bg-[#ffe27a] disabled:opacity-50"
+            className="w-full cursor-pointer rounded-xl bg-[#FFD54A] py-3 text-sm font-bold text-black hover:bg-[#ffdf70] disabled:opacity-50"
           >
-            <Plus className="h-4 w-4" />
             {savingAd ? "Publishing..." : "Publish Promo Ad"}
           </button>
         </form>
 
         <div className="space-y-3 lg:col-span-7">
-          <h2 className="text-lg font-semibold text-white">Active Promo Ads ({ads.length})</h2>
-          {ads.length === 0 ? (
-            <p className="rounded-2xl border border-white/10 bg-zinc-900/60 p-6 text-xs text-[#E1E0CC]/60">
-              No active promo ads right now.
-            </p>
-          ) : (
-            ads.map((ad) => (
-              <div
-                key={ad.id}
-                className="flex items-center justify-between gap-4 rounded-2xl border border-white/10 bg-zinc-900/80 p-4"
-              >
-                <div className="text-xs">
-                  <p className="text-sm font-semibold text-white">{ad.title}</p>
-                  <p className="text-[#E1E0CC]/70">{ad.subtitle}</p>
-                  <span className="text-[10px] text-[#FFD54A]">{ad.href}</span>
-                </div>
-                <button
-                  type="button"
-                  onClick={() => deleteDoc(doc(db, "ads", ad.id))}
-                  className="cursor-pointer rounded-xl bg-red-600/20 p-2.5 text-red-400 hover:bg-red-600 hover:text-white"
-                >
-                  <Trash2 className="h-4 w-4" />
-                </button>
+          <h2 className="text-lg font-semibold text-white">
+            Active Promo Ads ({ads.length})
+          </h2>
+          {ads.map((ad) => (
+            <div
+              key={ad.id}
+              className="flex items-center justify-between gap-4 rounded-2xl border border-white/10 bg-zinc-900/70 p-4"
+            >
+              <div className="min-w-0">
+                <p className="truncate text-sm font-bold text-white">
+                  {ad.title}
+                </p>
+                {ad.subtitle && (
+                  <p className="truncate text-xs text-zinc-400">
+                    {ad.subtitle}
+                  </p>
+                )}
+                <p className="text-xs text-[#FFD54A]">{ad.href}</p>
               </div>
-            ))
-          )}
+              <button
+                type="button"
+                onClick={() => handleDeleteAd(ad.id)}
+                className="cursor-pointer rounded-lg border border-red-500/20 bg-red-500/10 p-2 text-red-400 hover:bg-red-500/20"
+              >
+                <Trash2 className="h-4 w-4" />
+              </button>
+            </div>
+          ))}
         </div>
       </div>
     </div>
   );
 };
+
+export default CatalogManager;
