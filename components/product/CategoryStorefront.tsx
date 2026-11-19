@@ -26,18 +26,23 @@ interface StoreProduct {
 }
 
 interface CategoryStorefrontProps {
-  categorySlug: string;
+  category?: string;
+  categorySlug?: string;
   title: string;
   subtitle?: string;
+  accent?: string;
 }
 
 const CACHE_TTL_MS = 2 * 60 * 1000;
 
 export const CategoryStorefront = ({
+  category,
   categorySlug,
   title,
   subtitle,
+  accent = "#FFD54A",
 }: CategoryStorefrontProps) => {
+  const activeCategory = category || categorySlug || "";
   const [products, setProducts] = useState<StoreProduct[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState("");
@@ -45,8 +50,13 @@ export const CategoryStorefront = ({
   const { addItem } = useCart();
 
   useEffect(() => {
+    if (!activeCategory) {
+      setLoading(false);
+      return;
+    }
+
     let active = true;
-    const cacheKey = `lenka_cat_${categorySlug}`;
+    const cacheKey = `lenka_cat_${activeCategory}`;
 
     const loadProducts = async () => {
       try {
@@ -68,7 +78,7 @@ export const CategoryStorefront = ({
       try {
         const q = query(
           collection(db, "products"),
-          where("category", "==", categorySlug)
+          where("category", "==", activeCategory)
         );
         const snap = await getDocs(q);
         const list = snap.docs.map((d) => ({
@@ -98,7 +108,7 @@ export const CategoryStorefront = ({
     return () => {
       active = false;
     };
-  }, [categorySlug]);
+  }, [activeCategory]);
 
   const filtered = products.filter((p) => {
     const q = searchTerm.trim().toLowerCase();
@@ -187,7 +197,10 @@ export const CategoryStorefront = ({
                       alt={p.name}
                     />
                     {p.badge && (
-                      <span className="absolute left-3 top-3 rounded-full bg-[#FFD54A] px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-wider text-black">
+                      <span
+                        style={{ backgroundColor: accent }}
+                        className="absolute left-3 top-3 rounded-full px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-wider text-black"
+                      >
                         {p.badge}
                       </span>
                     )}
@@ -202,7 +215,10 @@ export const CategoryStorefront = ({
                   )}
 
                   <div className="mt-3 flex items-baseline gap-2">
-                    <span className="text-xl font-bold text-[#FFD54A]">
+                    <span
+                      style={{ color: accent }}
+                      className="text-xl font-bold"
+                    >
                       ₹{Number(p.price).toLocaleString("en-IN")}
                     </span>
                     {p.mrp > p.price && (
