@@ -15,7 +15,13 @@ import { Megaphone, Trash2, Upload } from "lucide-react";
 import { useEffect, useState } from "react";
 import { db } from "@/lib/firebase";
 
-export type AdFormat = "BANNER" | "TICKER" | "COUNTDOWN" | "POPUP" | "VIDEO";
+export type AdFormat =
+  | "HERO_BANNER"
+  | "BANNER"
+  | "TICKER"
+  | "COUNTDOWN"
+  | "POPUP"
+  | "VIDEO";
 
 export interface LiveAd {
   id: string;
@@ -23,7 +29,7 @@ export interface LiveAd {
   title: string;
   subtitle?: string;
   couponCode?: string | null;
-  href?: string;
+  href?: string | null;
   image?: string | null;
   videoUrl?: string | null;
   endsAt?: string | null;
@@ -31,7 +37,8 @@ export interface LiveAd {
 }
 
 const AD_FORMATS: { id: AdFormat; label: string }[] = [
-  { id: "BANNER", label: "Banner Slider" },
+  { id: "HERO_BANNER", label: "Main Banner (P2)" },
+  { id: "BANNER", label: "Promo Slider" },
   { id: "TICKER", label: "Top Ticker" },
   { id: "COUNTDOWN", label: "Flash Countdown" },
   { id: "POPUP", label: "Welcome Popup" },
@@ -44,7 +51,7 @@ function compressAdPhoto(file: File): Promise<string> {
     reader.onload = () => {
       const img = new Image();
       img.onload = () => {
-        const maxW = 900;
+        const maxW = 1000;
         const scale = Math.min(1, maxW / img.width);
         const canvas = document.createElement("canvas");
         canvas.width = img.width * scale;
@@ -52,7 +59,7 @@ function compressAdPhoto(file: File): Promise<string> {
         const ctx = canvas.getContext("2d");
         if (!ctx) return reject(new Error("Canvas error"));
         ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
-        resolve(canvas.toDataURL("image/jpeg", 0.72));
+        resolve(canvas.toDataURL("image/jpeg", 0.75));
       };
       img.onerror = reject;
       img.src = reader.result as string;
@@ -64,11 +71,11 @@ function compressAdPhoto(file: File): Promise<string> {
 
 export const AdsManager = () => {
   const [ads, setAds] = useState<LiveAd[]>([]);
-  const [format, setFormat] = useState<AdFormat>("BANNER");
+  const [format, setFormat] = useState<AdFormat>("HERO_BANNER");
   const [title, setTitle] = useState("");
   const [subtitle, setSubtitle] = useState("");
   const [couponCode, setCouponCode] = useState("");
-  const [href, setHref] = useState("/diwali-ka-dhamaka");
+  const [href, setHref] = useState("");
   const [image, setImage] = useState("");
   const [videoUrl, setVideoUrl] = useState("");
   const [endsAt, setEndsAt] = useState("");
@@ -96,7 +103,7 @@ export const AdsManager = () => {
 
   const handleAddAd = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!title.trim()) return;
+    if (!title.trim() && !image) return;
     setSaving(true);
     try {
       await addDoc(collection(db, "ads"), {
@@ -104,7 +111,7 @@ export const AdsManager = () => {
         title: title.trim(),
         subtitle: subtitle.trim(),
         couponCode: couponCode.trim().toUpperCase() || null,
-        href,
+        href: href.trim() || null,
         image: image || null,
         videoUrl: format === "VIDEO" ? videoUrl.trim() || "/hero.mp4.mp4" : null,
         endsAt: format === "COUNTDOWN" ? endsAt || null : null,
@@ -114,6 +121,7 @@ export const AdsManager = () => {
       setTitle("");
       setSubtitle("");
       setCouponCode("");
+      setHref("");
       setImage("");
       setVideoUrl("");
       setEndsAt("");
@@ -166,13 +174,12 @@ export const AdsManager = () => {
           placeholder="Ad Headline (e.g. MEGA DIWALI SALE)"
           value={title}
           onChange={(e) => setTitle(e.target.value)}
-          required
           className="w-full rounded-xl border border-white/15 bg-black/50 px-4 py-3 text-sm text-white outline-none focus:border-[#FFD54A]"
         />
 
         <input
           type="text"
-          placeholder="Ad Subtitle / Offer Details"
+          placeholder="Description / Offer Details"
           value={subtitle}
           onChange={(e) => setSubtitle(e.target.value)}
           className="w-full rounded-xl border border-white/15 bg-black/50 px-4 py-3 text-sm text-white outline-none focus:border-[#FFD54A]"
@@ -216,6 +223,9 @@ export const AdsManager = () => {
           onChange={(e) => setHref(e.target.value)}
           className="w-full rounded-xl border border-white/15 bg-black/50 px-4 py-3 text-sm text-white outline-none focus:border-[#FFD54A]"
         >
+          <option value="" className="bg-zinc-900">
+            No Link (Display Banner Only — Optional)
+          </option>
           <option value="/diwali-ka-dhamaka" className="bg-zinc-900">
             Link to: Diwali Ka Dhamaka
           </option>
@@ -233,7 +243,7 @@ export const AdsManager = () => {
         {format !== "TICKER" && (
           <label className="flex cursor-pointer items-center justify-center gap-2 rounded-xl border border-dashed border-white/20 bg-black/30 px-4 py-3 text-xs text-zinc-300 hover:border-[#FFD54A]">
             <Upload className="h-4 w-4 text-[#FFD54A]" />
-            <span>{image ? "Ad Image Selected ✓" : "Upload Ad Image (Optional)"}</span>
+            <span>{image ? "Banner Image Selected ✓" : "Upload Banner Image"}</span>
             <input
               type="file"
               accept="image/*"
@@ -263,20 +273,29 @@ export const AdsManager = () => {
               key={ad.id}
               className="flex flex-wrap items-center justify-between gap-4 rounded-2xl border border-white/10 bg-zinc-900/70 p-4"
             >
-              <div className="min-w-0 flex-1">
-                <span className="inline-block rounded-full bg-[#FFD54A]/15 px-2 py-0.5 text-[10px] font-bold uppercase text-[#FFD54A]">
-                  {ad.format || "BANNER"}
-                </span>
-                <p className="mt-1 truncate text-sm font-bold text-white">
-                  {ad.title}
-                </p>
-                {ad.subtitle && (
-                  <p className="truncate text-xs text-zinc-400">{ad.subtitle}</p>
+              <div className="flex min-w-0 flex-1 items-center gap-3">
+                {ad.image && (
+                  <img
+                    src={ad.image}
+                    alt={ad.title || "Ad"}
+                    className="h-12 w-16 shrink-0 rounded-lg object-cover"
+                  />
                 )}
-                <p className="text-xs text-zinc-500">
-                  {ad.href}
-                  {ad.couponCode ? ` • Code: ${ad.couponCode}` : ""}
-                </p>
+                <div className="min-w-0">
+                  <span className="inline-block rounded-full bg-[#FFD54A]/15 px-2 py-0.5 text-[10px] font-bold uppercase text-[#FFD54A]">
+                    {ad.format || "BANNER"}
+                  </span>
+                  <p className="mt-1 truncate text-sm font-bold text-white">
+                    {ad.title || "Image Banner"}
+                  </p>
+                  {ad.subtitle && (
+                    <p className="truncate text-xs text-zinc-400">{ad.subtitle}</p>
+                  )}
+                  <p className="text-xs text-zinc-500">
+                    {ad.href ? ad.href : "No link (Display only)"}
+                    {ad.couponCode ? ` • Code: ${ad.couponCode}` : ""}
+                  </p>
+                </div>
               </div>
 
               <div className="flex items-center gap-2">
