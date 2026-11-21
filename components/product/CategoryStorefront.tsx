@@ -43,10 +43,10 @@ export const CategoryStorefront = ({
   categorySlug,
   title,
   subtitle,
-  accent = "#FFD54A",
 }: CategoryStorefrontProps) => {
   const activeCategory = category || categorySlug || "";
   const subList = SUBCATEGORIES[activeCategory] || [];
+  const brass = "#C9A45C";
 
   const [products, setProducts] = useState<StoreProduct[]>([]);
   const [loading, setLoading] = useState(true);
@@ -146,51 +146,51 @@ export const CategoryStorefront = ({
   };
 
   return (
-    <section className="mx-auto max-w-7xl overflow-x-hidden px-4 py-10 sm:px-6">
+    <section className="mx-auto max-w-7xl overflow-x-hidden px-4 py-10 text-[#FFFDF2] sm:px-6">
       <Link
         href="/"
-        className="mb-4 inline-flex items-center gap-2 text-sm text-zinc-400 transition hover:text-[#FFD54A]"
+        className="mb-4 inline-flex items-center gap-2 text-sm text-[#FFFDF2]/70 transition hover:text-[#C9A45C]"
       >
         <ArrowLeft className="h-4 w-4" />
         Back to Lenka Store
       </Link>
 
-      <div className="flex flex-col gap-4 border-b border-white/10 pb-6 sm:flex-row sm:items-end sm:justify-between">
+      <div className="flex flex-col gap-4 border-b border-[#C9A45C]/15 pb-6 sm:flex-row sm:items-end sm:justify-between">
         <div>
-          <h1 className="text-3xl font-bold tracking-tight text-white sm:text-4xl">
+          <h1 className="text-3xl font-bold tracking-tight text-[#FFFDF2] sm:text-4xl">
             {title}
           </h1>
           {subtitle && (
-            <p className="mt-2 text-sm text-zinc-400">{subtitle}</p>
+            <p className="mt-2 text-sm text-[#FFFDF2]/70">{subtitle}</p>
           )}
         </div>
 
         <div className="relative w-full sm:w-72">
-          <Search className="pointer-events-none absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-zinc-500" />
+          <Search className="pointer-events-none absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-[#C9A45C]/70" />
           <input
             type="text"
             placeholder="Search products..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
-            className="w-full rounded-full border border-white/15 bg-zinc-900/80 py-2.5 pl-10 pr-4 text-sm text-white outline-none focus:border-[#FFD54A]"
+            className="w-full rounded-full border border-[#C9A45C]/25 bg-[#0D211B] py-2.5 pl-10 pr-4 text-sm text-[#FFFDF2] placeholder:text-[#FFFDF2]/45 outline-none focus:border-[#C9A45C]"
           />
         </div>
       </div>
 
       <div className="mt-8 grid min-w-0 gap-6 lg:grid-cols-12">
-        {/* Left Sidebar: Subcategories (Instamart / Flipkart style) */}
+        {/* Left Sidebar: Subcategories */}
         {subList.length > 0 && (
           <aside className="min-w-0 lg:col-span-3">
-            <div className="flex w-full max-w-full gap-2 overflow-x-auto pb-2 lg:sticky lg:top-6 lg:flex-col lg:overflow-visible lg:rounded-2xl lg:border lg:border-white/10 lg:bg-[#111114] lg:p-3">
+            <div className="flex w-full max-w-full gap-2 overflow-x-auto pb-2 lg:sticky lg:top-6 lg:flex-col lg:overflow-visible lg:rounded-2xl lg:border lg:border-[#C9A45C]/20 lg:bg-[#0D211B] lg:p-3">
               <button
                 type="button"
                 onClick={() => setSelectedSub("all")}
                 className={`flex shrink-0 cursor-pointer items-center justify-between gap-2 rounded-xl px-3.5 py-2.5 text-left text-xs font-semibold transition ${
                   selectedSub === "all"
-                    ? "text-black"
-                    : "border border-white/10 bg-zinc-900/60 text-zinc-300 hover:bg-zinc-800 lg:border-transparent lg:bg-transparent"
+                    ? "text-[#071410]"
+                    : "border border-[#C9A45C]/15 bg-[#0D211B] text-[#FFFDF2]/80 hover:border-[#C9A45C]/40 lg:border-transparent lg:bg-transparent"
                 }`}
-                style={selectedSub === "all" ? { backgroundColor: accent } : undefined}
+                style={selectedSub === "all" ? { backgroundColor: brass } : undefined}
               >
                 <span className="inline-flex items-center gap-2">
                   <LayoutGrid className="h-3.5 w-3.5" />
@@ -211,10 +211,10 @@ export const CategoryStorefront = ({
                     onClick={() => setSelectedSub(sub.slug)}
                     className={`flex shrink-0 cursor-pointer items-center justify-between gap-2 rounded-xl px-3.5 py-2.5 text-left text-xs font-semibold transition ${
                       isSelected
-                        ? "text-black"
-                        : "border border-white/10 bg-zinc-900/60 text-zinc-300 hover:bg-zinc-800 lg:border-transparent lg:bg-transparent"
+                        ? "text-[#071410]"
+                        : "border border-[#C9A45C]/15 bg-[#0D211B] text-[#FFFDF2]/80 hover:border-[#C9A45C]/40 lg:border-transparent lg:bg-transparent"
                     }`}
-                    style={isSelected ? { backgroundColor: accent } : undefined}
+                    style={isSelected ? { backgroundColor: brass } : undefined}
                   >
                     <span>{sub.label}</span>
                     <span className="rounded-full bg-black/15 px-2 py-0.5 text-[10px]">
@@ -234,12 +234,12 @@ export const CategoryStorefront = ({
               {[1, 2, 3].map((n) => (
                 <div
                   key={n}
-                  className="h-80 animate-pulse rounded-2xl border border-white/10 bg-zinc-900/60"
+                  className="h-80 animate-pulse rounded-2xl border border-[#C9A45C]/15 bg-[#0D211B]"
                 />
               ))}
             </div>
           ) : filtered.length === 0 ? (
-            <div className="rounded-2xl border border-white/10 bg-zinc-900/60 p-10 text-center text-sm text-zinc-400">
+            <div className="rounded-2xl border border-[#C9A45C]/20 bg-[#0D211B] p-10 text-center text-sm text-[#FFFDF2]/70">
               No products in this section yet. Check another category on the left or check back soon!
             </div>
           ) : (
@@ -256,7 +256,7 @@ export const CategoryStorefront = ({
                   <div
                     key={p.id}
                     id={`product-${p.id}`}
-                    className="flex flex-col justify-between rounded-2xl border border-white/10 bg-[#111114] p-4 transition hover:border-[#FFD54A]/40"
+                    className="flex flex-col justify-between rounded-2xl border border-[#C9A45C]/20 bg-[#0D211B] p-4 transition hover:border-[#C9A45C]/60"
                   >
                     <div>
                       <div className="relative">
@@ -267,10 +267,7 @@ export const CategoryStorefront = ({
                           alt={p.name}
                         />
                         {p.badge && (
-                          <span
-                            style={{ backgroundColor: accent }}
-                            className="absolute left-3 top-3 rounded-full px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-wider text-black"
-                          >
+                          <span className="absolute left-3 top-3 rounded-full bg-[#C9A45C] px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-wider text-[#071410]">
                             {p.badge}
                           </span>
                         )}
@@ -284,20 +281,17 @@ export const CategoryStorefront = ({
                         </div>
                       </div>
 
-                      <h2 className="mt-4 text-lg font-bold text-white">{p.name}</h2>
+                      <h2 className="mt-4 text-lg font-bold text-[#FFFDF2]">{p.name}</h2>
                       {p.tagline && (
-                        <p className="mt-1 text-xs text-zinc-400">{p.tagline}</p>
+                        <p className="mt-1 text-xs text-[#FFFDF2]/70">{p.tagline}</p>
                       )}
 
                       <div className="mt-3 flex items-baseline gap-2">
-                        <span
-                          style={{ color: accent }}
-                          className="text-xl font-bold"
-                        >
+                        <span className="text-xl font-bold text-[#C9A45C]">
                           ₹{Number(p.price).toLocaleString("en-IN")}
                         </span>
                         {p.mrp > p.price && (
-                          <span className="text-xs text-zinc-500 line-through">
+                          <span className="text-xs text-[#FFFDF2]/40 line-through">
                             ₹{Number(p.mrp).toLocaleString("en-IN")}
                           </span>
                         )}
@@ -321,10 +315,10 @@ export const CategoryStorefront = ({
                                 }
                                 className={`rounded-lg border px-2.5 py-1 text-xs font-semibold transition ${
                                   out
-                                    ? "cursor-not-allowed border-white/5 bg-zinc-900/40 text-zinc-600 line-through"
+                                    ? "cursor-not-allowed border-white/5 bg-[#071410]/40 text-[#FFFDF2]/30 line-through"
                                     : selected
-                                    ? "cursor-pointer border-[#FFD54A] bg-[#FFD54A]/15 text-[#FFD54A]"
-                                    : "cursor-pointer border-white/15 bg-black/40 text-zinc-300 hover:border-white/30"
+                                    ? "cursor-pointer border-[#C9A45C] bg-[#C9A45C]/20 text-[#C9A45C]"
+                                    : "cursor-pointer border-[#C9A45C]/20 bg-[#071410]/60 text-[#FFFDF2]/80 hover:border-[#C9A45C]/50"
                                 }`}
                               >
                                 {v.label} ({v.stock})
@@ -339,7 +333,7 @@ export const CategoryStorefront = ({
                       type="button"
                       disabled={isOutOfStock}
                       onClick={() => handleAdd(p)}
-                      className="mt-4 inline-flex w-full cursor-pointer items-center justify-center gap-2 rounded-xl bg-[#FFD54A] py-2.5 text-sm font-bold text-black transition hover:bg-[#ffdf70] disabled:cursor-not-allowed disabled:bg-zinc-800 disabled:text-zinc-500"
+                      className="mt-4 inline-flex w-full cursor-pointer items-center justify-center gap-2 rounded-full bg-[#C9A45C] py-2.5 text-sm font-bold text-[#071410] transition hover:bg-[#d8b673] disabled:cursor-not-allowed disabled:bg-[#071410] disabled:text-[#FFFDF2]/35"
                     >
                       <ShoppingBag className="h-4 w-4" />
                       {isOutOfStock ? "Out of Stock" : "Add to Cart"}
