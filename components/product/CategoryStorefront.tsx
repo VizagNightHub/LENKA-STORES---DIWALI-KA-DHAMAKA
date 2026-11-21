@@ -46,7 +46,6 @@ export const CategoryStorefront = ({
 }: CategoryStorefrontProps) => {
   const activeCategory = category || categorySlug || "";
   const subList = SUBCATEGORIES[activeCategory] || [];
-  const brass = "#C9A45C";
 
   const [products, setProducts] = useState<StoreProduct[]>([]);
   const [loading, setLoading] = useState(true);
@@ -146,206 +145,218 @@ export const CategoryStorefront = ({
   };
 
   return (
-    <section className="mx-auto max-w-7xl overflow-x-hidden px-4 py-10 text-[#FFFDF2] sm:px-6">
-      <Link
-        href="/"
-        className="mb-4 inline-flex items-center gap-2 text-sm text-[#FFFDF2]/70 transition hover:text-[#C9A45C]"
-      >
-        <ArrowLeft className="h-4 w-4" />
-        Back to Lenka Store
-      </Link>
+    <div className="min-h-screen w-full bg-[#FAF8F3] text-[#071410]">
+      <section className="mx-auto max-w-7xl overflow-x-hidden px-4 py-10 sm:px-6">
+        <Link
+          href="/"
+          className="mb-4 inline-flex items-center gap-2 text-sm font-medium text-[#0D211B]/70 transition hover:text-[#071410]"
+        >
+          <ArrowLeft className="h-4 w-4" />
+          Back to Lenka Store
+        </Link>
 
-      <div className="flex flex-col gap-4 border-b border-[#C9A45C]/15 pb-6 sm:flex-row sm:items-end sm:justify-between">
-        <div>
-          <h1 className="text-3xl font-bold tracking-tight text-[#FFFDF2] sm:text-4xl">
-            {title}
-          </h1>
-          {subtitle && (
-            <p className="mt-2 text-sm text-[#FFFDF2]/70">{subtitle}</p>
-          )}
+        <div className="flex flex-col gap-4 border-b border-[#0D211B]/10 pb-6 sm:flex-row sm:items-end sm:justify-between">
+          <div>
+            <h1 className="text-3xl font-bold tracking-tight text-[#071410] sm:text-4xl">
+              {title}
+            </h1>
+            {subtitle && (
+              <p className="mt-2 text-sm text-[#0D211B]/70">{subtitle}</p>
+            )}
+          </div>
+
+          <div className="relative w-full sm:w-72">
+            <Search className="pointer-events-none absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-[#0D211B]/50" />
+            <input
+              type="text"
+              placeholder="Search products..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="w-full rounded-full border border-[#0D211B]/15 bg-white py-2.5 pl-10 pr-4 text-sm text-[#071410] placeholder:text-[#0D211B]/45 outline-none focus:border-[#C9A45C]"
+            />
+          </div>
         </div>
 
-        <div className="relative w-full sm:w-72">
-          <Search className="pointer-events-none absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-[#C9A45C]/70" />
-          <input
-            type="text"
-            placeholder="Search products..."
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            className="w-full rounded-full border border-[#C9A45C]/25 bg-[#0D211B] py-2.5 pl-10 pr-4 text-sm text-[#FFFDF2] placeholder:text-[#FFFDF2]/45 outline-none focus:border-[#C9A45C]"
-          />
-        </div>
-      </div>
-
-      <div className="mt-8 grid min-w-0 gap-6 lg:grid-cols-12">
-        {/* Left Sidebar: Subcategories */}
-        {subList.length > 0 && (
-          <aside className="min-w-0 lg:col-span-3">
-            <div className="flex w-full max-w-full gap-2 overflow-x-auto pb-2 lg:sticky lg:top-6 lg:flex-col lg:overflow-visible lg:rounded-2xl lg:border lg:border-[#C9A45C]/20 lg:bg-[#0D211B] lg:p-3">
-              <button
-                type="button"
-                onClick={() => setSelectedSub("all")}
-                className={`flex shrink-0 cursor-pointer items-center justify-between gap-2 rounded-xl px-3.5 py-2.5 text-left text-xs font-semibold transition ${
-                  selectedSub === "all"
-                    ? "text-[#071410]"
-                    : "border border-[#C9A45C]/15 bg-[#0D211B] text-[#FFFDF2]/80 hover:border-[#C9A45C]/40 lg:border-transparent lg:bg-transparent"
-                }`}
-                style={selectedSub === "all" ? { backgroundColor: brass } : undefined}
-              >
-                <span className="inline-flex items-center gap-2">
-                  <LayoutGrid className="h-3.5 w-3.5" />
-                  All Items
-                </span>
-                <span className="rounded-full bg-black/15 px-2 py-0.5 text-[10px]">
-                  {products.length}
-                </span>
-              </button>
-
-              {subList.map((sub) => {
-                const count = products.filter((p) => p.subcategory === sub.slug).length;
-                const isSelected = selectedSub === sub.slug;
-                return (
-                  <button
-                    key={sub.slug}
-                    type="button"
-                    onClick={() => setSelectedSub(sub.slug)}
-                    className={`flex shrink-0 cursor-pointer items-center justify-between gap-2 rounded-xl px-3.5 py-2.5 text-left text-xs font-semibold transition ${
-                      isSelected
-                        ? "text-[#071410]"
-                        : "border border-[#C9A45C]/15 bg-[#0D211B] text-[#FFFDF2]/80 hover:border-[#C9A45C]/40 lg:border-transparent lg:bg-transparent"
+        <div className="mt-8 grid min-w-0 gap-6 lg:grid-cols-12">
+          {/* Left Sidebar: Subcategories */}
+          {subList.length > 0 && (
+            <aside className="min-w-0 lg:col-span-3">
+              <div className="flex w-full max-w-full gap-2 overflow-x-auto pb-2 lg:sticky lg:top-6 lg:flex-col lg:overflow-visible lg:rounded-2xl lg:border lg:border-[#0D211B]/10 lg:bg-white lg:p-3 lg:shadow-sm">
+                <button
+                  type="button"
+                  onClick={() => setSelectedSub("all")}
+                  className={`flex shrink-0 cursor-pointer items-center justify-between gap-2 rounded-xl px-3.5 py-2.5 text-left text-xs font-semibold transition ${
+                    selectedSub === "all"
+                      ? "bg-[#071410] text-[#FFFDF2]"
+                      : "border border-[#0D211B]/10 bg-white text-[#0D211B]/80 hover:border-[#C9A45C] lg:border-transparent lg:bg-transparent"
+                  }`}
+                >
+                  <span className="inline-flex items-center gap-2">
+                    <LayoutGrid className="h-3.5 w-3.5" />
+                    All Items
+                  </span>
+                  <span
+                    className={`rounded-full px-2 py-0.5 text-[10px] font-bold ${
+                      selectedSub === "all"
+                        ? "bg-[#C9A45C] text-[#071410]"
+                        : "bg-[#0D211B]/10 text-[#071410]"
                     }`}
-                    style={isSelected ? { backgroundColor: brass } : undefined}
                   >
-                    <span>{sub.label}</span>
-                    <span className="rounded-full bg-black/15 px-2 py-0.5 text-[10px]">
-                      {count}
-                    </span>
-                  </button>
-                );
-              })}
-            </div>
-          </aside>
-        )}
+                    {products.length}
+                  </span>
+                </button>
 
-        {/* Right Side: Filtered Product Grid */}
-        <div className={subList.length > 0 ? "min-w-0 lg:col-span-9" : "min-w-0 lg:col-span-12"}>
-          {loading ? (
-            <div className="grid gap-6 sm:grid-cols-2 xl:grid-cols-3">
-              {[1, 2, 3].map((n) => (
-                <div
-                  key={n}
-                  className="h-80 animate-pulse rounded-2xl border border-[#C9A45C]/15 bg-[#0D211B]"
-                />
-              ))}
-            </div>
-          ) : filtered.length === 0 ? (
-            <div className="rounded-2xl border border-[#C9A45C]/20 bg-[#0D211B] p-10 text-center text-sm text-[#FFFDF2]/70">
-              No products in this section yet. Check another category on the left or check back soon!
-            </div>
-          ) : (
-            <div className="grid gap-6 sm:grid-cols-2 xl:grid-cols-3">
-              {filtered.map((p) => {
-                const variants = Array.isArray(p.variants) ? p.variants : [];
-                const availableVariants = variants.filter((v) => v.stock > 0);
-                const activeVariant =
-                  selectedVariants[p.id] || availableVariants[0]?.label || "";
-                const isOutOfStock =
-                  variants.length > 0 && availableVariants.length === 0;
-
-                return (
-                  <div
-                    key={p.id}
-                    id={`product-${p.id}`}
-                    className="flex flex-col justify-between rounded-2xl border border-[#C9A45C]/20 bg-[#0D211B] p-4 transition hover:border-[#C9A45C]/60"
-                  >
-                    <div>
-                      <div className="relative">
-                        <ProductViewer3D
-                          images={
-                            p.images?.length ? p.images : ["/images/new-launch.png"]
-                          }
-                          alt={p.name}
-                        />
-                        {p.badge && (
-                          <span className="absolute left-3 top-3 rounded-full bg-[#C9A45C] px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-wider text-[#071410]">
-                            {p.badge}
-                          </span>
-                        )}
-                        <div className="absolute right-2 top-2">
-                          <ShareProductButton
-                            productId={p.id}
-                            productName={p.name}
-                            price={Number(p.price) || 0}
-                            categoryPath={`/${activeCategory}`}
-                          />
-                        </div>
-                      </div>
-
-                      <h2 className="mt-4 text-lg font-bold text-[#FFFDF2]">{p.name}</h2>
-                      {p.tagline && (
-                        <p className="mt-1 text-xs text-[#FFFDF2]/70">{p.tagline}</p>
-                      )}
-
-                      <div className="mt-3 flex items-baseline gap-2">
-                        <span className="text-xl font-bold text-[#C9A45C]">
-                          ₹{Number(p.price).toLocaleString("en-IN")}
-                        </span>
-                        {p.mrp > p.price && (
-                          <span className="text-xs text-[#FFFDF2]/40 line-through">
-                            ₹{Number(p.mrp).toLocaleString("en-IN")}
-                          </span>
-                        )}
-                      </div>
-
-                      {variants.length > 0 && (
-                        <div className="mt-3 flex flex-wrap gap-1.5">
-                          {variants.map((v) => {
-                            const out = v.stock <= 0;
-                            const selected = activeVariant === v.label;
-                            return (
-                              <button
-                                key={v.label}
-                                type="button"
-                                disabled={out}
-                                onClick={() =>
-                                  setSelectedVariants((prev) => ({
-                                    ...prev,
-                                    [p.id]: v.label,
-                                  }))
-                                }
-                                className={`rounded-lg border px-2.5 py-1 text-xs font-semibold transition ${
-                                  out
-                                    ? "cursor-not-allowed border-white/5 bg-[#071410]/40 text-[#FFFDF2]/30 line-through"
-                                    : selected
-                                    ? "cursor-pointer border-[#C9A45C] bg-[#C9A45C]/20 text-[#C9A45C]"
-                                    : "cursor-pointer border-[#C9A45C]/20 bg-[#071410]/60 text-[#FFFDF2]/80 hover:border-[#C9A45C]/50"
-                                }`}
-                              >
-                                {v.label} ({v.stock})
-                              </button>
-                            );
-                          })}
-                        </div>
-                      )}
-                    </div>
-
+                {subList.map((sub) => {
+                  const count = products.filter((p) => p.subcategory === sub.slug).length;
+                  const isSelected = selectedSub === sub.slug;
+                  return (
                     <button
+                      key={sub.slug}
                       type="button"
-                      disabled={isOutOfStock}
-                      onClick={() => handleAdd(p)}
-                      className="mt-4 inline-flex w-full cursor-pointer items-center justify-center gap-2 rounded-full bg-[#C9A45C] py-2.5 text-sm font-bold text-[#071410] transition hover:bg-[#d8b673] disabled:cursor-not-allowed disabled:bg-[#071410] disabled:text-[#FFFDF2]/35"
+                      onClick={() => setSelectedSub(sub.slug)}
+                      className={`flex shrink-0 cursor-pointer items-center justify-between gap-2 rounded-xl px-3.5 py-2.5 text-left text-xs font-semibold transition ${
+                        isSelected
+                          ? "bg-[#071410] text-[#FFFDF2]"
+                          : "border border-[#0D211B]/10 bg-white text-[#0D211B]/80 hover:border-[#C9A45C] lg:border-transparent lg:bg-transparent"
+                      }`}
                     >
-                      <ShoppingBag className="h-4 w-4" />
-                      {isOutOfStock ? "Out of Stock" : "Add to Cart"}
+                      <span>{sub.label}</span>
+                      <span
+                        className={`rounded-full px-2 py-0.5 text-[10px] font-bold ${
+                          isSelected
+                            ? "bg-[#C9A45C] text-[#071410]"
+                            : "bg-[#0D211B]/10 text-[#071410]"
+                        }`}
+                      >
+                        {count}
+                      </span>
                     </button>
-                  </div>
-                );
-              })}
-            </div>
+                  );
+                })}
+              </div>
+            </aside>
           )}
+
+          {/* Right Side: Filtered Product Grid */}
+          <div className={subList.length > 0 ? "min-w-0 lg:col-span-9" : "min-w-0 lg:col-span-12"}>
+            {loading ? (
+              <div className="grid gap-6 sm:grid-cols-2 xl:grid-cols-3">
+                {[1, 2, 3].map((n) => (
+                  <div
+                    key={n}
+                    className="h-80 animate-pulse rounded-2xl border border-[#0D211B]/10 bg-white"
+                  />
+                ))}
+              </div>
+            ) : filtered.length === 0 ? (
+              <div className="rounded-2xl border border-[#0D211B]/10 bg-white p-10 text-center text-sm text-[#0D211B]/65">
+                No products in this section yet. Check another category on the left or check back soon!
+              </div>
+            ) : (
+              <div className="grid gap-6 sm:grid-cols-2 xl:grid-cols-3">
+                {filtered.map((p) => {
+                  const variants = Array.isArray(p.variants) ? p.variants : [];
+                  const availableVariants = variants.filter((v) => v.stock > 0);
+                  const activeVariant =
+                    selectedVariants[p.id] || availableVariants[0]?.label || "";
+                  const isOutOfStock =
+                    variants.length > 0 && availableVariants.length === 0;
+
+                  return (
+                    <div
+                      key={p.id}
+                      id={`product-${p.id}`}
+                      className="flex flex-col justify-between rounded-2xl border border-[#0D211B]/10 bg-white p-4 shadow-sm transition hover:border-[#C9A45C]"
+                    >
+                      <div>
+                        <div className="relative">
+                          <ProductViewer3D
+                            images={
+                              p.images?.length ? p.images : ["/images/new-launch.png"]
+                            }
+                            alt={p.name}
+                          />
+                          {p.badge && (
+                            <span className="absolute left-3 top-3 rounded-full bg-[#C9A45C] px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-wider text-[#071410]">
+                              {p.badge}
+                            </span>
+                          )}
+                          <div className="absolute right-2 top-2">
+                            <ShareProductButton
+                              productId={p.id}
+                              productName={p.name}
+                              price={Number(p.price) || 0}
+                              categoryPath={`/${activeCategory}`}
+                            />
+                          </div>
+                        </div>
+
+                        <h2 className="mt-4 text-lg font-bold text-[#071410]">{p.name}</h2>
+                        {p.tagline && (
+                          <p className="mt-1 text-xs text-[#0D211B]/65">{p.tagline}</p>
+                        )}
+
+                        <div className="mt-3 flex items-baseline gap-2">
+                          <span className="text-xl font-bold text-[#071410]">
+                            ₹{Number(p.price).toLocaleString("en-IN")}
+                          </span>
+                          {p.mrp > p.price && (
+                            <span className="text-xs text-[#0D211B]/40 line-through">
+                              ₹{Number(p.mrp).toLocaleString("en-IN")}
+                            </span>
+                          )}
+                        </div>
+
+                        {variants.length > 0 && (
+                          <div className="mt-3 flex flex-wrap gap-1.5">
+                            {variants.map((v) => {
+                              const out = v.stock <= 0;
+                              const selected = activeVariant === v.label;
+                              return (
+                                <button
+                                  key={v.label}
+                                  type="button"
+                                  disabled={out}
+                                  onClick={() =>
+                                    setSelectedVariants((prev) => ({
+                                      ...prev,
+                                      [p.id]: v.label,
+                                    }))
+                                  }
+                                  className={`rounded-lg border px-2.5 py-1 text-xs font-semibold transition ${
+                                    out
+                                      ? "cursor-not-allowed border-[#0D211B]/10 bg-[#FAF8F3] text-[#0D211B]/30 line-through"
+                                      : selected
+                                      ? "cursor-pointer border-[#071410] bg-[#071410] text-[#FFFDF2]"
+                                      : "cursor-pointer border-[#0D211B]/20 bg-[#FAF8F3] text-[#071410] hover:border-[#C9A45C]"
+                                  }`}
+                                >
+                                  {v.label} ({v.stock})
+                                </button>
+                              );
+                            })}
+                          </div>
+                        )}
+                      </div>
+
+                      <button
+                        type="button"
+                        disabled={isOutOfStock}
+                        onClick={() => handleAdd(p)}
+                        className="mt-4 inline-flex w-full cursor-pointer items-center justify-center gap-2 rounded-full bg-[#C9A45C] py-2.5 text-sm font-bold text-[#071410] transition hover:bg-[#d8b673] disabled:cursor-not-allowed disabled:bg-[#0D211B]/10 disabled:text-[#0D211B]/35"
+                      >
+                        <ShoppingBag className="h-4 w-4" />
+                        {isOutOfStock ? "Out of Stock" : "Add to Cart"}
+                      </button>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+          </div>
         </div>
-      </div>
-    </section>
+      </section>
+    </div>
   );
 };
 
