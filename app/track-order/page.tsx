@@ -106,26 +106,26 @@ export default function TrackOrderPage() {
   };
 
   return (
-    <main className="min-h-screen bg-[#09090b] px-4 py-10 text-[#E1E0CC] sm:px-8">
+    <main className="min-h-screen bg-[#FAF8F3] px-4 py-10 text-[#071410] sm:px-8">
       <div className="mx-auto max-w-2xl">
         <Link
           href="/"
-          className="inline-flex items-center gap-2 text-sm text-[#E1E0CC]/75 hover:text-[#FFD54A]"
+          className="inline-flex items-center gap-2 text-sm font-medium text-[#0D211B]/70 hover:text-[#071410]"
         >
           <ArrowLeft className="h-4 w-4" />
           Back to Lenka Store
         </Link>
 
-        <h1 className="mt-4 text-3xl font-semibold text-white sm:text-4xl">
+        <h1 className="mt-4 text-3xl font-bold text-[#071410] sm:text-4xl">
           Track Your Order
         </h1>
-        <p className="mt-2 text-sm text-[#E1E0CC]/70">
+        <p className="mt-2 text-sm text-[#0D211B]/70">
           Enter your <strong>Order ID</strong> or your <strong>10-digit Mobile Number</strong> (any one is enough).
         </p>
 
         <form
           onSubmit={handleTrack}
-          className="mt-6 space-y-4 rounded-3xl border border-white/10 bg-zinc-900/80 p-6"
+          className="mt-6 space-y-4 rounded-3xl border border-[#0D211B]/10 bg-white p-6 shadow-sm"
         >
           <div className="grid gap-3 sm:grid-cols-2">
             <input
@@ -133,7 +133,7 @@ export default function TrackOrderPage() {
               placeholder="Order ID (e.g. D27-373826)"
               value={orderIdInput}
               onChange={(e) => setOrderIdInput(e.target.value.toUpperCase())}
-              className="w-full rounded-xl border border-white/15 bg-black/50 px-4 py-3 font-mono text-sm uppercase text-white outline-none focus:border-[#FFD54A]"
+              className="w-full rounded-xl border border-[#0D211B]/20 bg-[#FAF8F3] px-4 py-3 font-mono text-sm uppercase text-[#071410] outline-none focus:border-[#C9A45C]"
             />
             <input
               type="tel"
@@ -141,16 +141,16 @@ export default function TrackOrderPage() {
               placeholder="Or 10-Digit Mobile Number"
               value={phoneInput}
               onChange={(e) => setPhoneInput(e.target.value.replace(/\D/g, ""))}
-              className="w-full rounded-xl border border-white/15 bg-black/50 px-4 py-3 font-mono text-sm text-white outline-none focus:border-[#FFD54A]"
+              className="w-full rounded-xl border border-[#0D211B]/20 bg-[#FAF8F3] px-4 py-3 font-mono text-sm text-[#071410] outline-none focus:border-[#C9A45C]"
             />
           </div>
 
-          {error && <p className="text-xs text-red-400">{error}</p>}
+          {error && <p className="text-xs font-medium text-red-600">{error}</p>}
 
           <button
             type="submit"
             disabled={loading}
-            className="inline-flex w-full cursor-pointer items-center justify-center gap-2 rounded-full bg-[#FFD54A] py-3 text-sm font-bold text-black hover:bg-[#ffe27a] disabled:opacity-50"
+            className="inline-flex w-full cursor-pointer items-center justify-center gap-2 rounded-full bg-[#C9A45C] py-3 text-sm font-bold text-[#071410] transition hover:bg-[#d8b673] disabled:opacity-50"
           >
             <Search className="h-4 w-4" />
             {loading ? "Checking Order..." : "Track Order"}
@@ -158,7 +158,7 @@ export default function TrackOrderPage() {
         </form>
 
         {searched && results.length === 0 && (
-          <div className="mt-6 rounded-2xl border border-white/10 bg-zinc-900/70 p-6 text-center text-sm text-zinc-400">
+          <div className="mt-6 rounded-2xl border border-[#0D211B]/10 bg-white p-6 text-center text-sm text-[#0D211B]/70 shadow-sm">
             No matching order found. Double-check your Order ID or Mobile Number.
           </div>
         )}
@@ -171,30 +171,30 @@ export default function TrackOrderPage() {
             return (
               <div
                 key={order.id}
-                className="rounded-3xl border border-white/10 bg-zinc-900/80 p-6"
+                className="rounded-3xl border border-[#0D211B]/10 bg-white p-6 shadow-sm"
               >
-                <div className="flex flex-wrap items-center justify-between gap-2 border-b border-white/10 pb-4">
+                <div className="flex flex-wrap items-center justify-between gap-2 border-b border-[#0D211B]/10 pb-4">
                   <div>
-                    <p className="font-mono text-base font-bold text-[#FFD54A]">
+                    <p className="font-mono text-base font-bold text-[#071410]">
                       {order.orderId || order.id}
                     </p>
-                    <p className="text-xs text-zinc-400">
+                    <p className="text-xs text-[#0D211B]/65">
                       {order.customerName} • {order.city}, {order.state}
                     </p>
                   </div>
-                  <span className="rounded-full bg-white/10 px-3 py-1 text-xs font-semibold text-white">
+                  <span className="rounded-full bg-[#071410] px-3 py-1 text-xs font-bold text-[#C9A45C]">
                     ₹{Number(order.totalAmount || 0).toLocaleString("en-IN")}
                   </span>
                 </div>
 
                 {isCancelled ? (
-                  <div className="mt-4 flex items-center gap-2 rounded-xl border border-red-500/30 bg-red-950/30 p-3 text-xs font-semibold text-red-300">
+                  <div className="mt-4 flex items-center gap-2 rounded-xl border border-red-200 bg-red-50 p-3 text-xs font-semibold text-red-700">
                     <XCircle className="h-4 w-4" />
                     This order was cancelled. Contact support on WhatsApp if you need help.
                   </div>
                 ) : stepIdx === -1 ? (
-                  <div className="mt-4 flex items-center gap-2 rounded-xl border border-amber-500/30 bg-amber-950/30 p-3 text-xs font-semibold text-amber-300">
-                    <Package className="h-4 w-4" />
+                  <div className="mt-4 flex items-center gap-2 rounded-xl border border-[#C9A45C]/40 bg-[#FAF8F3] p-3 text-xs font-semibold text-[#071410]">
+                    <Package className="h-4 w-4 text-[#C9A45C]" />
                     Payment received — waiting for team verification.
                   </div>
                 ) : (
@@ -205,12 +205,12 @@ export default function TrackOrderPage() {
                         <div key={st.id} className="flex items-center gap-3">
                           <CheckCircle2
                             className={`h-5 w-5 shrink-0 ${
-                              done ? "text-emerald-400" : "text-zinc-600"
+                              done ? "text-emerald-700" : "text-[#0D211B]/20"
                             }`}
                           />
                           <span
                             className={`text-sm font-medium ${
-                              done ? "text-white" : "text-zinc-500"
+                              done ? "text-[#071410]" : "text-[#0D211B]/40"
                             }`}
                           >
                             {st.label}
@@ -222,18 +222,18 @@ export default function TrackOrderPage() {
                 )}
 
                 {(order.expectedDeliveryDate || order.trackingId) && (
-                  <div className="mt-5 space-y-2 rounded-2xl border border-[#FFD54A]/25 bg-black/40 p-4 text-xs">
+                  <div className="mt-5 space-y-2 rounded-2xl border border-[#C9A45C]/35 bg-[#FAF8F3] p-4 text-xs">
                     {order.expectedDeliveryDate && (
-                      <p className="flex items-center gap-2 text-[#FFD54A]">
-                        <Calendar className="h-4 w-4" />
+                      <p className="flex items-center gap-2 text-[#071410]">
+                        <Calendar className="h-4 w-4 text-[#C9A45C]" />
                         <span>
                           Expected Delivery: <strong>{order.expectedDeliveryDate}</strong>
                         </span>
                       </p>
                     )}
                     {order.trackingId && (
-                      <p className="flex items-center gap-2 text-zinc-200">
-                        <Truck className="h-4 w-4 text-sky-400" />
+                      <p className="flex items-center gap-2 text-[#071410]">
+                        <Truck className="h-4 w-4 text-[#0D211B]" />
                         <span>
                           Courier Tracking ID:{" "}
                           <strong className="font-mono">{order.trackingId}</strong>
@@ -244,7 +244,7 @@ export default function TrackOrderPage() {
                 )}
 
                 {Array.isArray(order.items) && order.items.length > 0 && (
-                  <div className="mt-4 space-y-1 border-t border-white/10 pt-3 text-xs text-zinc-400">
+                  <div className="mt-4 space-y-1 border-t border-[#0D211B]/10 pt-3 text-xs text-[#0D211B]/70">
                     {order.items.map((it, i) => (
                       <p key={i}>
                         • {it.name}
