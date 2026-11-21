@@ -45,11 +45,16 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en">
-      <body className={`${spaceGrotesk.className} bg-[#09090b] antialiased`}>
+      <body className={`${spaceGrotesk.className} bg-[#071410] text-[#FFFDF2] antialiased`}>
         <VisitorTracker />
         <CartProvider>
           {children}
-          <PushpinTearFooter />
+          <PushpinTearFooter
+            sheet="#0D211B"
+            paper="#C9A45C"
+            sheetInk="#FFFDF2"
+            paperInk="#071410"
+          />
         </CartProvider>
       </body>
     </html>
