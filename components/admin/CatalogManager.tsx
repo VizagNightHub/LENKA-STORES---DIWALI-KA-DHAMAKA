@@ -12,9 +12,8 @@ import {
   setDoc,
   updateDoc,
 } from "firebase/firestore";
-import { MessageSquare, Pencil, Plus, Trash2, Upload, X } from "lucide-react";
+import { BarChart3, MessageSquare, Pencil, Plus, Trash2, Upload, X } from "lucide-react";
 import { useEffect, useState } from "react";
-import { AdsManager } from "@/components/admin/AdsManager";
 import { ProductReviewsModal } from "@/components/product/ProductReviewsModal";
 import { SUBCATEGORIES } from "@/data/subcategories";
 import { db } from "@/lib/firebase";
@@ -38,6 +37,13 @@ interface LiveProduct {
   images: string[];
   variants?: VariantOption[];
 }
+
+const DEFAULT_CATEGORIES = [
+  { slug: "diwali-ka-dhamaka", label: "Diwali Ka Dhamaka" },
+  { slug: "fashion-wear", label: "Fashion Wear" },
+  { slug: "electronics", label: "Electronics" },
+  { slug: "new-launch", label: "New Launch" },
+];
 
 const QUICK_SIZES = ["XS", "S", "M", "L", "XL", "XXL", "Free Size"];
 const QUICK_COLOURS = ["Black", "White", "Red", "Blue", "Gold", "Green"];
@@ -66,10 +72,16 @@ function compressPhoto(file: File): Promise<string> {
   });
 }
 
+function getProductStock(p: LiveProduct): number {
+  if (!Array.isArray(p.variants) || p.variants.length === 0) return 10;
+  return p.variants.reduce((sum, v) => sum + (Number(v.stock) || 0), 0);
+}
+
 export const CatalogManager = () => {
   const [products, setProducts] = useState<LiveProduct[]>([]);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [category, setCategory] = useState("diwali-ka-dhamaka");
+  const [customCategoryName, setCustomCategoryName] = useState("");
   const [subcategory, setSubcategory] = useState("");
   const [name, setName] = useState("");
   const [tagline, setTagline] = useState("");
@@ -83,6 +95,9 @@ export const CatalogManager = () => {
   const [customVariantLabel, setCustomVariantLabel] = useState("");
   const [customVariantStock, setCustomVariantStock] = useState("10");
   const [saving, setSaving] = useState(false);
+
+  const [listFilter, setListFilter] = useState<string>("all");
+  const [graphFilter, setGraphFilter] = useState<string>("all");
   const [reviewProduct, setReviewProduct] = useState<{
     id: string;
     name: string;
@@ -101,9 +116,22 @@ export const CatalogManager = () => {
     return () => unsub1();
   }, []);
 
+  // Collect default + any custom categories found in Firestore
+  const allCategorySlugs = Array.from(
+    new Set([
+      ...DEFAULT_CATEGORIES.map((c) => c.slug),
+      ...products.map((p) => p.category).filter(Boolean),
+    ])
+  );
+
+  const getCategoryLabel = (slug: string) =>
+    DEFAULT_CATEGORIES.find((c) => c.slug === slug)?.label ||
+    slug.replace(/-/g, " ").replace(/\b\w/g, (m) => m.toUpperCase());
+
   const resetForm = () => {
     setEditingId(null);
     setCategory("diwali-ka-dhamaka");
+    setCustomCategoryName("");
     setSubcategory("");
     setName("");
     setTagline("");
@@ -120,7 +148,14 @@ export const CatalogManager = () => {
 
   const startEdit = (p: LiveProduct) => {
     setEditingId(p.id);
-    setCategory(p.category || "diwali-ka-dhamaka");
+    const isDefault = DEFAULT_CATEGORIES.some((c) => c.slug === p.category);
+    if (isDefault) {
+      setCategory(p.category);
+      setCustomCategoryName("");
+    } else {
+      setCategory("__custom__");
+      setCustomCategoryName(p.category || "");
+    }
     setSubcategory(p.subcategory || "");
     setName(p.name || "");
     setTagline(p.tagline || "");
@@ -195,15 +230,24 @@ export const CatalogManager = () => {
   const handleSaveProduct = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!name.trim() || !price) return;
-    setSaving(true);
 
+    const finalCategory =
+      category === "__custom__"
+        ? customCategoryName
+            .trim()
+            .toLowerCase()
+            .replace(/[^a-z0-9]+/g, "-")
+            .replace(/^-|-$/g, "") || "custom"
+        : category;
+
+    setSaving(true);
     const parsedItems = itemsText
       .split("\n")
       .map((s) => s.trim())
       .filter(Boolean);
 
     const payload = {
-      category,
+      category: finalCategory,
       subcategory: subcategory || null,
       name: name.trim(),
       tagline: tagline.trim(),
@@ -233,8 +277,138 @@ export const CatalogManager = () => {
 
   const subOptions = SUBCATEGORIES[category] || [];
 
+  // Graph calculations
+  const graphProducts =
+    graphFilter === "all"
+      ? products
+      : products.filter((p) => p.category === graphFilter);
+  const totalGraphUnits = graphProducts.reduce(
+    (sum, p) => sum + getProductStock(p),
+    0
+  );
+  const lowStockGraphCount = graphProducts.filter(
+    (p) =>
+      Array.isArray(p.variants) && p.variants.some((v) => v.stock < 3)
+  ).length;
+
+  const graphBars =
+    graphFilter === "all"
+      ? allCategorySlugs.map((slug) => {
+          const prods = products.filter((p) => p.category === slug);
+          return {
+            key: slug,
+            label: getCategoryLabel(slug),
+            units: prods.reduce((s, p) => s + getProductStock(p), 0),
+            count: prods.length,
+          };
+        })
+      : graphProducts.map((p) => ({
+          key: p.id,
+          label: p.name,
+          units: getProductStock(p),
+          count: 1,
+        }));
+
+  const maxBarUnits = Math.max(1, ...graphBars.map((b) => b.units));
+
+  const visibleProducts =
+    listFilter === "all"
+      ? products
+      : products.filter((p) => p.category === listFilter);
+
   return (
-    <div className="mt-6 space-y-12">
+    <div className="mt-6 space-y-10">
+      {/* Interactive Stock Graph + Digital Counts */}
+      <div className="rounded-2xl border border-white/10 bg-zinc-900/80 p-5 sm:p-6">
+        <div className="flex flex-wrap items-center justify-between gap-4">
+          <div>
+            <h2 className="flex items-center gap-2 text-base font-bold text-white">
+              <BarChart3 className="h-5 w-5 text-[#FFD54A]" />
+              Stock &amp; Inventory Analytics
+            </h2>
+            <p className="text-xs text-zinc-400">
+              Click a category below to inspect digital counts and product-level stock.
+            </p>
+          </div>
+
+          <div className="flex flex-wrap gap-1.5">
+            <button
+              type="button"
+              onClick={() => setGraphFilter("all")}
+              className={`cursor-pointer rounded-full px-3 py-1 text-xs font-semibold transition ${
+                graphFilter === "all"
+                  ? "bg-[#FFD54A] text-black"
+                  : "border border-white/10 bg-black/40 text-zinc-300 hover:border-white/30"
+              }`}
+            >
+              All
+            </button>
+            {allCategorySlugs.map((slug) => (
+              <button
+                key={slug}
+                type="button"
+                onClick={() => setGraphFilter(slug)}
+                className={`cursor-pointer rounded-full px-3 py-1 text-xs font-semibold transition ${
+                  graphFilter === slug
+                    ? "bg-[#FFD54A] text-black"
+                    : "border border-white/10 bg-black/40 text-zinc-300 hover:border-white/30"
+                }`}
+              >
+                {getCategoryLabel(slug)}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        {/* Digital Counters */}
+        <div className="mt-4 grid grid-cols-3 gap-3">
+          <div className="rounded-xl border border-white/10 bg-black/40 p-3">
+            <p className="text-[11px] text-zinc-400">Products</p>
+            <p className="mt-1 font-mono text-2xl font-bold text-white">
+              {graphProducts.length}
+            </p>
+          </div>
+          <div className="rounded-xl border border-white/10 bg-black/40 p-3">
+            <p className="text-[11px] text-zinc-400">Total Stock Units</p>
+            <p className="mt-1 font-mono text-2xl font-bold text-emerald-400">
+              {totalGraphUnits}
+            </p>
+          </div>
+          <div className="rounded-xl border border-white/10 bg-black/40 p-3">
+            <p className="text-[11px] text-zinc-400">Low Stock (&lt; 3)</p>
+            <p className="mt-1 font-mono text-2xl font-bold text-red-400">
+              {lowStockGraphCount}
+            </p>
+          </div>
+        </div>
+
+        {/* Visual Bar Graph */}
+        <div className="mt-5 space-y-2.5">
+          {graphBars.map((bar) => {
+            const pct = Math.round((bar.units / maxBarUnits) * 100);
+            return (
+              <div key={bar.key} className="space-y-1">
+                <div className="flex justify-between text-xs">
+                  <span className="truncate font-medium text-zinc-200">
+                    {bar.label}
+                  </span>
+                  <span className="font-mono font-bold text-[#FFD54A]">
+                    {bar.units} units
+                  </span>
+                </div>
+                <div className="h-2.5 w-full overflow-hidden rounded-full bg-black/60">
+                  <div
+                    className="h-full rounded-full bg-[#FFD54A] transition-all duration-500"
+                    style={{ width: `${Math.max(4, pct)}%` }}
+                  />
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      </div>
+
+      {/* Add/Edit Form + Category Slider Product List */}
       <div className="grid gap-8 lg:grid-cols-12">
         <form
           onSubmit={handleSaveProduct}
@@ -263,19 +437,26 @@ export const CatalogManager = () => {
             }}
             className="w-full rounded-xl border border-white/15 bg-black/50 px-4 py-3 text-sm text-white outline-none focus:border-[#FFD54A]"
           >
-            <option value="diwali-ka-dhamaka" className="bg-zinc-900">
-              Diwali Ka Dhamaka
-            </option>
-            <option value="fashion-wear" className="bg-zinc-900">
-              Fashion Wear
-            </option>
-            <option value="electronics" className="bg-zinc-900">
-              Electronics
-            </option>
-            <option value="new-launch" className="bg-zinc-900">
-              New Launch
+            {DEFAULT_CATEGORIES.map((c) => (
+              <option key={c.slug} value={c.slug} className="bg-zinc-900">
+                {c.label}
+              </option>
+            ))}
+            <option value="__custom__" className="bg-zinc-900">
+              + Custom Category...
             </option>
           </select>
+
+          {category === "__custom__" && (
+            <input
+              type="text"
+              placeholder="Enter Custom Category Name (e.g. Home Decor)"
+              value={customCategoryName}
+              onChange={(e) => setCustomCategoryName(e.target.value)}
+              required
+              className="w-full rounded-xl border border-[#FFD54A]/40 bg-black/50 px-4 py-3 text-sm text-white outline-none focus:border-[#FFD54A]"
+            />
+          )}
 
           {subOptions.length > 0 && (
             <select
@@ -515,10 +696,39 @@ export const CatalogManager = () => {
         </form>
 
         <div className="space-y-3 lg:col-span-7">
-          <h2 className="text-lg font-semibold text-white">
-            All Store Products ({products.length})
-          </h2>
-          {products.map((p) => {
+          {/* Category Filter Slider */}
+          <div className="flex gap-2 overflow-x-auto pb-2">
+            <button
+              type="button"
+              onClick={() => setListFilter("all")}
+              className={`shrink-0 cursor-pointer rounded-full px-3.5 py-1.5 text-xs font-semibold transition ${
+                listFilter === "all"
+                  ? "bg-[#FFD54A] text-black"
+                  : "border border-white/15 bg-zinc-900 text-zinc-300 hover:border-white/30"
+              }`}
+            >
+              All Products ({products.length})
+            </button>
+            {allCategorySlugs.map((slug) => {
+              const count = products.filter((p) => p.category === slug).length;
+              return (
+                <button
+                  key={slug}
+                  type="button"
+                  onClick={() => setListFilter(slug)}
+                  className={`shrink-0 cursor-pointer rounded-full px-3.5 py-1.5 text-xs font-semibold transition ${
+                    listFilter === slug
+                      ? "bg-[#FFD54A] text-black"
+                      : "border border-white/15 bg-zinc-900 text-zinc-300 hover:border-white/30"
+                  }`}
+                >
+                  {getCategoryLabel(slug)} ({count})
+                </button>
+              );
+            })}
+          </div>
+
+          {visibleProducts.map((p) => {
             const hasLowStock =
               Array.isArray(p.variants) && p.variants.some((v) => v.stock < 3);
 
@@ -589,8 +799,6 @@ export const CatalogManager = () => {
           })}
         </div>
       </div>
-
-      <AdsManager />
 
       {reviewProduct && (
         <ProductReviewsModal
