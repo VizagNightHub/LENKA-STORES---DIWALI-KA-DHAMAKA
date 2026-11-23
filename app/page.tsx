@@ -6,7 +6,7 @@ import { GlobalSearchBar } from "@/components/search/GlobalSearchBar";
 
 export default function HomePage() {
   return (
-    <main className="min-h-screen bg-[#071410]">
+    <main className="min-h-screen bg-[#F8FAF9] text-[#0B2219]">
       <PrismaHero />
       <GlobalSearchBar />
       <PromoBanner />
