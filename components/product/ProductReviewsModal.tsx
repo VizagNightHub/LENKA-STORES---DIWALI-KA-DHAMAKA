@@ -149,7 +149,6 @@ export const ProductReviewsModal = ({
           </button>
         </div>
 
-        {/* Add Review Form */}
         <form
           onSubmit={handleSubmit}
           className="mt-5 space-y-3 rounded-2xl border border-[#0D211B]/10 bg-white p-4"
@@ -243,7 +242,6 @@ export const ProductReviewsModal = ({
           </button>
         </form>
 
-        {/* Reviews List */}
         <div className="mt-5 space-y-3">
           {reviews.map((r) => (
             <div
