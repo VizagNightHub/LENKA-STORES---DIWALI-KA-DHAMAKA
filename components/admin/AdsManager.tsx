@@ -11,7 +11,7 @@ import {
   serverTimestamp,
   updateDoc,
 } from "firebase/firestore";
-import { Megaphone, Trash2, Upload } from "lucide-react";
+import { Megaphone, Pencil, Trash2, Upload, X } from "lucide-react";
 import { useEffect, useState } from "react";
 import { db } from "@/lib/firebase";
 
@@ -71,6 +71,7 @@ function compressAdPhoto(file: File): Promise<string> {
 
 export const AdsManager = () => {
   const [ads, setAds] = useState<LiveAd[]>([]);
+  const [editingId, setEditingId] = useState<string | null>(null);
   const [format, setFormat] = useState<AdFormat>("HERO_BANNER");
   const [title, setTitle] = useState("");
   const [subtitle, setSubtitle] = useState("");
@@ -94,6 +95,31 @@ export const AdsManager = () => {
     return () => unsub();
   }, []);
 
+  const resetForm = () => {
+    setEditingId(null);
+    setFormat("HERO_BANNER");
+    setTitle("");
+    setSubtitle("");
+    setCouponCode("");
+    setHref("");
+    setImage("");
+    setVideoUrl("");
+    setEndsAt("");
+  };
+
+  const startEdit = (ad: LiveAd) => {
+    setEditingId(ad.id);
+    setFormat(ad.format || "BANNER");
+    setTitle(ad.title || "");
+    setSubtitle(ad.subtitle || "");
+    setCouponCode(ad.couponCode || "");
+    setHref(ad.href || "");
+    setImage(ad.image || "");
+    setVideoUrl(ad.videoUrl || "");
+    setEndsAt(ad.endsAt || "");
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  };
+
   const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
@@ -101,30 +127,32 @@ export const AdsManager = () => {
     setImage(compressed);
   };
 
-  const handleAddAd = async (e: React.FormEvent) => {
+  const handleSaveAd = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!title.trim() && !image) return;
     setSaving(true);
+    const payload = {
+      format,
+      title: title.trim(),
+      subtitle: subtitle.trim(),
+      couponCode: couponCode.trim().toUpperCase() || null,
+      href: href.trim() || null,
+      image: image || null,
+      videoUrl: format === "VIDEO" ? videoUrl.trim() || "/hero.mp4.mp4" : null,
+      endsAt: format === "COUNTDOWN" ? endsAt || null : null,
+    };
+
     try {
-      await addDoc(collection(db, "ads"), {
-        format,
-        title: title.trim(),
-        subtitle: subtitle.trim(),
-        couponCode: couponCode.trim().toUpperCase() || null,
-        href: href.trim() || null,
-        image: image || null,
-        videoUrl: format === "VIDEO" ? videoUrl.trim() || "/hero.mp4.mp4" : null,
-        endsAt: format === "COUNTDOWN" ? endsAt || null : null,
-        active: true,
-        createdAt: serverTimestamp(),
-      });
-      setTitle("");
-      setSubtitle("");
-      setCouponCode("");
-      setHref("");
-      setImage("");
-      setVideoUrl("");
-      setEndsAt("");
+      if (editingId) {
+        await updateDoc(doc(db, "ads", editingId), payload);
+      } else {
+        await addDoc(collection(db, "ads"), {
+          ...payload,
+          active: true,
+          createdAt: serverTimestamp(),
+        });
+      }
+      resetForm();
     } finally {
       setSaving(false);
     }
@@ -140,14 +168,26 @@ export const AdsManager = () => {
   };
 
   return (
-    <div className="grid gap-8 lg:grid-cols-12">
+    <div className="mt-8 grid gap-8 lg:grid-cols-12">
       <form
-        onSubmit={handleAddAd}
+        onSubmit={handleSaveAd}
         className="space-y-4 rounded-2xl border border-white/10 bg-zinc-900/80 p-6 lg:col-span-5"
       >
-        <h2 className="flex items-center gap-2 text-lg font-semibold text-white">
-          <Megaphone className="h-5 w-5 text-[#FFD54A]" /> Create Website Ad
-        </h2>
+        <div className="flex items-center justify-between">
+          <h2 className="flex items-center gap-2 text-lg font-semibold text-white">
+            <Megaphone className="h-5 w-5 text-[#FFD54A]" />
+            {editingId ? "Edit Website Ad" : "Create Website Ad"}
+          </h2>
+          {editingId && (
+            <button
+              type="button"
+              onClick={resetForm}
+              className="inline-flex cursor-pointer items-center gap-1 text-xs text-red-400 hover:underline"
+            >
+              <X className="h-3.5 w-3.5" /> Cancel
+            </button>
+          )}
+        </div>
 
         <div>
           <p className="mb-1.5 text-xs text-zinc-400">Select Ad Format</p>
@@ -258,7 +298,7 @@ export const AdsManager = () => {
           disabled={saving}
           className="w-full cursor-pointer rounded-xl bg-[#FFD54A] py-3 text-sm font-bold text-black hover:bg-[#ffdf70] disabled:opacity-50"
         >
-          {saving ? "Publishing..." : "Publish Ad"}
+          {saving ? "Saving..." : editingId ? "Update Ad" : "Publish Ad"}
         </button>
       </form>
 
@@ -309,6 +349,14 @@ export const AdsManager = () => {
                   }`}
                 >
                   {isActive ? "Active ✓" : "Inactive"}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => startEdit(ad)}
+                  title="Edit Ad"
+                  className="cursor-pointer rounded-lg border border-white/10 bg-white/5 p-2 text-[#FFD54A] hover:bg-white/10"
+                >
+                  <Pencil className="h-4 w-4" />
                 </button>
                 <button
                   type="button"
