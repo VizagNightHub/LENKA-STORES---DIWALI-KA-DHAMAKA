@@ -79,7 +79,6 @@ export const AdminStats = ({
           showOrderStats ? "sm:grid-cols-2 lg:grid-cols-4" : "max-w-sm"
         }`}
       >
-        {/* Always Top-Left: Analog/Digital Live Users Counter */}
         <button
           type="button"
           onClick={() => setShowLiveList((v) => !v)}
@@ -93,7 +92,6 @@ export const AdminStats = ({
             <Users className="h-4 w-4 text-emerald-400" />
           </div>
 
-          {/* Analog Flip-Style Digit Display */}
           <div className="mt-3 flex items-center gap-1.5">
             {paddedLive.map((digit, i) => (
               <span
@@ -113,7 +111,6 @@ export const AdminStats = ({
           </p>
         </button>
 
-        {/* Shown ONLY on Orders Tab */}
         {showOrderStats && (
           <>
             <div className="rounded-2xl border border-white/10 bg-zinc-900/70 p-5">
