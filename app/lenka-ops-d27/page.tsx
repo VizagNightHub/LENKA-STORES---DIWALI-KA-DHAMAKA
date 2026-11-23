@@ -7,13 +7,22 @@ import {
   User,
 } from "firebase/auth";
 import { collection, onSnapshot, orderBy, query } from "firebase/firestore";
-import { LogOut, Megaphone, PackageCheck, ShoppingBag, Tag, Users } from "lucide-react";
+import {
+  LogOut,
+  Megaphone,
+  MessageSquare,
+  PackageCheck,
+  ShoppingBag,
+  Tag,
+  Users,
+} from "lucide-react";
 import { useEffect, useState } from "react";
 import { AdminStats } from "@/components/admin/AdminStats";
 import { AdsManager } from "@/components/admin/AdsManager";
 import { CatalogManager } from "@/components/admin/CatalogManager";
 import { CouponsAndCharges } from "@/components/admin/CouponsAndCharges";
 import { CustomersManager } from "@/components/admin/CustomersManager";
+import { FeedbackManager } from "@/components/admin/FeedbackManager";
 import { OrderRecord, OrdersManager } from "@/components/admin/OrdersManager";
 import { auth, db } from "@/lib/firebase";
 
@@ -24,7 +33,7 @@ export default function AdminDashboardPage() {
   const [password, setPassword] = useState("");
   const [authError, setAuthError] = useState("");
   const [tab, setTab] = useState<
-    "orders" | "products" | "ads" | "coupons" | "customers"
+    "orders" | "products" | "ads" | "coupons" | "customers" | "feedback"
   >("orders");
   const [orders, setOrders] = useState<OrderRecord[]>([]);
 
@@ -203,6 +212,17 @@ export default function AdminDashboardPage() {
               Customers
             </button>
             <button
+              onClick={() => setTab("feedback")}
+              className={`inline-flex cursor-pointer items-center gap-1.5 rounded-full px-4 py-2 text-xs font-semibold transition ${
+                tab === "feedback"
+                  ? "bg-[#FFD54A] text-black"
+                  : "border border-white/15 bg-zinc-900 text-zinc-300 hover:bg-zinc-800"
+              }`}
+            >
+              <MessageSquare className="h-3.5 w-3.5" />
+              Feedback
+            </button>
+            <button
               onClick={() => signOut(auth)}
               className="inline-flex cursor-pointer items-center gap-1.5 rounded-full border border-white/15 bg-zinc-900 px-4 py-2 text-xs font-semibold text-zinc-300 hover:bg-zinc-800"
             >
@@ -226,6 +246,7 @@ export default function AdminDashboardPage() {
         {tab === "ads" && <AdsManager />}
         {tab === "coupons" && <CouponsAndCharges />}
         {tab === "customers" && <CustomersManager />}
+        {tab === "feedback" && <FeedbackManager />}
       </div>
     </div>
   );
