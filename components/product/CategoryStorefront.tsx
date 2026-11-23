@@ -1,14 +1,34 @@
 "use client";
 
-import { collection, getDocs, query, where } from "firebase/firestore";
-import { ArrowLeft, LayoutGrid, Search, ShoppingBag } from "lucide-react";
+import { onAuthStateChanged } from "firebase/auth";
+import {
+  arrayRemove,
+  arrayUnion,
+  collection,
+  doc,
+  getDoc,
+  getDocs,
+  query,
+  updateDoc,
+  where,
+} from "firebase/firestore";
+import {
+  ArrowLeft,
+  Heart,
+  LayoutGrid,
+  Search,
+  ShoppingBag,
+  Star,
+  User as UserIcon,
+} from "lucide-react";
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import { useCart } from "@/components/cart/CartProvider";
+import { ProductReviewsModal } from "@/components/product/ProductReviewsModal";
 import { ProductViewer3D } from "@/components/product/ProductViewer3D";
 import { ShareProductButton } from "@/components/product/ShareProductButton";
 import { SUBCATEGORIES } from "@/data/subcategories";
-import { db } from "@/lib/firebase";
+import { auth, db } from "@/lib/firebase";
 
 interface VariantOption {
   label: string;
@@ -52,7 +72,35 @@ export const CategoryStorefront = ({
   const [selectedSub, setSelectedSub] = useState<string>("all");
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedVariants, setSelectedVariants] = useState<Record<string, string>>({});
+  const [wishlist, setWishlist] = useState<string[]>([]);
+  const [customerUid, setCustomerUid] = useState<string | null>(null);
+  const [reviewProduct, setReviewProduct] = useState<{
+    id: string;
+    name: string;
+  } | null>(null);
   const { addItem } = useCart();
+
+  useEffect(() => {
+    try {
+      const saved = localStorage.getItem("lenka_wishlist");
+      if (saved) setWishlist(JSON.parse(saved));
+    } catch {
+      // Ignore
+    }
+
+    const unsub = onAuthStateChanged(auth, async (u) => {
+      if (u && u.email?.endsWith("@users.lenkastore.in")) {
+        setCustomerUid(u.uid);
+        const snap = await getDoc(doc(db, "customers", u.uid));
+        if (snap.exists() && Array.isArray(snap.data().wishlist)) {
+          setWishlist(snap.data().wishlist);
+        }
+      } else {
+        setCustomerUid(null);
+      }
+    });
+    return () => unsub();
+  }, []);
 
   useEffect(() => {
     setSelectedSub("all");
@@ -103,7 +151,7 @@ export const CategoryStorefront = ({
             JSON.stringify({ ts: Date.now(), data: list })
           );
         } catch {
-          // Ignore if product images exceed sessionStorage quota
+          // Ignore quota
         }
       } catch {
         if (active) setLoading(false);
@@ -115,6 +163,28 @@ export const CategoryStorefront = ({
       active = false;
     };
   }, [activeCategory]);
+
+  const toggleWishlist = async (productId: string) => {
+    const exists = wishlist.includes(productId);
+    const updated = exists
+      ? wishlist.filter((id) => id !== productId)
+      : [...wishlist, productId];
+    setWishlist(updated);
+    try {
+      localStorage.setItem("lenka_wishlist", JSON.stringify(updated));
+    } catch {
+      // Ignore
+    }
+    if (customerUid) {
+      try {
+        await updateDoc(doc(db, "customers", customerUid), {
+          wishlist: exists ? arrayRemove(productId) : arrayUnion(productId),
+        });
+      } catch {
+        // Ignore
+      }
+    }
+  };
 
   const filtered = products.filter((p) => {
     const matchesSub =
@@ -147,13 +217,23 @@ export const CategoryStorefront = ({
   return (
     <div className="min-h-screen w-full bg-[#FAF8F3] text-[#071410]">
       <section className="mx-auto max-w-7xl overflow-x-hidden px-4 py-10 sm:px-6">
-        <Link
-          href="/"
-          className="mb-4 inline-flex items-center gap-2 text-sm font-medium text-[#0D211B]/70 transition hover:text-[#071410]"
-        >
-          <ArrowLeft className="h-4 w-4" />
-          Back to Lenka Store
-        </Link>
+        <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
+          <Link
+            href="/"
+            className="inline-flex items-center gap-2 text-sm font-medium text-[#0D211B]/70 transition hover:text-[#071410]"
+          >
+            <ArrowLeft className="h-4 w-4" />
+            Back to Lenka Store
+          </Link>
+
+          <Link
+            href="/account"
+            className="inline-flex items-center gap-1.5 rounded-full border border-[#0D211B]/15 bg-white px-3.5 py-1.5 text-xs font-semibold text-[#071410] hover:border-[#C9A45C]"
+          >
+            <UserIcon className="h-3.5 w-3.5 text-[#C9A45C]" />
+            {customerUid ? "My Profile" : "Login / Sign Up"}
+          </Link>
+        </div>
 
         <div className="flex flex-col gap-4 border-b border-[#0D211B]/10 pb-6 sm:flex-row sm:items-end sm:justify-between">
           <div>
@@ -178,7 +258,6 @@ export const CategoryStorefront = ({
         </div>
 
         <div className="mt-8 grid min-w-0 gap-6 lg:grid-cols-12">
-          {/* Left Sidebar: Subcategories */}
           {subList.length > 0 && (
             <aside className="min-w-0 lg:col-span-3">
               <div className="flex w-full max-w-full gap-2 overflow-x-auto pb-2 lg:sticky lg:top-6 lg:flex-col lg:overflow-visible lg:rounded-2xl lg:border lg:border-[#0D211B]/10 lg:bg-white lg:p-3 lg:shadow-sm">
@@ -237,7 +316,6 @@ export const CategoryStorefront = ({
             </aside>
           )}
 
-          {/* Right Side: Filtered Product Grid */}
           <div className={subList.length > 0 ? "min-w-0 lg:col-span-9" : "min-w-0 lg:col-span-12"}>
             {loading ? (
               <div className="grid gap-6 sm:grid-cols-2 xl:grid-cols-3">
@@ -261,6 +339,7 @@ export const CategoryStorefront = ({
                     selectedVariants[p.id] || availableVariants[0]?.label || "";
                   const isOutOfStock =
                     variants.length > 0 && availableVariants.length === 0;
+                  const liked = wishlist.includes(p.id);
 
                   return (
                     <div
@@ -281,7 +360,19 @@ export const CategoryStorefront = ({
                               {p.badge}
                             </span>
                           )}
-                          <div className="absolute right-2 top-2">
+                          <div className="absolute right-2 top-2 flex items-center gap-1.5">
+                            <button
+                              type="button"
+                              onClick={() => toggleWishlist(p.id)}
+                              title="Save to Wishlist"
+                              className="cursor-pointer rounded-full border border-white/20 bg-black/50 p-1.5 text-white transition hover:border-[#C9A45C]"
+                            >
+                              <Heart
+                                className={`h-3.5 w-3.5 ${
+                                  liked ? "fill-red-500 text-red-500" : "text-white"
+                                }`}
+                              />
+                            </button>
                             <ShareProductButton
                               productId={p.id}
                               productName={p.name}
@@ -296,15 +387,26 @@ export const CategoryStorefront = ({
                           <p className="mt-1 text-xs text-[#0D211B]/65">{p.tagline}</p>
                         )}
 
-                        <div className="mt-3 flex items-baseline gap-2">
-                          <span className="text-xl font-bold text-[#071410]">
-                            ₹{Number(p.price).toLocaleString("en-IN")}
-                          </span>
-                          {p.mrp > p.price && (
-                            <span className="text-xs text-[#0D211B]/40 line-through">
-                              ₹{Number(p.mrp).toLocaleString("en-IN")}
+                        <div className="mt-3 flex items-center justify-between">
+                          <div className="flex items-baseline gap-2">
+                            <span className="text-xl font-bold text-[#071410]">
+                              ₹{Number(p.price).toLocaleString("en-IN")}
                             </span>
-                          )}
+                            {p.mrp > p.price && (
+                              <span className="text-xs text-[#0D211B]/40 line-through">
+                                ₹{Number(p.mrp).toLocaleString("en-IN")}
+                              </span>
+                            )}
+                          </div>
+
+                          <button
+                            type="button"
+                            onClick={() => setReviewProduct({ id: p.id, name: p.name })}
+                            className="inline-flex cursor-pointer items-center gap-1 rounded-full border border-[#0D211B]/15 bg-[#FAF8F3] px-2.5 py-1 text-[11px] font-semibold text-[#071410] hover:border-[#C9A45C]"
+                          >
+                            <Star className="h-3 w-3 fill-[#C9A45C] text-[#C9A45C]" />
+                            Reviews
+                          </button>
                         </div>
 
                         {variants.length > 0 && (
@@ -356,6 +458,14 @@ export const CategoryStorefront = ({
           </div>
         </div>
       </section>
+
+      {reviewProduct && (
+        <ProductReviewsModal
+          productId={reviewProduct.id}
+          productName={reviewProduct.name}
+          onClose={() => setReviewProduct(null)}
+        />
+      )}
     </div>
   );
 };
