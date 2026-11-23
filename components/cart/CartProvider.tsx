@@ -1,8 +1,9 @@
 "use client";
 
-import { Minus, Plus, ShoppingBag, Trash2, X } from "lucide-react";
+import { motion } from "framer-motion";
+import { GripHorizontal, Minus, Plus, ShoppingBag, Trash2, X } from "lucide-react";
 import { usePathname, useRouter } from "next/navigation";
-import { createContext, useContext, useEffect, useState } from "react";
+import { createContext, useContext, useEffect, useRef, useState } from "react";
 
 export interface GlobalCartItem {
   id: string;
@@ -34,6 +35,8 @@ export const CartProvider = ({ children }: { children: React.ReactNode }) => {
   const pathname = usePathname();
   const [items, setItems] = useState<GlobalCartItem[]>([]);
   const [open, setOpen] = useState(false);
+  const [pillDismissed, setPillDismissed] = useState(false);
+  const draggedRef = useRef(false);
 
   useEffect(() => {
     try {
@@ -50,6 +53,7 @@ export const CartProvider = ({ children }: { children: React.ReactNode }) => {
   };
 
   const addItem = (item: Omit<GlobalCartItem, "qty">) => {
+    setPillDismissed(false);
     const idx = items.findIndex(
       (i) => i.id === item.id && (i.variant || "") === (item.variant || "")
     );
@@ -86,26 +90,54 @@ export const CartProvider = ({ children }: { children: React.ReactNode }) => {
     >
       {children}
 
-      {/* Floating Cart Button */}
-      {totalCount > 0 && !hideFloatingBar && (
-        <button
-          type="button"
-          onClick={() => setOpen(true)}
-          className="fixed bottom-5 right-5 z-40 flex cursor-pointer items-center gap-3 rounded-full border border-[#FFD54A]/60 bg-zinc-950/95 px-5 py-3 text-sm font-bold text-white shadow-[0_14px_40px_rgba(0,0,0,0.8)] backdrop-blur-md transition-transform hover:scale-105"
+      {/* Draggable & Dismissible Floating Cart Pill */}
+      {totalCount > 0 && !hideFloatingBar && !pillDismissed && (
+        <motion.div
+          drag
+          dragMomentum={false}
+          onDragStart={() => {
+            draggedRef.current = true;
+          }}
+          onDragEnd={() => {
+            setTimeout(() => {
+              draggedRef.current = false;
+            }, 80);
+          }}
+          className="fixed bottom-20 right-4 z-40 flex touch-none items-center gap-1.5 rounded-full border border-[#C9A45C]/60 bg-[#071410]/95 p-1.5 pl-3 text-xs font-bold text-[#FFFDF2] shadow-[0_14px_40px_rgba(0,0,0,0.75)] backdrop-blur-md md:bottom-6 md:right-6"
         >
-          <ShoppingBag className="h-4 w-4 text-[#FFD54A]" />
-          <span>
-            {totalCount} Item{totalCount > 1 ? "s" : ""} • ₹{totalAmount.toLocaleString("en-IN")}
-          </span>
-        </button>
+          <GripHorizontal className="h-3.5 w-3.5 shrink-0 cursor-grab text-[#C9A45C]/60" />
+
+          <button
+            type="button"
+            onClick={() => {
+              if (!draggedRef.current) setOpen(true);
+            }}
+            className="flex cursor-pointer items-center gap-2 pr-1"
+          >
+            <ShoppingBag className="h-4 w-4 text-[#C9A45C]" />
+            <span>
+              {totalCount} Item{totalCount > 1 ? "s" : ""} • ₹
+              {totalAmount.toLocaleString("en-IN")}
+            </span>
+          </button>
+
+          <button
+            type="button"
+            onClick={() => setPillDismissed(true)}
+            title="Hide Cart Box"
+            className="flex h-6 w-6 cursor-pointer items-center justify-center rounded-full bg-white/10 text-[#FFFDF2]/80 hover:bg-red-600 hover:text-white"
+          >
+            <X className="h-3.5 w-3.5" />
+          </button>
+        </motion.div>
       )}
 
       {/* Slide-Over Cart Drawer */}
       {open && (
         <div className="fixed inset-0 z-50 flex justify-end bg-black/75 backdrop-blur-sm">
-          <div className="flex h-full w-full max-w-md flex-col justify-between border-l border-white/10 bg-[#09090b] p-6 text-[#E1E0CC]">
-            <div className="flex items-center justify-between border-b border-white/10 pb-4">
-              <h2 className="text-lg font-bold text-white">Your Cart ({totalCount})</h2>
+          <div className="flex h-full w-full max-w-md flex-col justify-between border-l border-[#C9A45C]/25 bg-[#071410] p-6 text-[#FFFDF2]">
+            <div className="flex items-center justify-between border-b border-[#C9A45C]/20 pb-4">
+              <h2 className="text-lg font-bold text-[#FFFDF2]">Your Cart ({totalCount})</h2>
               <button
                 type="button"
                 onClick={() => setOpen(false)}
@@ -117,21 +149,21 @@ export const CartProvider = ({ children }: { children: React.ReactNode }) => {
 
             <div className="my-4 flex-1 space-y-3 overflow-y-auto">
               {items.length === 0 ? (
-                <p className="pt-10 text-center text-sm text-[#E1E0CC]/60">
+                <p className="pt-10 text-center text-sm text-[#FFFDF2]/60">
                   Your cart is empty.
                 </p>
               ) : (
                 items.map((item) => (
                   <div
                     key={`${item.id}-${item.variant || "std"}`}
-                    className="flex items-center justify-between gap-3 rounded-2xl border border-white/10 bg-zinc-900/80 p-4"
+                    className="flex items-center justify-between gap-3 rounded-2xl border border-[#C9A45C]/20 bg-[#0D211B] p-4"
                   >
                     <div>
-                      <p className="text-sm font-semibold text-white">{item.name}</p>
+                      <p className="text-sm font-semibold text-[#FFFDF2]">{item.name}</p>
                       {item.variant && (
-                        <p className="text-[11px] text-[#FFD54A]">{item.variant}</p>
+                        <p className="text-[11px] text-[#C9A45C]">{item.variant}</p>
                       )}
-                      <p className="mt-1 text-xs text-[#E1E0CC]/70">
+                      <p className="mt-1 text-xs text-[#FFFDF2]/70">
                         ₹{item.price.toLocaleString("en-IN")} each
                       </p>
                     </div>
@@ -144,13 +176,13 @@ export const CartProvider = ({ children }: { children: React.ReactNode }) => {
                       >
                         <Minus className="h-3.5 w-3.5" />
                       </button>
-                      <span className="w-5 text-center text-xs font-bold text-[#FFD54A]">
+                      <span className="w-5 text-center text-xs font-bold text-[#C9A45C]">
                         {item.qty}
                       </span>
                       <button
                         type="button"
                         onClick={() => updateQty(item.id, item.variant, 1)}
-                        className="flex h-7 w-7 cursor-pointer items-center justify-center rounded-full bg-[#FFD54A] text-black"
+                        className="flex h-7 w-7 cursor-pointer items-center justify-center rounded-full bg-[#C9A45C] text-[#071410]"
                       >
                         <Plus className="h-3.5 w-3.5" />
                       </button>
@@ -161,10 +193,10 @@ export const CartProvider = ({ children }: { children: React.ReactNode }) => {
             </div>
 
             {items.length > 0 && (
-              <div className="space-y-3 border-t border-white/10 pt-4">
-                <div className="flex items-center justify-between text-base font-bold text-white">
+              <div className="space-y-3 border-t border-[#C9A45C]/20 pt-4">
+                <div className="flex items-center justify-between text-base font-bold text-[#FFFDF2]">
                   <span>Subtotal</span>
-                  <span className="text-[#FFD54A]">₹{totalAmount.toLocaleString("en-IN")}</span>
+                  <span className="text-[#C9A45C]">₹{totalAmount.toLocaleString("en-IN")}</span>
                 </div>
                 <div className="flex gap-2">
                   <button
@@ -181,7 +213,7 @@ export const CartProvider = ({ children }: { children: React.ReactNode }) => {
                       setOpen(false);
                       router.push("/checkout");
                     }}
-                    className="flex-1 cursor-pointer rounded-full bg-[#FFD54A] py-3 text-sm font-bold text-black hover:bg-[#ffe27a]"
+                    className="flex-1 cursor-pointer rounded-full bg-[#C9A45C] py-3 text-sm font-bold text-[#071410] hover:bg-[#d8b673]"
                   >
                     Proceed to Checkout →
                   </button>
