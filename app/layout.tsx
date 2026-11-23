@@ -56,6 +56,7 @@ export default function RootLayout({
             sheetInk="#FFFDF2"
             paperInk="#071410"
           />
+          <MobileBottomNav />
         </CartProvider>
       </body>
     </html>
