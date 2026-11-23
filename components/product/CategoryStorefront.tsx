@@ -224,12 +224,12 @@ export const CategoryStorefront = ({
   };
 
   return (
-    <div className="min-h-screen w-full bg-[#FAF8F3] text-[#071410]">
+    <div className="min-h-screen w-full bg-[#F8FAF9] text-[#0B2219]">
       <section className="mx-auto max-w-7xl overflow-x-hidden px-4 py-10 sm:px-6">
         <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
           <Link
             href="/"
-            className="inline-flex items-center gap-2 text-sm font-medium text-[#0D211B]/70 transition hover:text-[#071410]"
+            className="inline-flex items-center gap-2 text-sm font-medium text-[#4A5D54] transition hover:text-[#0B5D3B]"
           >
             <ArrowLeft className="h-4 w-4" />
             Back to Lenka Store
@@ -237,31 +237,31 @@ export const CategoryStorefront = ({
 
           <Link
             href="/account"
-            className="inline-flex items-center gap-1.5 rounded-full border border-[#0D211B]/15 bg-white px-3.5 py-1.5 text-xs font-semibold text-[#071410] hover:border-[#C9A45C]"
+            className="inline-flex items-center gap-1.5 rounded-full border border-[#DCE5DF] bg-white px-3.5 py-1.5 text-xs font-semibold text-[#0B2219] shadow-sm transition hover:border-[#0B5D3B]"
           >
-            <UserIcon className="h-3.5 w-3.5 text-[#C9A45C]" />
+            <UserIcon className="h-3.5 w-3.5 text-[#0B5D3B]" />
             {customerUid ? "My Profile" : "Login / Sign Up"}
           </Link>
         </div>
 
-        <div className="flex flex-col gap-4 border-b border-[#0D211B]/10 pb-6 sm:flex-row sm:items-end sm:justify-between">
+        <div className="flex flex-col gap-4 border-b border-[#DCE5DF] pb-6 sm:flex-row sm:items-end sm:justify-between">
           <div>
-            <h1 className="text-3xl font-bold tracking-tight text-[#071410] sm:text-4xl">
+            <h1 className="text-3xl font-bold tracking-tight text-[#0B2219] sm:text-4xl">
               {title}
             </h1>
             {subtitle && (
-              <p className="mt-2 text-sm text-[#0D211B]/70">{subtitle}</p>
+              <p className="mt-2 text-sm text-[#4A5D54]">{subtitle}</p>
             )}
           </div>
 
           <div className="relative w-full sm:w-72">
-            <Search className="pointer-events-none absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-[#0D211B]/50" />
+            <Search className="pointer-events-none absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-[#0B5D3B]" />
             <input
               type="text"
               placeholder="Search products..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              className="w-full rounded-full border border-[#0D211B]/15 bg-white py-2.5 pl-10 pr-4 text-sm text-[#071410] placeholder:text-[#0D211B]/45 outline-none focus:border-[#C9A45C]"
+              className="w-full rounded-full border border-[#DCE5DF] bg-white py-2.5 pl-10 pr-4 text-sm text-[#0B2219] placeholder:text-[#4A5D54]/60 shadow-sm outline-none focus:border-[#0B5D3B]"
             />
           </div>
         </div>
@@ -269,14 +269,14 @@ export const CategoryStorefront = ({
         <div className="mt-8 grid min-w-0 gap-6 lg:grid-cols-12">
           {subList.length > 0 && (
             <aside className="min-w-0 lg:col-span-3">
-              <div className="flex w-full max-w-full gap-2 overflow-x-auto pb-2 lg:sticky lg:top-6 lg:flex-col lg:overflow-visible lg:rounded-2xl lg:border lg:border-[#0D211B]/10 lg:bg-white lg:p-3 lg:shadow-sm">
+              <div className="flex w-full max-w-full gap-2 overflow-x-auto pb-2 lg:sticky lg:top-6 lg:flex-col lg:overflow-visible lg:rounded-2xl lg:border lg:border-[#DCE5DF] lg:bg-white lg:p-3 lg:shadow-sm">
                 <button
                   type="button"
                   onClick={() => setSelectedSub("all")}
                   className={`flex shrink-0 cursor-pointer items-center justify-between gap-2 rounded-xl px-3.5 py-2.5 text-left text-xs font-semibold transition ${
                     selectedSub === "all"
-                      ? "bg-[#071410] text-[#FFFDF2]"
-                      : "border border-[#0D211B]/10 bg-white text-[#0D211B]/80 hover:border-[#C9A45C] lg:border-transparent lg:bg-transparent"
+                      ? "bg-[#0B5D3B] text-white"
+                      : "border border-[#DCE5DF] bg-white text-[#4A5D54] hover:border-[#0B5D3B] hover:text-[#0B5D3B] lg:border-transparent lg:bg-transparent"
                   }`}
                 >
                   <span className="inline-flex items-center gap-2">
@@ -286,8 +286,8 @@ export const CategoryStorefront = ({
                   <span
                     className={`rounded-full px-2 py-0.5 text-[10px] font-bold ${
                       selectedSub === "all"
-                        ? "bg-[#C9A45C] text-[#071410]"
-                        : "bg-[#0D211B]/10 text-[#071410]"
+                        ? "bg-white text-[#0B5D3B]"
+                        : "bg-[#EDF5F0] text-[#0B5D3B]"
                     }`}
                   >
                     {products.length}
@@ -304,16 +304,16 @@ export const CategoryStorefront = ({
                       onClick={() => setSelectedSub(sub.slug)}
                       className={`flex shrink-0 cursor-pointer items-center justify-between gap-2 rounded-xl px-3.5 py-2.5 text-left text-xs font-semibold transition ${
                         isSelected
-                          ? "bg-[#071410] text-[#FFFDF2]"
-                          : "border border-[#0D211B]/10 bg-white text-[#0D211B]/80 hover:border-[#C9A45C] lg:border-transparent lg:bg-transparent"
+                          ? "bg-[#0B5D3B] text-white"
+                          : "border border-[#DCE5DF] bg-white text-[#4A5D54] hover:border-[#0B5D3B] hover:text-[#0B5D3B] lg:border-transparent lg:bg-transparent"
                       }`}
                     >
                       <span>{sub.label}</span>
                       <span
                         className={`rounded-full px-2 py-0.5 text-[10px] font-bold ${
                           isSelected
-                            ? "bg-[#C9A45C] text-[#071410]"
-                            : "bg-[#0D211B]/10 text-[#071410]"
+                            ? "bg-white text-[#0B5D3B]"
+                            : "bg-[#EDF5F0] text-[#0B5D3B]"
                         }`}
                       >
                         {count}
@@ -331,12 +331,12 @@ export const CategoryStorefront = ({
                 {[1, 2, 3].map((n) => (
                   <div
                     key={n}
-                    className="h-80 animate-pulse rounded-2xl border border-[#0D211B]/10 bg-white"
+                    className="h-80 animate-pulse rounded-2xl border border-[#DCE5DF] bg-white"
                   />
                 ))}
               </div>
             ) : filtered.length === 0 ? (
-              <div className="rounded-2xl border border-[#0D211B]/10 bg-white p-10 text-center text-sm text-[#0D211B]/65">
+              <div className="rounded-2xl border border-[#DCE5DF] bg-white p-10 text-center text-sm text-[#4A5D54]">
                 No products in this section yet. Check another category on the left or check back soon!
               </div>
             ) : (
@@ -354,7 +354,7 @@ export const CategoryStorefront = ({
                     <div
                       key={p.id}
                       id={`product-${p.id}`}
-                      className="flex flex-col justify-between rounded-2xl border border-[#0D211B]/10 bg-white p-4 shadow-sm transition hover:border-[#C9A45C]"
+                      className="flex flex-col justify-between rounded-2xl border border-[#DCE5DF] bg-white p-4 shadow-sm transition hover:border-[#0B5D3B]/50 hover:shadow-md"
                     >
                       <div>
                         <div className="relative">
@@ -365,7 +365,7 @@ export const CategoryStorefront = ({
                             alt={p.name}
                           />
                           {p.badge && (
-                            <span className="absolute left-3 top-3 rounded-full bg-[#C9A45C] px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-wider text-[#071410]">
+                            <span className="absolute left-3 top-3 rounded-full bg-[#0B5D3B] px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-wider text-white">
                               {p.badge}
                             </span>
                           )}
@@ -374,7 +374,7 @@ export const CategoryStorefront = ({
                               type="button"
                               onClick={() => toggleWishlist(p.id)}
                               title="Save to Wishlist"
-                              className="cursor-pointer rounded-full border border-white/20 bg-black/50 p-1.5 text-white transition hover:border-[#C9A45C]"
+                              className="cursor-pointer rounded-full border border-white/25 bg-black/50 p-1.5 text-white transition hover:border-white"
                             >
                               <Heart
                                 className={`h-3.5 w-3.5 ${
@@ -391,18 +391,18 @@ export const CategoryStorefront = ({
                           </div>
                         </div>
 
-                        <h2 className="mt-4 text-lg font-bold text-[#071410]">{p.name}</h2>
+                        <h2 className="mt-4 text-lg font-bold text-[#0B2219]">{p.name}</h2>
                         {p.tagline && (
-                          <p className="mt-1 text-xs text-[#0D211B]/65">{p.tagline}</p>
+                          <p className="mt-1 text-xs text-[#4A5D54]">{p.tagline}</p>
                         )}
 
                         <div className="mt-3 flex items-center justify-between">
                           <div className="flex items-baseline gap-2">
-                            <span className="text-xl font-bold text-[#071410]">
+                            <span className="text-xl font-bold text-[#0B5D3B]">
                               ₹{Number(p.price).toLocaleString("en-IN")}
                             </span>
                             {p.mrp > p.price && (
-                              <span className="text-xs text-[#0D211B]/40 line-through">
+                              <span className="text-xs text-[#4A5D54]/50 line-through">
                                 ₹{Number(p.mrp).toLocaleString("en-IN")}
                               </span>
                             )}
@@ -411,9 +411,9 @@ export const CategoryStorefront = ({
                           <button
                             type="button"
                             onClick={() => setReviewProduct({ id: p.id, name: p.name })}
-                            className="inline-flex cursor-pointer items-center gap-1 rounded-full border border-[#0D211B]/15 bg-[#FAF8F3] px-2.5 py-1 text-[11px] font-semibold text-[#071410] hover:border-[#C9A45C]"
+                            className="inline-flex cursor-pointer items-center gap-1 rounded-full border border-[#DCE5DF] bg-[#F8FAF9] px-2.5 py-1 text-[11px] font-semibold text-[#0B2219] hover:border-[#0B5D3B]"
                           >
-                            <Star className="h-3 w-3 fill-[#C9A45C] text-[#C9A45C]" />
+                            <Star className="h-3 w-3 fill-amber-400 text-amber-400" />
                             Reviews
                           </button>
                         </div>
@@ -436,10 +436,10 @@ export const CategoryStorefront = ({
                                   }
                                   className={`rounded-lg border px-2.5 py-1 text-xs font-semibold transition ${
                                     out
-                                      ? "cursor-not-allowed border-[#0D211B]/10 bg-[#FAF8F3] text-[#0D211B]/30 line-through"
+                                      ? "cursor-not-allowed border-[#DCE5DF] bg-[#F8FAF9] text-[#4A5D54]/40 line-through"
                                       : selected
-                                      ? "cursor-pointer border-[#071410] bg-[#071410] text-[#FFFDF2]"
-                                      : "cursor-pointer border-[#0D211B]/20 bg-[#FAF8F3] text-[#071410] hover:border-[#C9A45C]"
+                                      ? "cursor-pointer border-[#0B5D3B] bg-[#0B5D3B] text-white"
+                                      : "cursor-pointer border-[#DCE5DF] bg-[#F8FAF9] text-[#0B2219] hover:border-[#0B5D3B]"
                                   }`}
                                 >
                                   {v.label} ({v.stock})
@@ -454,7 +454,7 @@ export const CategoryStorefront = ({
                         type="button"
                         disabled={isOutOfStock}
                         onClick={() => handleAdd(p)}
-                        className="mt-4 inline-flex w-full cursor-pointer items-center justify-center gap-2 rounded-full bg-[#C9A45C] py-2.5 text-sm font-bold text-[#071410] transition hover:bg-[#d8b673] disabled:cursor-not-allowed disabled:bg-[#0D211B]/10 disabled:text-[#0D211B]/35"
+                        className="mt-4 inline-flex w-full cursor-pointer items-center justify-center gap-2 rounded-full bg-[#0B5D3B] py-2.5 text-sm font-bold text-white transition hover:bg-[#08472D] disabled:cursor-not-allowed disabled:bg-[#DCE5DF] disabled:text-[#4A5D54]/60"
                       >
                         <ShoppingBag className="h-4 w-4" />
                         {isOutOfStock ? "Out of Stock" : "Add to Cart"}
