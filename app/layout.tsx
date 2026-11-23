@@ -46,7 +46,7 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en">
-      <body className={`${spaceGrotesk.className} bg-[#071410] text-[#FFFDF2] antialiased`}>
+      <body className={`${spaceGrotesk.className} bg-[#F8FAF9] text-[#0B2219] antialiased`}>
         <VisitorTracker />
         <CartProvider>
           {children}
