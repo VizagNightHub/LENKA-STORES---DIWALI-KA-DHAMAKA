@@ -7,9 +7,10 @@ import {
   User,
 } from "firebase/auth";
 import { collection, onSnapshot, orderBy, query } from "firebase/firestore";
-import { LogOut, PackageCheck, ShoppingBag, Tag, Users } from "lucide-react";
+import { LogOut, Megaphone, PackageCheck, ShoppingBag, Tag, Users } from "lucide-react";
 import { useEffect, useState } from "react";
 import { AdminStats } from "@/components/admin/AdminStats";
+import { AdsManager } from "@/components/admin/AdsManager";
 import { CatalogManager } from "@/components/admin/CatalogManager";
 import { CouponsAndCharges } from "@/components/admin/CouponsAndCharges";
 import { CustomersManager } from "@/components/admin/CustomersManager";
@@ -22,7 +23,9 @@ export default function AdminDashboardPage() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [authError, setAuthError] = useState("");
-  const [tab, setTab] = useState<"orders" | "catalog" | "coupons" | "customers">("orders");
+  const [tab, setTab] = useState<
+    "orders" | "products" | "ads" | "coupons" | "customers"
+  >("orders");
   const [orders, setOrders] = useState<OrderRecord[]>([]);
 
   useEffect(() => {
@@ -156,15 +159,26 @@ export default function AdminDashboardPage() {
               Orders ({orders.length})
             </button>
             <button
-              onClick={() => setTab("catalog")}
+              onClick={() => setTab("products")}
               className={`inline-flex cursor-pointer items-center gap-1.5 rounded-full px-4 py-2 text-xs font-semibold transition ${
-                tab === "catalog"
+                tab === "products"
                   ? "bg-[#FFD54A] text-black"
                   : "border border-white/15 bg-zinc-900 text-zinc-300 hover:bg-zinc-800"
               }`}
             >
               <PackageCheck className="h-3.5 w-3.5" />
-              Products &amp; Ads
+              Products
+            </button>
+            <button
+              onClick={() => setTab("ads")}
+              className={`inline-flex cursor-pointer items-center gap-1.5 rounded-full px-4 py-2 text-xs font-semibold transition ${
+                tab === "ads"
+                  ? "bg-[#FFD54A] text-black"
+                  : "border border-white/15 bg-zinc-900 text-zinc-300 hover:bg-zinc-800"
+              }`}
+            >
+              <Megaphone className="h-3.5 w-3.5" />
+              Ads
             </button>
             <button
               onClick={() => setTab("coupons")}
@@ -199,6 +213,7 @@ export default function AdminDashboardPage() {
         </div>
 
         <AdminStats
+          showOrderStats={tab === "orders"}
           totalOrders={orders.length}
           paidCount={paidOrders.length}
           completedCount={completedOrders.length}
@@ -207,7 +222,8 @@ export default function AdminDashboardPage() {
         />
 
         {tab === "orders" && <OrdersManager orders={orders} />}
-        {tab === "catalog" && <CatalogManager />}
+        {tab === "products" && <CatalogManager />}
+        {tab === "ads" && <AdsManager />}
         {tab === "coupons" && <CouponsAndCharges />}
         {tab === "customers" && <CustomersManager />}
       </div>
