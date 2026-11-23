@@ -12,9 +12,10 @@ import {
   setDoc,
   updateDoc,
 } from "firebase/firestore";
-import { Pencil, Plus, Trash2, Upload, X } from "lucide-react";
+import { MessageSquare, Pencil, Plus, Trash2, Upload, X } from "lucide-react";
 import { useEffect, useState } from "react";
 import { AdsManager } from "@/components/admin/AdsManager";
+import { ProductReviewsModal } from "@/components/product/ProductReviewsModal";
 import { SUBCATEGORIES } from "@/data/subcategories";
 import { db } from "@/lib/firebase";
 
@@ -82,6 +83,10 @@ export const CatalogManager = () => {
   const [customVariantLabel, setCustomVariantLabel] = useState("");
   const [customVariantStock, setCustomVariantStock] = useState("10");
   const [saving, setSaving] = useState(false);
+  const [reviewProduct, setReviewProduct] = useState<{
+    id: string;
+    name: string;
+  } | null>(null);
 
   useEffect(() => {
     const q1 = query(collection(db, "products"), orderBy("createdAt", "desc"));
@@ -513,59 +518,88 @@ export const CatalogManager = () => {
           <h2 className="text-lg font-semibold text-white">
             All Store Products ({products.length})
           </h2>
-          {products.map((p) => (
-            <div
-              key={p.id}
-              className="flex items-center justify-between gap-4 rounded-2xl border border-white/10 bg-zinc-900/70 p-4"
-            >
-              <div className="flex min-w-0 items-center gap-3">
-                <img
-                  src={p.images?.[0] || "/images/new-launch.png"}
-                  alt={p.name}
-                  className="h-12 w-12 shrink-0 rounded-xl object-cover"
-                />
-                <div className="min-w-0">
-                  <p className="text-[10px] font-bold uppercase tracking-wider text-[#FFD54A]">
-                    {p.category}
-                    {p.subcategory ? ` • ${p.subcategory}` : ""}
-                  </p>
-                  <p className="truncate text-sm font-bold text-white">
-                    {p.name}
-                  </p>
-                  <p className="text-xs text-zinc-400">
-                    ₹{Number(p.price).toLocaleString("en-IN")} •{" "}
-                    {p.images?.length || 1} photo(s)
-                    {Array.isArray(p.variants) && p.variants.length > 0
-                      ? ` • ${p.variants
-                          .map((v) => `${v.label}:${v.stock}`)
-                          .join(", ")}`
-                      : ""}
-                  </p>
+          {products.map((p) => {
+            const hasLowStock =
+              Array.isArray(p.variants) && p.variants.some((v) => v.stock < 3);
+
+            return (
+              <div
+                key={p.id}
+                className="flex items-center justify-between gap-4 rounded-2xl border border-white/10 bg-zinc-900/70 p-4"
+              >
+                <div className="flex min-w-0 items-center gap-3">
+                  <img
+                    src={p.images?.[0] || "/images/new-launch.png"}
+                    alt={p.name}
+                    className="h-12 w-12 shrink-0 rounded-xl object-cover"
+                  />
+                  <div className="min-w-0">
+                    <div className="flex flex-wrap items-center gap-2">
+                      <p className="text-[10px] font-bold uppercase tracking-wider text-[#FFD54A]">
+                        {p.category}
+                        {p.subcategory ? ` • ${p.subcategory}` : ""}
+                      </p>
+                      {hasLowStock && (
+                        <span className="rounded-full bg-red-500/20 px-2 py-0.5 text-[10px] font-bold text-red-300">
+                          Low Stock
+                        </span>
+                      )}
+                    </div>
+                    <p className="truncate text-sm font-bold text-white">
+                      {p.name}
+                    </p>
+                    <p className="text-xs text-zinc-400">
+                      ₹{Number(p.price).toLocaleString("en-IN")} •{" "}
+                      {p.images?.length || 1} photo(s)
+                      {Array.isArray(p.variants) && p.variants.length > 0
+                        ? ` • ${p.variants
+                            .map((v) => `${v.label}:${v.stock}`)
+                            .join(", ")}`
+                        : ""}
+                    </p>
+                  </div>
+                </div>
+
+                <div className="flex shrink-0 items-center gap-2">
+                  <button
+                    type="button"
+                    onClick={() => setReviewProduct({ id: p.id, name: p.name })}
+                    title="View & Manage Reviews"
+                    className="cursor-pointer rounded-lg border border-white/10 bg-white/5 p-2 text-sky-400 hover:bg-white/10"
+                  >
+                    <MessageSquare className="h-4 w-4" />
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => startEdit(p)}
+                    className="cursor-pointer rounded-lg border border-white/10 bg-white/5 p-2 text-[#FFD54A] hover:bg-white/10"
+                  >
+                    <Pencil className="h-4 w-4" />
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => handleDeleteProduct(p.id)}
+                    className="cursor-pointer rounded-lg border border-red-500/20 bg-red-500/10 p-2 text-red-400 hover:bg-red-500/20"
+                  >
+                    <Trash2 className="h-4 w-4" />
+                  </button>
                 </div>
               </div>
-
-              <div className="flex shrink-0 items-center gap-2">
-                <button
-                  type="button"
-                  onClick={() => startEdit(p)}
-                  className="cursor-pointer rounded-lg border border-white/10 bg-white/5 p-2 text-[#FFD54A] hover:bg-white/10"
-                >
-                  <Pencil className="h-4 w-4" />
-                </button>
-                <button
-                  type="button"
-                  onClick={() => handleDeleteProduct(p.id)}
-                  className="cursor-pointer rounded-lg border border-red-500/20 bg-red-500/10 p-2 text-red-400 hover:bg-red-500/20"
-                >
-                  <Trash2 className="h-4 w-4" />
-                </button>
-              </div>
-            </div>
-          ))}
+            );
+          })}
         </div>
       </div>
 
       <AdsManager />
+
+      {reviewProduct && (
+        <ProductReviewsModal
+          productId={reviewProduct.id}
+          productName={reviewProduct.name}
+          isAdmin
+          onClose={() => setReviewProduct(null)}
+        />
+      )}
     </div>
   );
 };
