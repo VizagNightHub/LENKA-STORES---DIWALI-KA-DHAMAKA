@@ -1,6 +1,7 @@
 "use client";
 
 import { onAuthStateChanged } from "firebase/auth";
+import { printOrderInvoice } from "@/lib/printInvoice";
 import {
   doc,
   getDoc,
@@ -12,6 +13,7 @@ import {
   ArrowLeft,
   CheckCircle2,
   Copy,
+  Printer,
   ShieldCheck,
   Smartphone,
   Tag,
@@ -352,9 +354,35 @@ export default function CheckoutPage() {
           <p className="mt-3 text-xs text-[#0D211B]/65">
             Your UTR ({utr}) and payment screenshot are saved. Our team will verify your payment and confirm your order shortly.
           </p>
+          <button
+            type="button"
+            onClick={() =>
+              printOrderInvoice({
+                orderId,
+                customerName: name,
+                phone,
+                addressText: [address, streetRoad, landmark, city, district, state, pincode]
+                  .filter(Boolean)
+                  .join(", "),
+                items: cart,
+                subtotal,
+                packingCharge,
+                deliveryCharge,
+                discountAmount,
+                couponCode: appliedCoupon?.code || null,
+                totalAmount: grandTotal,
+                utr,
+                status: "PENDING_VERIFICATION",
+              })
+            }
+            className="mt-5 inline-flex w-full cursor-pointer items-center justify-center gap-2 rounded-full border border-[#0D211B]/20 bg-[#FAF8F3] px-6 py-2.5 text-sm font-bold text-[#071410] transition hover:border-[#C9A45C]"
+          >
+            <Printer className="h-4 w-4 text-[#C9A45C]" />
+            Download / Print Invoice
+          </button>
           <Link
             href="/"
-            className="mt-6 inline-block rounded-full bg-[#C9A45C] px-6 py-2.5 text-sm font-bold text-[#071410] hover:bg-[#d8b673]"
+            className="mt-3 inline-flex w-full items-center justify-center rounded-full bg-[#C9A45C] px-6 py-2.5 text-sm font-bold text-[#071410] hover:bg-[#d8b673]"
           >
             Back to Lenka Store
           </Link>
