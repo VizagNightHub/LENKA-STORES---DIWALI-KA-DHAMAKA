@@ -1,6 +1,7 @@
 "use client";
 
 import { onAuthStateChanged } from "firebase/auth";
+import { recordRecentlyViewed } from "@/components/product/RecentlyViewedStrip";
 import {
   arrayRemove,
   arrayUnion,
@@ -204,6 +205,14 @@ export const CategoryStorefront = ({
     const chosenVariant =
       selectedVariants[p.id] ||
       (hasVariants ? p.variants?.find((v) => v.stock > 0)?.label : undefined);
+
+    recordRecentlyViewed({
+      id: p.id,
+      name: p.name,
+      price: Number(p.price) || 0,
+      category: p.category,
+      image: p.images?.[0],
+    });
 
     addItem({
       id: p.id,
