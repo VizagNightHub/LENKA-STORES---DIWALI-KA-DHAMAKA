@@ -1,6 +1,6 @@
 "use client";
 
-import { deleteDoc, doc, updateDoc } from "firebase/firestore";
+import { deleteDoc, doc, getDoc, updateDoc } from "firebase/firestore";
 import {
   Calendar,
   CheckCircle2,
@@ -16,6 +16,7 @@ import { db } from "@/lib/firebase";
 import { printOrderInvoice } from "@/lib/printInvoice";
 
 export interface OrderItem {
+  id?: string;
   name: string;
   variant?: string;
   quantity?: number;
@@ -49,6 +50,30 @@ export interface OrderRecord {
 
 type OrderFilter = "PROCESSING" | "COMPLETED" | "CANCELLED" | "ALL";
 
+async function adjustOrderStock(items: OrderItem[] | undefined, deltaSign: 1 | -1) {
+  if (!Array.isArray(items)) return;
+  for (const item of items) {
+    if (!item.id || !item.variant) continue;
+    const qty = Number(item.quantity ?? item.qty ?? 1);
+    if (qty <= 0) continue;
+    try {
+      const ref = doc(db, "products", item.id);
+      const snap = await getDoc(ref);
+      if (!snap.exists()) continue;
+      const data = snap.data();
+      if (!Array.isArray(data.variants)) continue;
+      const updated = data.variants.map((v: { label: string; stock: number }) =>
+        v.label === item.variant
+          ? { ...v, stock: Math.max(0, (Number(v.stock) || 0) + qty * deltaSign) }
+          : v
+      );
+      await updateDoc(ref, { variants: updated });
+    } catch {
+      // Ignore if product was deleted
+    }
+  }
+}
+
 export const OrdersManager = ({ orders }: { orders: OrderRecord[] }) => {
   const [orderFilter, setOrderFilter] = useState<OrderFilter>("PROCESSING");
   const [trackingInputs, setTrackingInputs] = useState<Record<string, string>>({});
@@ -75,8 +100,15 @@ export const OrdersManager = ({ orders }: { orders: OrderRecord[] }) => {
     });
   }, [orders]);
 
-  const handleStatusChange = async (orderId: string, status: string) => {
-    await updateDoc(doc(db, "orders", orderId), { status });
+  const handleStatusChange = async (order: OrderRecord, newStatus: string) => {
+    const wasCancelled = order.status === "CANCELLED";
+    const willBeCancelled = newStatus === "CANCELLED";
+    if (!wasCancelled && willBeCancelled) {
+      await adjustOrderStock(order.items, 1);
+    } else if (wasCancelled && !willBeCancelled) {
+      await adjustOrderStock(order.items, -1);
+    }
+    await updateDoc(doc(db, "orders", order.id), { status: newStatus });
   };
 
   const handleSaveDeliveryDetails = async (orderId: string) => {
@@ -95,6 +127,9 @@ export const OrdersManager = ({ orders }: { orders: OrderRecord[] }) => {
 
   const handleDeleteOrder = async (order: OrderRecord) => {
     if (!confirm(`Delete order ${order.orderId || order.id}?`)) return;
+    if (order.status !== "CANCELLED") {
+      await adjustOrderStock(order.items, 1);
+    }
     if (order.utr) {
       try {
         await deleteDoc(doc(db, "used_utrs", order.utr));
@@ -293,7 +328,7 @@ export const OrdersManager = ({ orders }: { orders: OrderRecord[] }) => {
                 <button
                   key={st.id}
                   type="button"
-                  onClick={() => handleStatusChange(order.id, st.id)}
+                  onClick={() => handleStatusChange(order, st.id)}
                   className={`cursor-pointer rounded-lg border px-2.5 py-1 text-xs font-semibold transition ${
                     order.status === st.id
                       ? st.id === "CANCELLED"
