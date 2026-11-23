@@ -45,7 +45,7 @@ export const RecentlyViewedStrip = () => {
   return (
     <section className="mx-auto max-w-7xl px-4 pb-16 pt-4 sm:px-8">
       <div className="mb-4 flex items-center justify-between">
-        <p className="text-xs font-semibold uppercase tracking-[0.2em] text-[#C9A45C]">
+        <p className="text-xs font-semibold uppercase tracking-[0.2em] text-[#0B5D3B]">
           Recently Viewed
         </p>
       </div>
@@ -54,16 +54,16 @@ export const RecentlyViewedStrip = () => {
           <Link
             key={item.id}
             href={`/${item.category}#product-${item.id}`}
-            className="flex items-center gap-3 rounded-2xl border border-[#C9A45C]/25 bg-[#0D211B] p-3 transition hover:border-[#C9A45C]"
+            className="flex items-center gap-3 rounded-2xl border border-[#DCE5DF] bg-white p-3 shadow-sm transition hover:border-[#0B5D3B]"
           >
             <img
               src={item.image || "/images/new-launch.png"}
               alt={item.name}
-              className="h-12 w-12 shrink-0 rounded-xl object-cover"
+              className="h-12 w-12 shrink-0 rounded-xl border border-[#DCE5DF] object-cover"
             />
             <div className="min-w-0">
-              <p className="truncate text-xs font-bold text-[#FFFDF2]">{item.name}</p>
-              <p className="text-xs font-semibold text-[#C9A45C]">
+              <p className="truncate text-xs font-bold text-[#0B2219]">{item.name}</p>
+              <p className="text-xs font-semibold text-[#0B5D3B]">
                 ₹{Number(item.price || 0).toLocaleString("en-IN")}
               </p>
             </div>
