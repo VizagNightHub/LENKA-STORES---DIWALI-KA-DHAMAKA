@@ -5,6 +5,7 @@ import {
   Calendar,
   CheckCircle2,
   MessageCircle,
+  Printer,
   Trash2,
   Truck,
   X,
@@ -12,6 +13,7 @@ import {
 } from "lucide-react";
 import { useEffect, useState } from "react";
 import { db } from "@/lib/firebase";
+import { printOrderInvoice } from "@/lib/printInvoice";
 
 export interface OrderItem {
   name: string;
@@ -218,6 +220,35 @@ export const OrdersManager = ({ orders }: { orders: OrderRecord[] }) => {
                     </span>
                   </button>
                 )}
+
+                <button
+                  type="button"
+                  onClick={() =>
+                    printOrderInvoice({
+                      orderId: order.orderId || order.id,
+                      customerName: order.customerName || "Customer",
+                      phone: order.phone || "",
+                      addressText: [
+                        order.address || order.houseNo,
+                        order.streetRoad || order.street,
+                        order.landmark,
+                        order.city,
+                        order.district,
+                        order.state,
+                        order.pincode,
+                      ]
+                        .filter(Boolean)
+                        .join(", "),
+                      items: order.items || [],
+                      totalAmount: Number(order.totalAmount || 0),
+                      utr: order.utr,
+                      status: order.status,
+                    })
+                  }
+                  className="inline-flex cursor-pointer items-center gap-1 rounded-lg border border-white/15 bg-white/5 px-3 py-2 text-xs font-semibold text-white hover:bg-white/15"
+                >
+                  <Printer className="h-3.5 w-3.5" /> Bill
+                </button>
 
                 {order.phone && (
                   <a
