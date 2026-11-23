@@ -157,6 +157,7 @@ export function PushpinTearFooter({
 
   const [copied, setCopied] = useState(false);
   const [subEmail, setSubEmail] = useState("");
+  const [feedback, setFeedback] = useState("");
   const [subState, setSubState] = useState<"idle" | "saving" | "done" | "error">("idle");
   const [clock, setClock] = useState("");
 
@@ -196,9 +197,11 @@ export function PushpinTearFooter({
     try {
       await addDoc(collection(db, "subscribers"), {
         email: clean,
+        feedback: feedback.trim() || null,
         createdAt: serverTimestamp(),
       });
       setSubEmail("");
+      setFeedback("");
       setSubState("done");
     } catch {
       setSubState("error");
@@ -218,6 +221,8 @@ export function PushpinTearFooter({
     { label: "Contact", href: "/contact" },
     { label: "About", href: "/about" },
   ];
+
+  const showFeedbackBox = subEmail.trim().length > 0;
 
   return (
     <footer
@@ -280,7 +285,7 @@ export function PushpinTearFooter({
           </motion.div>
 
           <div className="hidden items-center gap-2 rounded-full border border-current/20 px-3.5 py-1.5 text-[11px] font-semibold tracking-wide sm:inline-flex">
-            <span className="h-2 w-2 rounded-full bg-emerald-700" />
+            <span className="h-2 w-2 rounded-full bg-emerald-400" />
             <span>pre-booking open · AP &amp; Telangana</span>
           </div>
         </div>
@@ -307,37 +312,68 @@ export function PushpinTearFooter({
               )}
             </div>
 
-            <form onSubmit={handleSubscribe} className="max-w-sm space-y-2">
+            <form onSubmit={handleSubscribe} className="max-w-sm space-y-2.5">
               <label className="block text-xs font-semibold tracking-wide opacity-80">
-                festival offers, straight to your inbox
+                share your email &amp; website feedback
               </label>
-              <div className="flex items-center gap-2 rounded-full border border-current/30 bg-white/35 p-1">
+              <div className="flex items-center gap-2 rounded-full border border-current/30 bg-black/20 p-1">
                 <input
                   type="email"
                   required
                   value={subEmail}
-                  onChange={(e) => setSubEmail(e.target.value)}
+                  onChange={(e) => {
+                    setSubEmail(e.target.value);
+                    if (subState !== "idle") setSubState("idle");
+                  }}
                   placeholder="your@email"
                   className="w-full bg-transparent px-4 py-2 text-xs font-medium placeholder:text-current/55 focus:outline-none"
                 />
-                <button
-                  type="submit"
-                  disabled={subState === "saving"}
-                  className="flex h-8 w-8 shrink-0 cursor-pointer items-center justify-center rounded-full transition-transform hover:scale-105"
-                  style={{ backgroundColor: sheetInk, color: sheet }}
-                  aria-label="Subscribe"
-                >
-                  <BrandSocialIcon
-                    name={subState === "done" ? "check" : "arrow"}
-                    className="h-3.5 w-3.5"
-                  />
-                </button>
+                {!showFeedbackBox && (
+                  <button
+                    type="submit"
+                    disabled={subState === "saving"}
+                    className="flex h-8 w-8 shrink-0 cursor-pointer items-center justify-center rounded-full transition-transform hover:scale-105"
+                    style={{ backgroundColor: paper, color: paperInk }}
+                    aria-label="Send"
+                  >
+                    <BrandSocialIcon
+                      name={subState === "done" ? "check" : "arrow"}
+                      className="h-3.5 w-3.5"
+                    />
+                  </button>
+                )}
               </div>
+
+              {showFeedbackBox && (
+                <div className="space-y-2">
+                  <textarea
+                    rows={3}
+                    value={feedback}
+                    onChange={(e) => setFeedback(e.target.value)}
+                    placeholder="Write your feedback or website experience (optional)..."
+                    className="w-full rounded-2xl border border-current/25 bg-black/20 px-4 py-2.5 text-xs font-medium placeholder:text-current/55 focus:outline-none"
+                  />
+                  <button
+                    type="submit"
+                    disabled={subState === "saving"}
+                    className="inline-flex cursor-pointer items-center gap-2 rounded-full px-5 py-2 text-xs font-bold transition hover:opacity-90 disabled:opacity-50"
+                    style={{ backgroundColor: paper, color: paperInk }}
+                  >
+                    <span>{subState === "saving" ? "Sending..." : "Send Feedback"}</span>
+                    <BrandSocialIcon name="arrow" className="h-3.5 w-3.5" />
+                  </button>
+                </div>
+              )}
+
               {subState === "done" && (
-                <p className="text-[11px] font-semibold">Subscribed for Diwali updates.</p>
+                <p className="text-[11px] font-semibold">
+                  Thank you! Your email &amp; feedback have been sent.
+                </p>
               )}
               {subState === "error" && (
-                <p className="text-[11px] font-semibold">Could not subscribe right now.</p>
+                <p className="text-[11px] font-semibold">
+                  Could not send right now. Please try again.
+                </p>
               )}
             </form>
           </div>
@@ -442,7 +478,7 @@ export function PushpinTearFooter({
             <div className="mx-auto max-w-7xl">
               <div className="flex flex-col justify-between gap-4 border-b border-current/15 pb-5 md:flex-row md:items-end">
                 <div>
-                  <p className="bg-gradient-to-r from-[#2B1400] via-[#7A3B00] to-[#2B1400] bg-clip-text text-xs font-bold tracking-wide text-transparent sm:text-sm">
+                  <p className="text-xs font-bold tracking-wide sm:text-sm">
                     {name}
                   </p>
                   <p className="mt-1 text-5xl font-black leading-none tracking-[-0.05em] sm:text-7xl md:text-8xl">
