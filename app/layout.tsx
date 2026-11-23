@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import { Space_Grotesk } from "next/font/google";
 import { VisitorTracker } from "@/components/analytics/VisitorTracker";
 import { CartProvider } from "@/components/cart/CartProvider";
-import { PushpinTearFooter } from "@/components/ui/pushpin-tear-footer";
+import { ConditionalFooter } from "@/components/ui/ConditionalFooter";
 import { MobileBottomNav } from "@/components/ui/MobileBottomNav";
 import "./globals.css";
 
@@ -50,12 +50,7 @@ export default function RootLayout({
         <VisitorTracker />
         <CartProvider>
           {children}
-          <PushpinTearFooter
-            sheet="#0D211B"
-            paper="#C9A45C"
-            sheetInk="#FFFDF2"
-            paperInk="#071410"
-          />
+          <ConditionalFooter />
           <MobileBottomNav />
         </CartProvider>
       </body>
