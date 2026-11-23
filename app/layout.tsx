@@ -3,6 +3,7 @@ import { Space_Grotesk } from "next/font/google";
 import { VisitorTracker } from "@/components/analytics/VisitorTracker";
 import { CartProvider } from "@/components/cart/CartProvider";
 import { PushpinTearFooter } from "@/components/ui/pushpin-tear-footer";
+import { MobileBottomNav } from "@/components/ui/MobileBottomNav";
 import "./globals.css";
 
 const spaceGrotesk = Space_Grotesk({
