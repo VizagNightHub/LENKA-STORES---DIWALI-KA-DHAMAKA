@@ -1,6 +1,7 @@
 import { PromoBanner } from "@/components/ads/PromoBanner";
 import { CategoryGrid } from "@/components/categories/CategoryGrid";
 import { PrismaHero } from "@/components/hero/PrismaHero";
+import { RecentlyViewedStrip } from "@/components/product/RecentlyViewedStrip";
 import { GlobalSearchBar } from "@/components/search/GlobalSearchBar";
 
 export default function HomePage() {
@@ -10,6 +11,7 @@ export default function HomePage() {
       <GlobalSearchBar />
       <PromoBanner />
       <CategoryGrid />
+      <RecentlyViewedStrip />
     </main>
   );
 }
