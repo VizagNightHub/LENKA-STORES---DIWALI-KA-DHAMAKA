@@ -1,12 +1,32 @@
 "use client";
 
-import { doc, getDoc, onSnapshot, serverTimestamp, setDoc } from "firebase/firestore";
-import { ArrowLeft, CheckCircle2, Copy, ShieldCheck, Smartphone, Tag, Upload } from "lucide-react";
+import { onAuthStateChanged } from "firebase/auth";
+import {
+  doc,
+  getDoc,
+  onSnapshot,
+  runTransaction,
+  serverTimestamp,
+} from "firebase/firestore";
+import {
+  ArrowLeft,
+  CheckCircle2,
+  Copy,
+  ShieldCheck,
+  Smartphone,
+  Tag,
+  Upload,
+  UserCheck,
+} from "lucide-react";
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import { STORE_CONFIG } from "@/data/storeConfig";
-import { calculateDeliveryFromKPHB, DEFAULT_RATES, DeliveryRates } from "@/lib/deliveryCalculator";
-import { db } from "@/lib/firebase";
+import {
+  calculateDeliveryFromKPHB,
+  DEFAULT_RATES,
+  DeliveryRates,
+} from "@/lib/deliveryCalculator";
+import { auth, db } from "@/lib/firebase";
 
 interface CartItem {
   id: string;
@@ -53,6 +73,7 @@ function compressImage(file: File): Promise<string> {
 export default function CheckoutPage() {
   const [cart, setCart] = useState<CartItem[]>([]);
   const [rates, setRates] = useState<DeliveryRates>(DEFAULT_RATES);
+  const [customerUid, setCustomerUid] = useState<string | null>(null);
 
   const [name, setName] = useState("");
   const [phone, setPhone] = useState("");
@@ -84,12 +105,35 @@ export default function CheckoutPage() {
       setCart([]);
     }
 
-    const unsub = onSnapshot(doc(db, "settings", "charges"), (snap) => {
+    const unsubCharges = onSnapshot(doc(db, "settings", "charges"), (snap) => {
       if (snap.exists()) {
         setRates({ ...DEFAULT_RATES, ...(snap.data() as Partial<DeliveryRates>) });
       }
     });
-    return () => unsub();
+
+    const unsubAuth = onAuthStateChanged(auth, async (u) => {
+      if (u && u.email?.endsWith("@users.lenkastore.in")) {
+        setCustomerUid(u.uid);
+        const snap = await getDoc(doc(db, "customers", u.uid));
+        if (snap.exists()) {
+          const d = snap.data();
+          if (d.name) setName((prev) => prev || d.name);
+          if (d.phone) setPhone((prev) => prev || d.phone);
+          if (d.pincode) setPincode((prev) => prev || d.pincode);
+          if (d.state) setState(d.state);
+          if (d.district) setDistrict((prev) => prev || d.district);
+          if (d.city) setCity((prev) => prev || d.city);
+          if (d.streetRoad) setStreetRoad((prev) => prev || d.streetRoad);
+          if (d.landmark) setLandmark((prev) => prev || d.landmark);
+          if (d.address) setAddress((prev) => prev || d.address);
+        }
+      }
+    });
+
+    return () => {
+      unsubCharges();
+      unsubAuth();
+    };
   }, []);
 
   const getItemQty = (item: CartItem) => Number(item.qty ?? item.quantity ?? 1);
@@ -197,57 +241,100 @@ export default function CheckoutPage() {
 
     setLoading(true);
     try {
-      const utrRef = doc(db, "used_utrs", cleanUtr);
-      const utrSnap = await getDoc(utrRef);
-      if (utrSnap.exists()) {
-        setError("This UTR number has already been used. Duplicate UTRs are blocked.");
-        setLoading(false);
-        return;
-      }
-
       const newOrderId = `D27-${Date.now().toString().slice(-6)}`;
+      const utrRef = doc(db, "used_utrs", cleanUtr);
+      const orderRef = doc(db, "orders", newOrderId);
 
-      await setDoc(utrRef, {
-        orderId: newOrderId,
-        createdAt: serverTimestamp(),
-      });
+      await runTransaction(db, async (tx) => {
+        const utrSnap = await tx.get(utrRef);
+        if (utrSnap.exists()) {
+          throw new Error("UTR_USED");
+        }
 
-      await setDoc(doc(db, "orders", newOrderId), {
-        orderId: newOrderId,
-        customerName: name.trim(),
-        phone: phone.trim(),
-        altPhone: altPhone.trim() || null,
-        pincode: pincode.trim(),
-        state,
-        district: district.trim(),
-        city: city.trim(),
-        streetRoad: streetRoad.trim(),
-        landmark: landmark.trim() || null,
-        address: address.trim(),
-        items: cart.map((c) => ({
-          id: c.id,
-          name: c.name,
-          price: c.price,
-          quantity: getItemQty(c),
-          variant: c.variant || null,
-        })),
-        subtotal,
-        packingCharge,
-        deliveryCharge,
-        couponCode: appliedCoupon ? appliedCoupon.code : null,
-        couponOfferNote: appliedCoupon?.offerNote || null,
-        discountAmount,
-        totalAmount: grandTotal,
-        utr: cleanUtr,
-        screenshot,
-        status: "PENDING_VERIFICATION",
-        createdAt: serverTimestamp(),
+        // Read & verify variant stock before any writes
+        const productUpdates: {
+          ref: ReturnType<typeof doc>;
+          variants: { label: string; stock: number }[];
+        }[] = [];
+
+        for (const item of cart) {
+          if (!item.variant) continue;
+          const prodRef = doc(db, "products", item.id);
+          const prodSnap = await tx.get(prodRef);
+          if (!prodSnap.exists()) continue;
+
+          const data = prodSnap.data();
+          if (!Array.isArray(data.variants)) continue;
+
+          const qty = getItemQty(item);
+          const updatedVariants = data.variants.map(
+            (v: { label: string; stock: number }) => {
+              if (v.label === item.variant) {
+                if (v.stock < qty) {
+                  throw new Error(`OUT_OF_STOCK:${item.name} (${item.variant})`);
+                }
+                return { ...v, stock: v.stock - qty };
+              }
+              return v;
+            }
+          );
+          productUpdates.push({ ref: prodRef, variants: updatedVariants });
+        }
+
+        for (const u of productUpdates) {
+          tx.update(u.ref, { variants: u.variants });
+        }
+
+        tx.set(utrRef, {
+          orderId: newOrderId,
+          createdAt: serverTimestamp(),
+        });
+
+        tx.set(orderRef, {
+          orderId: newOrderId,
+          customerUid: customerUid || null,
+          customerName: name.trim(),
+          phone: phone.trim(),
+          altPhone: altPhone.trim() || null,
+          pincode: pincode.trim(),
+          state,
+          district: district.trim(),
+          city: city.trim(),
+          streetRoad: streetRoad.trim(),
+          landmark: landmark.trim() || null,
+          address: address.trim(),
+          items: cart.map((c) => ({
+            id: c.id,
+            name: c.name,
+            price: c.price,
+            quantity: getItemQty(c),
+            variant: c.variant || null,
+          })),
+          subtotal,
+          packingCharge,
+          deliveryCharge,
+          couponCode: appliedCoupon ? appliedCoupon.code : null,
+          couponOfferNote: appliedCoupon?.offerNote || null,
+          discountAmount,
+          totalAmount: grandTotal,
+          utr: cleanUtr,
+          screenshot,
+          status: "PENDING_VERIFICATION",
+          createdAt: serverTimestamp(),
+        });
       });
 
       localStorage.removeItem("lenka_d27_cart");
       setOrderId(newOrderId);
-    } catch {
-      setError("Could not save order. Please check connection and try again.");
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : "";
+      if (msg === "UTR_USED") {
+        setError("This UTR number has already been used. Duplicate UTRs are blocked.");
+      } else if (msg.startsWith("OUT_OF_STOCK:")) {
+        setError(`${msg.replace("OUT_OF_STOCK:", "")} just went out of stock.`);
+      } else {
+        setError("Could not save order. Please check connection and try again.");
+      }
     } finally {
       setLoading(false);
     }
@@ -279,13 +366,22 @@ export default function CheckoutPage() {
   return (
     <main className="min-h-screen bg-[#FAF8F3] px-4 py-10 text-[#071410] sm:px-8">
       <div className="mx-auto max-w-5xl">
-        <Link
-          href="/diwali-ka-dhamaka"
-          className="inline-flex items-center gap-2 text-sm font-medium text-[#0D211B]/70 hover:text-[#071410]"
-        >
-          <ArrowLeft className="h-4 w-4" />
-          Back to Store
-        </Link>
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <Link
+            href="/diwali-ka-dhamaka"
+            className="inline-flex items-center gap-2 text-sm font-medium text-[#0D211B]/70 hover:text-[#071410]"
+          >
+            <ArrowLeft className="h-4 w-4" />
+            Back to Store
+          </Link>
+          <Link
+            href="/account"
+            className="inline-flex items-center gap-1.5 rounded-full border border-[#0D211B]/15 bg-white px-3.5 py-1.5 text-xs font-semibold text-[#071410] hover:border-[#C9A45C]"
+          >
+            <UserCheck className="h-3.5 w-3.5 text-[#C9A45C]" />
+            {customerUid ? "Profile Auto-Filled ✓" : "Login to Auto-Fill (Optional)"}
+          </Link>
+        </div>
 
         <h1 className="mt-4 text-3xl font-bold sm:text-4xl">Prepaid UPI Checkout</h1>
 
