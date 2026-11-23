@@ -103,9 +103,9 @@ export const CartProvider = ({ children }: { children: React.ReactNode }) => {
               draggedRef.current = false;
             }, 80);
           }}
-          className="fixed bottom-20 right-4 z-40 flex touch-none items-center gap-1.5 rounded-full border border-[#C9A45C]/60 bg-[#071410]/95 p-1.5 pl-3 text-xs font-bold text-[#FFFDF2] shadow-[0_14px_40px_rgba(0,0,0,0.75)] backdrop-blur-md md:bottom-6 md:right-6"
+          className="fixed bottom-20 right-4 z-40 flex touch-none items-center gap-1.5 rounded-full border border-[#0B5D3B]/30 bg-white/95 p-1.5 pl-3 text-xs font-bold text-[#0B2219] shadow-[0_10px_30px_rgba(11,59,43,0.18)] backdrop-blur-md md:bottom-6 md:right-6"
         >
-          <GripHorizontal className="h-3.5 w-3.5 shrink-0 cursor-grab text-[#C9A45C]/60" />
+          <GripHorizontal className="h-3.5 w-3.5 shrink-0 cursor-grab text-[#0B5D3B]/60" />
 
           <button
             type="button"
@@ -114,7 +114,7 @@ export const CartProvider = ({ children }: { children: React.ReactNode }) => {
             }}
             className="flex cursor-pointer items-center gap-2 pr-1"
           >
-            <ShoppingBag className="h-4 w-4 text-[#C9A45C]" />
+            <ShoppingBag className="h-4 w-4 text-[#0B5D3B]" />
             <span>
               {totalCount} Item{totalCount > 1 ? "s" : ""} • ₹
               {totalAmount.toLocaleString("en-IN")}
@@ -125,7 +125,7 @@ export const CartProvider = ({ children }: { children: React.ReactNode }) => {
             type="button"
             onClick={() => setPillDismissed(true)}
             title="Hide Cart Box"
-            className="flex h-6 w-6 cursor-pointer items-center justify-center rounded-full bg-white/10 text-[#FFFDF2]/80 hover:bg-red-600 hover:text-white"
+            className="flex h-6 w-6 cursor-pointer items-center justify-center rounded-full bg-[#EDF5F0] text-[#0B5D3B] transition hover:bg-red-600 hover:text-white"
           >
             <X className="h-3.5 w-3.5" />
           </button>
@@ -134,14 +134,14 @@ export const CartProvider = ({ children }: { children: React.ReactNode }) => {
 
       {/* Slide-Over Cart Drawer */}
       {open && (
-        <div className="fixed inset-0 z-50 flex justify-end bg-black/75 backdrop-blur-sm">
-          <div className="flex h-full w-full max-w-md flex-col justify-between border-l border-[#C9A45C]/25 bg-[#071410] p-6 text-[#FFFDF2]">
-            <div className="flex items-center justify-between border-b border-[#C9A45C]/20 pb-4">
-              <h2 className="text-lg font-bold text-[#FFFDF2]">Your Cart ({totalCount})</h2>
+        <div className="fixed inset-0 z-50 flex justify-end bg-[#0B2219]/50 backdrop-blur-sm">
+          <div className="flex h-full w-full max-w-md flex-col justify-between border-l border-[#DCE5DF] bg-[#F8FAF9] p-6 text-[#0B2219]">
+            <div className="flex items-center justify-between border-b border-[#DCE5DF] pb-4">
+              <h2 className="text-lg font-bold text-[#0B2219]">Your Cart ({totalCount})</h2>
               <button
                 type="button"
                 onClick={() => setOpen(false)}
-                className="cursor-pointer rounded-full p-1.5 hover:bg-white/10"
+                className="cursor-pointer rounded-full p-1.5 text-[#4A5D54] hover:bg-[#EDF5F0] hover:text-[#0B5D3B]"
               >
                 <X className="h-5 w-5" />
               </button>
@@ -149,21 +149,21 @@ export const CartProvider = ({ children }: { children: React.ReactNode }) => {
 
             <div className="my-4 flex-1 space-y-3 overflow-y-auto">
               {items.length === 0 ? (
-                <p className="pt-10 text-center text-sm text-[#FFFDF2]/60">
+                <p className="pt-10 text-center text-sm text-[#4A5D54]">
                   Your cart is empty.
                 </p>
               ) : (
                 items.map((item) => (
                   <div
                     key={`${item.id}-${item.variant || "std"}`}
-                    className="flex items-center justify-between gap-3 rounded-2xl border border-[#C9A45C]/20 bg-[#0D211B] p-4"
+                    className="flex items-center justify-between gap-3 rounded-2xl border border-[#DCE5DF] bg-white p-4 shadow-sm"
                   >
                     <div>
-                      <p className="text-sm font-semibold text-[#FFFDF2]">{item.name}</p>
+                      <p className="text-sm font-semibold text-[#0B2219]">{item.name}</p>
                       {item.variant && (
-                        <p className="text-[11px] text-[#C9A45C]">{item.variant}</p>
+                        <p className="text-[11px] font-medium text-[#0B5D3B]">{item.variant}</p>
                       )}
-                      <p className="mt-1 text-xs text-[#FFFDF2]/70">
+                      <p className="mt-1 text-xs text-[#4A5D54]">
                         ₹{item.price.toLocaleString("en-IN")} each
                       </p>
                     </div>
@@ -172,17 +172,17 @@ export const CartProvider = ({ children }: { children: React.ReactNode }) => {
                       <button
                         type="button"
                         onClick={() => updateQty(item.id, item.variant, -1)}
-                        className="flex h-7 w-7 cursor-pointer items-center justify-center rounded-full bg-white/10 hover:bg-white/20"
+                        className="flex h-7 w-7 cursor-pointer items-center justify-center rounded-full bg-[#EDF5F0] text-[#0B5D3B] hover:bg-[#DCECE3]"
                       >
                         <Minus className="h-3.5 w-3.5" />
                       </button>
-                      <span className="w-5 text-center text-xs font-bold text-[#C9A45C]">
+                      <span className="w-5 text-center text-xs font-bold text-[#0B2219]">
                         {item.qty}
                       </span>
                       <button
                         type="button"
                         onClick={() => updateQty(item.id, item.variant, 1)}
-                        className="flex h-7 w-7 cursor-pointer items-center justify-center rounded-full bg-[#C9A45C] text-[#071410]"
+                        className="flex h-7 w-7 cursor-pointer items-center justify-center rounded-full bg-[#0B5D3B] text-white hover:bg-[#08472D]"
                       >
                         <Plus className="h-3.5 w-3.5" />
                       </button>
@@ -193,16 +193,16 @@ export const CartProvider = ({ children }: { children: React.ReactNode }) => {
             </div>
 
             {items.length > 0 && (
-              <div className="space-y-3 border-t border-[#C9A45C]/20 pt-4">
-                <div className="flex items-center justify-between text-base font-bold text-[#FFFDF2]">
+              <div className="space-y-3 border-t border-[#DCE5DF] pt-4">
+                <div className="flex items-center justify-between text-base font-bold text-[#0B2219]">
                   <span>Subtotal</span>
-                  <span className="text-[#C9A45C]">₹{totalAmount.toLocaleString("en-IN")}</span>
+                  <span className="text-[#0B5D3B]">₹{totalAmount.toLocaleString("en-IN")}</span>
                 </div>
                 <div className="flex gap-2">
                   <button
                     type="button"
                     onClick={clearCart}
-                    className="flex cursor-pointer items-center justify-center rounded-full border border-red-500/35 px-4 py-3 text-xs font-semibold text-red-400 hover:bg-red-600 hover:text-white"
+                    className="flex cursor-pointer items-center justify-center rounded-full border border-red-200 bg-white px-4 py-3 text-xs font-semibold text-red-600 hover:bg-red-600 hover:text-white"
                     title="Clear Cart"
                   >
                     <Trash2 className="h-4 w-4" />
@@ -213,7 +213,7 @@ export const CartProvider = ({ children }: { children: React.ReactNode }) => {
                       setOpen(false);
                       router.push("/checkout");
                     }}
-                    className="flex-1 cursor-pointer rounded-full bg-[#C9A45C] py-3 text-sm font-bold text-[#071410] hover:bg-[#d8b673]"
+                    className="flex-1 cursor-pointer rounded-full bg-[#0B5D3B] py-3 text-sm font-bold text-white transition hover:bg-[#08472D]"
                   >
                     Proceed to Checkout →
                   </button>
