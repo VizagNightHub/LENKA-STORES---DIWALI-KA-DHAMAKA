@@ -144,7 +144,7 @@ export const PromoBanner = () => {
     <>
       {/* 1. Top Scrolling Ticker */}
       {tickers.length > 0 && (
-        <div className="w-full overflow-hidden border-y border-[#C9A45C]/40 bg-[#C9A45C] py-2 text-[#071410]">
+        <div className="w-full overflow-hidden border-y border-[#08472D] bg-[#0B5D3B] py-2 text-white">
           <div className="mx-auto flex max-w-6xl flex-wrap items-center justify-center gap-4 px-4 text-xs font-semibold tracking-wide">
             {tickers.map((t) => (
               <div key={t.id} className="flex items-center gap-2">
@@ -154,7 +154,7 @@ export const PromoBanner = () => {
                   <button
                     type="button"
                     onClick={() => copyCode(t.id, t.couponCode!)}
-                    className="inline-flex cursor-pointer items-center gap-1 rounded-full bg-[#071410] px-2.5 py-0.5 font-mono text-[11px] text-[#C9A45C]"
+                    className="inline-flex cursor-pointer items-center gap-1 rounded-full bg-white px-2.5 py-0.5 font-mono text-[11px] font-bold text-[#0B5D3B]"
                   >
                     <Copy className="h-3 w-3" />
                     {copiedId === t.id ? "Copied!" : t.couponCode}
@@ -169,26 +169,26 @@ export const PromoBanner = () => {
       <section className="mx-auto max-w-6xl space-y-6 px-4 py-6 sm:px-6">
         {/* 2. Auto-Sliding Banner Carousel */}
         {currentBanner && (
-          <div className="relative overflow-hidden rounded-2xl border border-[#C9A45C]/30 bg-[#0D211B] p-5 sm:p-6">
+          <div className="relative overflow-hidden rounded-2xl border border-[#DCE5DF] bg-white p-5 shadow-[0_6px_24px_rgba(11,59,43,0.06)] sm:p-6">
             <div className="flex flex-col items-start justify-between gap-4 sm:flex-row sm:items-center">
               <div className="flex items-center gap-4">
                 {currentBanner.image ? (
                   <img
                     src={currentBanner.image}
                     alt={currentBanner.title}
-                    className="h-20 w-20 shrink-0 rounded-xl border border-[#C9A45C]/25 object-cover"
+                    className="h-20 w-20 shrink-0 rounded-xl border border-[#DCE5DF] object-cover"
                   />
                 ) : (
-                  <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-xl border border-[#C9A45C]/25 bg-[#071410] text-[#C9A45C]">
+                  <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-xl border border-[#0B5D3B]/20 bg-[#EDF5F0] text-[#0B5D3B]">
                     <Megaphone className="h-6 w-6" />
                   </div>
                 )}
                 <div>
-                  <p className="text-base font-bold text-[#C9A45C] sm:text-lg">
+                  <p className="text-base font-bold text-[#0B2219] sm:text-lg">
                     {currentBanner.title}
                   </p>
                   {currentBanner.subtitle && (
-                    <p className="mt-0.5 text-xs text-[#FFFDF2]/80 sm:text-sm">
+                    <p className="mt-0.5 text-xs text-[#4A5D54] sm:text-sm">
                       {currentBanner.subtitle}
                     </p>
                   )}
@@ -202,7 +202,7 @@ export const PromoBanner = () => {
                     onClick={() =>
                       copyCode(currentBanner.id, currentBanner.couponCode!)
                     }
-                    className="inline-flex cursor-pointer items-center gap-1.5 rounded-full border border-[#C9A45C]/40 bg-[#071410] px-3.5 py-2 font-mono text-xs font-bold text-[#C9A45C] transition hover:border-[#C9A45C]"
+                    className="inline-flex cursor-pointer items-center gap-1.5 rounded-full border border-[#0B5D3B]/25 bg-[#EDF5F0] px-3.5 py-2 font-mono text-xs font-bold text-[#0B5D3B] transition hover:border-[#0B5D3B]"
                   >
                     <Copy className="h-3.5 w-3.5" />
                     {copiedId === currentBanner.id
@@ -212,7 +212,7 @@ export const PromoBanner = () => {
                 )}
                 <Link
                   href={currentBanner.href || "/diwali-ka-dhamaka"}
-                  className="rounded-full bg-[#C9A45C] px-5 py-2 text-xs font-bold text-[#071410] transition hover:bg-[#d8b673]"
+                  className="rounded-full bg-[#0B5D3B] px-5 py-2 text-xs font-bold text-white transition hover:bg-[#08472D]"
                 >
                   Shop Now
                 </Link>
@@ -229,8 +229,8 @@ export const PromoBanner = () => {
                       onClick={() => setSlideIdx(i)}
                       className={`h-1.5 cursor-pointer rounded-full transition-all ${
                         i === slideIdx % banners.length
-                          ? "w-6 bg-[#C9A45C]"
-                          : "w-2 bg-[#FFFDF2]/25"
+                          ? "w-6 bg-[#0B5D3B]"
+                          : "w-2 bg-[#DCE5DF]"
                       }`}
                     />
                   ))}
@@ -243,7 +243,7 @@ export const PromoBanner = () => {
                         (i) => (i - 1 + banners.length) % banners.length
                       )
                     }
-                    className="cursor-pointer rounded-full border border-[#C9A45C]/25 p-1 text-[#FFFDF2]/70 hover:text-[#C9A45C]"
+                    className="cursor-pointer rounded-full border border-[#DCE5DF] p-1 text-[#4A5D54] hover:border-[#0B5D3B] hover:text-[#0B5D3B]"
                   >
                     <ChevronLeft className="h-4 w-4" />
                   </button>
@@ -252,7 +252,7 @@ export const PromoBanner = () => {
                     onClick={() =>
                       setSlideIdx((i) => (i + 1) % banners.length)
                     }
-                    className="cursor-pointer rounded-full border border-[#C9A45C]/25 p-1 text-[#FFFDF2]/70 hover:text-[#C9A45C]"
+                    className="cursor-pointer rounded-full border border-[#DCE5DF] p-1 text-[#4A5D54] hover:border-[#0B5D3B] hover:text-[#0B5D3B]"
                   >
                     <ChevronRight className="h-4 w-4" />
                   </button>
@@ -271,10 +271,10 @@ export const PromoBanner = () => {
               return (
                 <div
                   key={c.id}
-                  className="flex flex-col justify-between gap-3 rounded-2xl border border-[#C9A45C]/35 bg-[#0D211B] p-5"
+                  className="flex flex-col justify-between gap-3 rounded-2xl border border-[#DCE5DF] bg-white p-5 shadow-sm"
                 >
                   <div className="flex items-center justify-between gap-2">
-                    <span className="inline-flex items-center gap-1.5 rounded-full border border-[#C9A45C]/30 bg-[#071410] px-3 py-1 font-mono text-xs font-bold text-[#C9A45C]">
+                    <span className="inline-flex items-center gap-1.5 rounded-full border border-[#0B5D3B]/20 bg-[#EDF5F0] px-3 py-1 font-mono text-xs font-bold text-[#0B5D3B]">
                       <Clock className="h-3.5 w-3.5" />
                       {left}
                     </span>
@@ -282,21 +282,21 @@ export const PromoBanner = () => {
                       <button
                         type="button"
                         onClick={() => copyCode(c.id, c.couponCode!)}
-                        className="cursor-pointer rounded-full border border-[#C9A45C]/30 bg-[#071410] px-2.5 py-1 font-mono text-[11px] font-bold text-[#C9A45C]"
+                        className="cursor-pointer rounded-full border border-[#0B5D3B]/20 bg-[#EDF5F0] px-2.5 py-1 font-mono text-[11px] font-bold text-[#0B5D3B]"
                       >
                         {copiedId === c.id ? "Copied!" : c.couponCode}
                       </button>
                     )}
                   </div>
                   <div>
-                    <p className="text-base font-bold text-[#FFFDF2]">{c.title}</p>
+                    <p className="text-base font-bold text-[#0B2219]">{c.title}</p>
                     {c.subtitle && (
-                      <p className="mt-1 text-xs text-[#FFFDF2]/75">{c.subtitle}</p>
+                      <p className="mt-1 text-xs text-[#4A5D54]">{c.subtitle}</p>
                     )}
                   </div>
                   <Link
                     href={c.href || "/diwali-ka-dhamaka"}
-                    className="inline-block w-fit rounded-full bg-[#C9A45C] px-5 py-1.5 text-xs font-bold text-[#071410] transition hover:bg-[#d8b673]"
+                    className="inline-block w-fit rounded-full bg-[#0B5D3B] px-5 py-1.5 text-xs font-bold text-white transition hover:bg-[#08472D]"
                   >
                     Grab Deal
                   </Link>
@@ -312,7 +312,7 @@ export const PromoBanner = () => {
             {videos.map((v) => (
               <div
                 key={v.id}
-                className="overflow-hidden rounded-2xl border border-[#C9A45C]/25 bg-[#0D211B]"
+                className="overflow-hidden rounded-2xl border border-[#DCE5DF] bg-white shadow-sm"
               >
                 <video
                   src={v.videoUrl || "/hero.mp4.mp4"}
@@ -324,18 +324,18 @@ export const PromoBanner = () => {
                 />
                 <div className="flex items-center justify-between gap-3 p-4">
                   <div className="min-w-0">
-                    <p className="truncate text-sm font-bold text-[#C9A45C]">
+                    <p className="truncate text-sm font-bold text-[#0B2219]">
                       {v.title}
                     </p>
                     {v.subtitle && (
-                      <p className="truncate text-xs text-[#FFFDF2]/75">
+                      <p className="truncate text-xs text-[#4A5D54]">
                         {v.subtitle}
                       </p>
                     )}
                   </div>
                   <Link
                     href={v.href || "/diwali-ka-dhamaka"}
-                    className="shrink-0 rounded-full bg-[#C9A45C] px-4 py-1.5 text-xs font-bold text-[#071410] transition hover:bg-[#d8b673]"
+                    className="shrink-0 rounded-full bg-[#0B5D3B] px-4 py-1.5 text-xs font-bold text-white transition hover:bg-[#08472D]"
                   >
                     Explore
                   </Link>
@@ -350,16 +350,16 @@ export const PromoBanner = () => {
       {showPopup && popupAd && (
         <div
           onClick={() => setShowPopup(false)}
-          className="fixed inset-0 z-50 flex items-center justify-center bg-[#071410]/85 p-4 backdrop-blur-sm"
+          className="fixed inset-0 z-50 flex items-center justify-center bg-[#0B2219]/60 p-4 backdrop-blur-sm"
         >
           <div
             onClick={(e) => e.stopPropagation()}
-            className="relative w-full max-w-md rounded-3xl border border-[#C9A45C]/40 bg-[#0D211B] p-6 text-center shadow-2xl"
+            className="relative w-full max-w-md rounded-3xl border border-[#DCE5DF] bg-white p-6 text-center shadow-2xl"
           >
             <button
               type="button"
               onClick={() => setShowPopup(false)}
-              className="absolute right-4 top-4 cursor-pointer rounded-full bg-[#071410] p-1.5 text-[#FFFDF2]/75 hover:text-[#C9A45C]"
+              className="absolute right-4 top-4 cursor-pointer rounded-full bg-[#EDF5F0] p-1.5 text-[#0B5D3B] hover:bg-[#0B5D3B] hover:text-white"
             >
               <X className="h-4 w-4" />
             </button>
@@ -367,19 +367,19 @@ export const PromoBanner = () => {
               <img
                 src={popupAd.image}
                 alt={popupAd.title}
-                className="mx-auto mb-4 h-40 w-full rounded-2xl border border-[#C9A45C]/25 object-cover"
+                className="mx-auto mb-4 h-40 w-full rounded-2xl border border-[#DCE5DF] object-cover"
               />
             )}
-            <p className="text-xl font-bold text-[#C9A45C]">{popupAd.title}</p>
+            <p className="text-xl font-bold text-[#0B2219]">{popupAd.title}</p>
             {popupAd.subtitle && (
-              <p className="mt-2 text-sm text-[#FFFDF2]/80">{popupAd.subtitle}</p>
+              <p className="mt-2 text-sm text-[#4A5D54]">{popupAd.subtitle}</p>
             )}
             <div className="mt-5 flex flex-wrap justify-center gap-2">
               {popupAd.couponCode && (
                 <button
                   type="button"
                   onClick={() => copyCode(popupAd.id, popupAd.couponCode!)}
-                  className="inline-flex cursor-pointer items-center gap-1.5 rounded-full border border-[#C9A45C] bg-[#071410] px-4 py-2 font-mono text-xs font-bold text-[#C9A45C]"
+                  className="inline-flex cursor-pointer items-center gap-1.5 rounded-full border border-[#0B5D3B] bg-[#EDF5F0] px-4 py-2 font-mono text-xs font-bold text-[#0B5D3B]"
                 >
                   <Copy className="h-3.5 w-3.5" />
                   {copiedId === popupAd.id
@@ -390,7 +390,7 @@ export const PromoBanner = () => {
               <Link
                 href={popupAd.href || "/diwali-ka-dhamaka"}
                 onClick={() => setShowPopup(false)}
-                className="rounded-full bg-[#C9A45C] px-6 py-2 text-xs font-bold text-[#071410] transition hover:bg-[#d8b673]"
+                className="rounded-full bg-[#0B5D3B] px-6 py-2 text-xs font-bold text-white transition hover:bg-[#08472D]"
               >
                 Shop Now
               </Link>
