@@ -7,11 +7,12 @@ import {
   User,
 } from "firebase/auth";
 import { collection, onSnapshot, orderBy, query } from "firebase/firestore";
-import { LogOut, PackageCheck, ShoppingBag, Tag } from "lucide-react";
+import { LogOut, PackageCheck, ShoppingBag, Tag, Users } from "lucide-react";
 import { useEffect, useState } from "react";
 import { AdminStats } from "@/components/admin/AdminStats";
 import { CatalogManager } from "@/components/admin/CatalogManager";
 import { CouponsAndCharges } from "@/components/admin/CouponsAndCharges";
+import { CustomersManager } from "@/components/admin/CustomersManager";
 import { OrderRecord, OrdersManager } from "@/components/admin/OrdersManager";
 import { auth, db } from "@/lib/firebase";
 
@@ -21,12 +22,16 @@ export default function AdminDashboardPage() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [authError, setAuthError] = useState("");
-  const [tab, setTab] = useState<"orders" | "catalog" | "coupons">("orders");
+  const [tab, setTab] = useState<"orders" | "catalog" | "coupons" | "customers">("orders");
   const [orders, setOrders] = useState<OrderRecord[]>([]);
 
   useEffect(() => {
     const unsub = onAuthStateChanged(auth, (u) => {
-      setUser(u);
+      if (u && u.email?.endsWith("@users.lenkastore.in")) {
+        setUser(null);
+      } else {
+        setUser(u);
+      }
       setAuthLoading(false);
     });
     return () => unsub();
@@ -49,6 +54,10 @@ export default function AdminDashboardPage() {
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setAuthError("");
+    if (email.trim().toLowerCase().endsWith("@users.lenkastore.in")) {
+      setAuthError("Customer accounts cannot access Admin.");
+      return;
+    }
     try {
       await signInWithEmailAndPassword(auth, email.trim(), password);
     } catch {
@@ -169,6 +178,17 @@ export default function AdminDashboardPage() {
               Coupons &amp; Charges
             </button>
             <button
+              onClick={() => setTab("customers")}
+              className={`inline-flex cursor-pointer items-center gap-1.5 rounded-full px-4 py-2 text-xs font-semibold transition ${
+                tab === "customers"
+                  ? "bg-[#FFD54A] text-black"
+                  : "border border-white/15 bg-zinc-900 text-zinc-300 hover:bg-zinc-800"
+              }`}
+            >
+              <Users className="h-3.5 w-3.5" />
+              Customers
+            </button>
+            <button
               onClick={() => signOut(auth)}
               className="inline-flex cursor-pointer items-center gap-1.5 rounded-full border border-white/15 bg-zinc-900 px-4 py-2 text-xs font-semibold text-zinc-300 hover:bg-zinc-800"
             >
@@ -189,6 +209,7 @@ export default function AdminDashboardPage() {
         {tab === "orders" && <OrdersManager orders={orders} />}
         {tab === "catalog" && <CatalogManager />}
         {tab === "coupons" && <CouponsAndCharges />}
+        {tab === "customers" && <CustomersManager />}
       </div>
     </div>
   );
