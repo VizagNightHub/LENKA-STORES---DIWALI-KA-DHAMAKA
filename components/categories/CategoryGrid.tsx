@@ -15,7 +15,7 @@ export const CategoryGrid = () => {
   return (
     <section
       id="categories"
-      className="relative w-full bg-[#071410] px-4 py-20 text-[#FFFDF2] sm:px-8 md:px-12"
+      className="relative w-full bg-[#F8FAF9] px-4 py-16 text-[#0B2219] sm:px-8 md:px-12"
     >
       <div className="mx-auto max-w-7xl">
         <motion.div
@@ -23,17 +23,17 @@ export const CategoryGrid = () => {
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true, amount: 0.3 }}
           transition={{ duration: 0.7, ease: [0.16, 1, 0.3, 1] }}
-          className="mb-12 flex flex-col justify-between gap-4 md:flex-row md:items-end"
+          className="mb-10 flex flex-col justify-between gap-4 md:flex-row md:items-end"
         >
           <div>
-            <p className="text-xs font-semibold uppercase tracking-[0.25em] text-[#C9A45C]">
+            <p className="text-xs font-semibold uppercase tracking-[0.25em] text-[#0B5D3B]">
               Explore Collections
             </p>
-            <h2 className="mt-2 text-3xl font-semibold tracking-tight sm:text-5xl">
+            <h2 className="mt-2 text-3xl font-semibold tracking-tight text-[#0B2219] sm:text-5xl">
               Pick Your Category
             </h2>
           </div>
-          <p className="max-w-md text-sm text-[#FFFDF2]/70 sm:text-base">
+          <p className="max-w-md text-sm text-[#4A5D54] sm:text-base">
             Select a department below to browse curated drops, festive combos,
             and instant pre-booking offers.
           </p>
@@ -55,33 +55,33 @@ export const CategoryGrid = () => {
                 ease: [0.16, 1, 0.3, 1],
               }}
               whileHover={{
-                y: -8,
-                rotateX: 3,
-                rotateY: idx % 2 === 0 ? -2 : 2,
+                y: -6,
+                rotateX: 2,
+                rotateY: idx % 2 === 0 ? -1.5 : 1.5,
               }}
               className="group relative"
             >
               <Link
                 href={cat.href}
-                className="relative flex min-h-[280px] flex-col justify-between overflow-hidden rounded-3xl border border-[#C9A45C]/20 bg-[#0D211B] p-7 transition-colors duration-300 hover:border-[#C9A45C]/60 sm:min-h-[320px] sm:p-9"
+                className="relative flex min-h-[260px] flex-col justify-between overflow-hidden rounded-3xl border border-[#DCE5DF] bg-white p-7 shadow-[0_6px_24px_rgba(11,59,43,0.06)] transition-all duration-300 hover:border-[#0B5D3B]/45 hover:shadow-[0_12px_32px_rgba(11,59,43,0.12)] sm:min-h-[300px] sm:p-9"
               >
-                {/* Unified Brushed Brass top hairline */}
-                <span className="absolute inset-x-0 top-0 h-[2px] bg-[#C9A45C] opacity-55 transition-opacity duration-300 group-hover:opacity-100" />
+                {/* Royal Green top hairline */}
+                <span className="absolute inset-x-0 top-0 h-[3px] bg-[#0B5D3B] opacity-70 transition-opacity duration-300 group-hover:opacity-100" />
 
                 <div className="relative z-10 flex items-start justify-between gap-5">
                   <div className="flex-1">
-                    <span className="inline-block rounded-full border border-[#C9A45C]/40 bg-[#071410]/70 px-3 py-1 text-[10px] font-semibold tracking-[0.2em] text-[#C9A45C]">
+                    <span className="inline-block rounded-full border border-[#0B5D3B]/20 bg-[#EDF5F0] px-3 py-1 text-[10px] font-semibold tracking-[0.2em] text-[#0B5D3B]">
                       {cat.tag}
                     </span>
-                    <h3 className="mt-4 text-2xl font-semibold tracking-tight text-[#FFFDF2] sm:text-3xl">
+                    <h3 className="mt-4 text-2xl font-semibold tracking-tight text-[#0B2219] sm:text-3xl">
                       {cat.title}
                     </h3>
-                    <p className="mt-2 max-w-xs text-sm text-[#FFFDF2]/70">
+                    <p className="mt-2 max-w-xs text-sm text-[#4A5D54]">
                       {cat.subtitle}
                     </p>
                   </div>
 
-                  <div className="relative h-32 w-32 shrink-0 overflow-hidden rounded-2xl border border-[#C9A45C]/25 bg-[#071410] shadow-[0_18px_40px_rgba(0,0,0,0.55)] transition-transform duration-500 ease-out group-hover:-translate-y-3 group-hover:rotate-2 group-hover:scale-110 sm:h-40 sm:w-40">
+                  <div className="relative h-32 w-32 shrink-0 overflow-hidden rounded-2xl border border-[#DCE5DF] bg-[#F3F6F4] shadow-sm transition-transform duration-500 ease-out group-hover:-translate-y-2 group-hover:rotate-1 group-hover:scale-105 sm:h-40 sm:w-40">
                     <img
                       src={IMAGE_MAP[cat.id]}
                       alt={cat.title}
@@ -90,11 +90,11 @@ export const CategoryGrid = () => {
                   </div>
                 </div>
 
-                <div className="relative z-10 mt-6 flex items-center justify-between border-t border-[#C9A45C]/15 pt-4 text-sm font-medium">
-                  <span className="text-[#FFFDF2]/80 group-hover:text-[#FFFDF2]">
+                <div className="relative z-10 mt-6 flex items-center justify-between border-t border-[#E6ECE8] pt-4 text-sm font-medium">
+                  <span className="text-[#0B2219]/80 transition-colors group-hover:text-[#0B5D3B]">
                     Open {cat.title}
                   </span>
-                  <span className="flex h-9 w-9 items-center justify-center rounded-full bg-[#C9A45C]/15 text-[#C9A45C] transition-all duration-300 group-hover:bg-[#C9A45C] group-hover:text-[#071410]">
+                  <span className="flex h-9 w-9 items-center justify-center rounded-full bg-[#EDF5F0] text-[#0B5D3B] transition-all duration-300 group-hover:bg-[#0B5D3B] group-hover:text-white">
                     <svg
                       viewBox="0 0 16 16"
                       fill="none"
