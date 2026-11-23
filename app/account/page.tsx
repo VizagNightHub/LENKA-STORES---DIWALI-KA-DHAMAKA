@@ -8,6 +8,7 @@ import {
   User,
 } from "firebase/auth";
 import {
+  arrayRemove,
   collection,
   doc,
   getDoc,
@@ -16,6 +17,7 @@ import {
   query,
   serverTimestamp,
   setDoc,
+  updateDoc,
   where,
 } from "firebase/firestore";
 import {
@@ -27,10 +29,12 @@ import {
   LogOut,
   Package,
   Save,
+  Trash2,
   Upload,
   User as UserIcon,
 } from "lucide-react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { STORE_CONFIG } from "@/data/storeConfig";
 import { auth, db } from "@/lib/firebase";
@@ -54,6 +58,14 @@ interface CustomerProfile {
   wishlist?: string[];
 }
 
+interface WishlistProduct {
+  id: string;
+  name: string;
+  price: number;
+  category: string;
+  images?: string[];
+}
+
 interface OrderSummary {
   id: string;
   orderId?: string;
@@ -61,6 +73,7 @@ interface OrderSummary {
   status?: string;
   expectedDeliveryDate?: string;
   trackingId?: string;
+  items?: { name: string; variant?: string; quantity?: number; qty?: number }[];
 }
 
 function compressAvatar(file: File): Promise<string> {
@@ -88,11 +101,11 @@ function compressAvatar(file: File): Promise<string> {
 }
 
 export default function AccountPage() {
+  const router = useRouter();
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
   const [mode, setMode] = useState<"login" | "signup">("login");
 
-  // Auth form fields
   const [loginPhone, setLoginPhone] = useState("");
   const [loginPass, setLoginPass] = useState("");
   const [showLoginPass, setShowLoginPass] = useState(false);
@@ -109,9 +122,9 @@ export default function AccountPage() {
   const [authError, setAuthError] = useState("");
   const [submitting, setSubmitting] = useState(false);
 
-  // Profile state
   const [profile, setProfile] = useState<CustomerProfile | null>(null);
   const [orders, setOrders] = useState<OrderSummary[]>([]);
+  const [wishlistItems, setWishlistItems] = useState<WishlistProduct[]>([]);
   const [saveMsg, setSaveMsg] = useState("");
   const [savingProfile, setSavingProfile] = useState(false);
 
@@ -123,6 +136,27 @@ export default function AccountPage() {
         if (snap.exists()) {
           const data = snap.data() as CustomerProfile;
           setProfile(data);
+
+          if (Array.isArray(data.wishlist) && data.wishlist.length > 0) {
+            const loaded: WishlistProduct[] = [];
+            for (const pid of data.wishlist) {
+              try {
+                const psnap = await getDoc(doc(db, "products", pid));
+                if (psnap.exists()) {
+                  loaded.push({
+                    id: psnap.id,
+                    ...(psnap.data() as Omit<WishlistProduct, "id">),
+                  });
+                }
+              } catch {
+                // Ignore missing
+              }
+            }
+            setWishlistItems(loaded);
+          } else {
+            setWishlistItems([]);
+          }
+
           if (data.phone) {
             try {
               const oq = query(
@@ -138,7 +172,7 @@ export default function AccountPage() {
                 }))
               );
             } catch {
-              // Ignore order query errors
+              // Ignore
             }
           }
         }
@@ -166,6 +200,7 @@ export default function AccountPage() {
     setSubmitting(true);
     try {
       await signInWithEmailAndPassword(auth, phoneToEmail(cleanPhone), loginPass);
+      router.push("/");
     } catch {
       setAuthError("Incorrect mobile number or password.");
     } finally {
@@ -222,11 +257,20 @@ export default function AccountPage() {
         createdAt: serverTimestamp(),
       });
       setProfile(newProfile);
+      router.push("/");
     } catch {
       setAuthError("This mobile number is already registered, or connection failed.");
     } finally {
       setSubmitting(false);
     }
+  };
+
+  const handleRemoveWishlist = async (productId: string) => {
+    if (!user) return;
+    setWishlistItems((prev) => prev.filter((item) => item.id !== productId));
+    await updateDoc(doc(db, "customers", user.uid), {
+      wishlist: arrayRemove(productId),
+    });
   };
 
   const handleAvatarUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -342,7 +386,7 @@ export default function AccountPage() {
                   disabled={submitting}
                   className="w-full cursor-pointer rounded-full bg-[#C9A45C] py-3 text-sm font-bold text-[#071410] hover:bg-[#d8b673] disabled:opacity-50"
                 >
-                  {submitting ? "Signing In..." : "Login to My Profile"}
+                  {submitting ? "Signing In..." : "Login"}
                 </button>
               </form>
             ) : (
@@ -592,7 +636,7 @@ export default function AccountPage() {
             </button>
           </form>
 
-          {/* Right: Order History & Wishlist */}
+          {/* Right: Order History & Saved Wishlist */}
           <div className="space-y-6 lg:col-span-5">
             <div className="rounded-3xl border border-[#0D211B]/10 bg-white p-6 shadow-sm">
               <h2 className="flex items-center gap-2 text-base font-bold">
@@ -614,9 +658,21 @@ export default function AccountPage() {
                       <p className="mt-1 text-[#0D211B]/70">
                         Status: <strong>{o.status || "PENDING_VERIFICATION"}</strong>
                       </p>
+                      {Array.isArray(o.items) && o.items.length > 0 && (
+                        <p className="mt-1 text-[11px] text-[#0D211B]/65">
+                          {o.items
+                            .map((i) => `${i.name}${i.variant ? ` (${i.variant})` : ""} × ${i.quantity ?? i.qty ?? 1}`)
+                            .join(", ")}
+                        </p>
+                      )}
                       {o.expectedDeliveryDate && (
-                        <p className="text-[#0D211B]/70">
-                          Expected: {o.expectedDeliveryDate}
+                        <p className="mt-0.5 text-[11px] font-medium text-[#071410]">
+                          Expected Delivery: {o.expectedDeliveryDate}
+                        </p>
+                      )}
+                      {o.trackingId && (
+                        <p className="mt-0.5 font-mono text-[11px] text-[#0D211B]/75">
+                          Tracking: {o.trackingId}
                         </p>
                       )}
                     </div>
@@ -628,11 +684,49 @@ export default function AccountPage() {
             <div className="rounded-3xl border border-[#0D211B]/10 bg-white p-6 shadow-sm">
               <h2 className="flex items-center gap-2 text-base font-bold">
                 <Heart className="h-4 w-4 text-[#C9A45C]" /> Saved Wishlist (
-                {profile.wishlist?.length || 0})
+                {wishlistItems.length})
               </h2>
-              <p className="mt-2 text-xs text-[#0D211B]/65">
-                Tap the heart icon on any product in Fashion, Electronics, or New Launch to save it here.
-              </p>
+              {wishlistItems.length === 0 ? (
+                <p className="mt-2 text-xs text-[#0D211B]/65">
+                  Tap the heart icon on any product to save it here.
+                </p>
+              ) : (
+                <div className="mt-3 space-y-2.5">
+                  {wishlistItems.map((item) => (
+                    <div
+                      key={item.id}
+                      className="flex items-center justify-between gap-3 rounded-xl border border-[#0D211B]/10 bg-[#FAF8F3] p-2.5"
+                    >
+                      <Link
+                        href={`/${item.category}#product-${item.id}`}
+                        className="flex min-w-0 flex-1 items-center gap-3"
+                      >
+                        <img
+                          src={item.images?.[0] || "/images/new-launch.png"}
+                          alt={item.name}
+                          className="h-11 w-11 shrink-0 rounded-lg object-cover"
+                        />
+                        <div className="min-w-0">
+                          <p className="truncate text-xs font-bold text-[#071410] hover:underline">
+                            {item.name}
+                          </p>
+                          <p className="text-xs font-semibold text-[#C9A45C]">
+                            ₹{Number(item.price || 0).toLocaleString("en-IN")}
+                          </p>
+                        </div>
+                      </Link>
+                      <button
+                        type="button"
+                        onClick={() => handleRemoveWishlist(item.id)}
+                        title="Remove from Wishlist"
+                        className="cursor-pointer rounded-lg p-1.5 text-red-500 hover:bg-red-50"
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              )}
             </div>
           </div>
         </div>
