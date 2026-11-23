@@ -1,21 +1,14 @@
 "use client";
 
-import { collection, getDocs, orderBy, query } from "firebase/firestore";
+import { onAuthStateChanged } from "firebase/auth";
+import { collection, doc, getDoc, getDocs, orderBy, query } from "firebase/firestore";
 import { motion } from "framer-motion";
-import { ChevronLeft, ChevronRight } from "lucide-react";
+import { ChevronLeft, ChevronRight, User as UserIcon } from "lucide-react";
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import { ShareMenuButton } from "@/components/ui/ShareMenuButton";
-import { db } from "@/lib/firebase";
+import { auth, db } from "@/lib/firebase";
 import { WordsPullUp } from "./WordsPullUp";
-
-const navItems = [
-  { label: "Diwali Dhamaka", href: "/diwali-ka-dhamaka" },
-  { label: "Fashion Wear", href: "/fashion-wear" },
-  { label: "Electronics", href: "/electronics" },
-  { label: "New Launch", href: "/new-launch" },
-  { label: "Account", href: "/account" },
-];
 
 interface HeroBannerAd {
   id: string;
@@ -30,8 +23,23 @@ interface HeroBannerAd {
 export const PrismaHero = () => {
   const [banners, setBanners] = useState<HeroBannerAd[]>([]);
   const [slideIdx, setSlideIdx] = useState(0);
+  const [profilePhoto, setProfilePhoto] = useState<string>("");
+  const [profileName, setProfileName] = useState<string>("");
 
   useEffect(() => {
+    const unsubAuth = onAuthStateChanged(auth, async (u) => {
+      if (u && u.email?.endsWith("@users.lenkastore.in")) {
+        const snap = await getDoc(doc(db, "customers", u.uid));
+        if (snap.exists()) {
+          setProfilePhoto(snap.data().photo || "");
+          setProfileName(snap.data().name || "Profile");
+        }
+      } else {
+        setProfilePhoto("");
+        setProfileName("");
+      }
+    });
+
     let active = true;
     const loadHeroBanners = async () => {
       try {
@@ -52,6 +60,7 @@ export const PrismaHero = () => {
     loadHeroBanners();
     return () => {
       active = false;
+      unsubAuth();
     };
   }, []);
 
@@ -72,7 +81,7 @@ export const PrismaHero = () => {
 
   return (
     <section className="w-full bg-[#071410] p-2 sm:p-3">
-      {/* P1: Video Hero (1/3 height on Mobile, 62vh on Desktop) */}
+      {/* P1: Video Hero */}
       <div className="relative h-[34vh] min-h-[240px] w-full overflow-hidden rounded-2xl border border-[#C9A45C]/25 md:h-[62vh] md:rounded-[2rem]">
         <video
           autoPlay
@@ -87,21 +96,25 @@ export const PrismaHero = () => {
 
         <div className="pointer-events-none absolute inset-0 bg-gradient-to-b from-[#071410]/50 via-transparent to-[#071410]/85" />
 
-        <nav className="absolute left-1/2 top-0 z-20 -translate-x-1/2">
-          <div className="flex items-center gap-2.5 rounded-b-2xl border-x border-b border-[#C9A45C]/25 bg-[#071410]/90 px-3 py-2 backdrop-blur-md sm:gap-6 md:gap-10 md:rounded-b-3xl md:px-8 md:py-2.5">
-            {navItems.map((item) => (
-              <Link
-                key={item.label}
-                href={item.href}
-                className="whitespace-nowrap text-[10px] font-medium text-[#FFFDF2]/80 transition-colors hover:text-[#C9A45C] sm:text-xs md:text-sm"
-              >
-                {item.label}
-              </Link>
-            ))}
-          </div>
-        </nav>
+        {/* Top-Left Circular Profile Button */}
+        <Link
+          href="/account"
+          title={profileName ? `${profileName} (My Account)` : "Login / My Account"}
+          className="absolute left-3 top-3 z-30 flex h-10 w-10 items-center justify-center overflow-hidden rounded-full border-2 border-[#C9A45C] bg-[#071410]/90 text-[#C9A45C] shadow-lg transition hover:scale-105 sm:left-5 sm:top-4 sm:h-11 sm:w-11"
+        >
+          {profilePhoto ? (
+            <img
+              src={profilePhoto}
+              alt={profileName || "Profile"}
+              className="h-full w-full object-cover"
+            />
+          ) : (
+            <UserIcon className="h-5 w-5" />
+          )}
+        </Link>
 
-        <div className="absolute right-2 top-2 z-30 sm:right-6 sm:top-3 md:right-8">
+        {/* Top-Right Share / Menu */}
+        <div className="absolute right-3 top-3 z-30 sm:right-5 sm:top-4">
           <ShareMenuButton />
         </div>
 
@@ -155,7 +168,7 @@ export const PrismaHero = () => {
         </div>
       </div>
 
-      {/* P2: Front-End Main Banners (Visible right below P1 on Mobile & Desktop) */}
+      {/* P2: Front-End Main Banners */}
       {currentBanner && (
         <div className="relative mt-2.5 overflow-hidden rounded-2xl border border-[#C9A45C]/30 bg-[#0D211B] md:mt-3 md:rounded-3xl">
           <div className="grid items-center md:grid-cols-12">
