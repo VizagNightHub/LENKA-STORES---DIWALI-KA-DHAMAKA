@@ -116,7 +116,6 @@ export const CatalogManager = () => {
     return () => unsub1();
   }, []);
 
-  // Collect default + any custom categories found in Firestore
   const allCategorySlugs = Array.from(
     new Set([
       ...DEFAULT_CATEGORIES.map((c) => c.slug),
@@ -277,7 +276,6 @@ export const CatalogManager = () => {
 
   const subOptions = SUBCATEGORIES[category] || [];
 
-  // Graph calculations
   const graphProducts =
     graphFilter === "all"
       ? products
@@ -287,8 +285,7 @@ export const CatalogManager = () => {
     0
   );
   const lowStockGraphCount = graphProducts.filter(
-    (p) =>
-      Array.isArray(p.variants) && p.variants.some((v) => v.stock < 3)
+    (p) => Array.isArray(p.variants) && p.variants.some((v) => v.stock < 3)
   ).length;
 
   const graphBars =
@@ -299,14 +296,12 @@ export const CatalogManager = () => {
             key: slug,
             label: getCategoryLabel(slug),
             units: prods.reduce((s, p) => s + getProductStock(p), 0),
-            count: prods.length,
           };
         })
       : graphProducts.map((p) => ({
           key: p.id,
           label: p.name,
           units: getProductStock(p),
-          count: 1,
         }));
 
   const maxBarUnits = Math.max(1, ...graphBars.map((b) => b.units));
@@ -360,7 +355,6 @@ export const CatalogManager = () => {
           </div>
         </div>
 
-        {/* Digital Counters */}
         <div className="mt-4 grid grid-cols-3 gap-3">
           <div className="rounded-xl border border-white/10 bg-black/40 p-3">
             <p className="text-[11px] text-zinc-400">Products</p>
@@ -382,7 +376,6 @@ export const CatalogManager = () => {
           </div>
         </div>
 
-        {/* Visual Bar Graph */}
         <div className="mt-5 space-y-2.5">
           {graphBars.map((bar) => {
             const pct = Math.round((bar.units / maxBarUnits) * 100);
@@ -696,7 +689,6 @@ export const CatalogManager = () => {
         </form>
 
         <div className="space-y-3 lg:col-span-7">
-          {/* Category Filter Slider */}
           <div className="flex gap-2 overflow-x-auto pb-2">
             <button
               type="button"
