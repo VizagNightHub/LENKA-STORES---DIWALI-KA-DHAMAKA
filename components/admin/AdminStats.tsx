@@ -13,6 +13,7 @@ interface ActiveSession {
 }
 
 interface AdminStatsProps {
+  showOrderStats: boolean;
   totalOrders: number;
   paidCount: number;
   completedCount: number;
@@ -21,6 +22,7 @@ interface AdminStatsProps {
 }
 
 export const AdminStats = ({
+  showOrderStats,
   totalOrders,
   paidCount,
   completedCount,
@@ -68,58 +70,87 @@ export const AdminStats = ({
     .filter((s) => s.lastSeenMs && nowMs - s.lastSeenMs <= 120_000)
     .sort((a, b) => (b.lastSeenMs || 0) - (a.lastSeenMs || 0));
 
+  const paddedLive = String(liveNow.length).padStart(3, "0").split("");
+
   return (
     <>
-      <div className="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        <div className="rounded-2xl border border-white/10 bg-zinc-900/70 p-5">
-          <div className="flex items-center justify-between text-xs text-zinc-400">
-            <span>Total Website Visitors</span>
-            <Eye className="h-4 w-4 text-sky-400" />
-          </div>
-          <p className="mt-2 text-3xl font-bold">{visitors.toLocaleString("en-IN")}</p>
-        </div>
-
+      <div
+        className={`mt-6 grid gap-4 ${
+          showOrderStats ? "sm:grid-cols-2 lg:grid-cols-4" : "max-w-sm"
+        }`}
+      >
+        {/* Always Top-Left: Analog/Digital Live Users Counter */}
         <button
           type="button"
           onClick={() => setShowLiveList((v) => !v)}
-          className="cursor-pointer rounded-2xl border border-emerald-500/30 bg-zinc-900/70 p-5 text-left transition hover:border-emerald-400"
+          className="cursor-pointer rounded-2xl border border-emerald-500/35 bg-zinc-900/80 p-5 text-left transition hover:border-emerald-400"
         >
           <div className="flex items-center justify-between text-xs text-zinc-400">
-            <span className="inline-flex items-center gap-1.5">
-              <span className="h-2 w-2 animate-pulse rounded-full bg-emerald-400" />
+            <span className="inline-flex items-center gap-1.5 font-semibold text-emerald-300">
+              <span className="h-2 w-2 animate-ping rounded-full bg-emerald-400" />
               Live Users Now
             </span>
             <Users className="h-4 w-4 text-emerald-400" />
           </div>
-          <p className="mt-2 text-3xl font-bold text-emerald-400">{liveNow.length}</p>
-          <p className="mt-1 text-[11px] text-zinc-400">
+
+          {/* Analog Flip-Style Digit Display */}
+          <div className="mt-3 flex items-center gap-1.5">
+            {paddedLive.map((digit, i) => (
+              <span
+                key={i}
+                className="flex h-10 w-8 items-center justify-center rounded-lg border border-emerald-500/30 bg-black font-mono text-2xl font-bold text-emerald-400 shadow-inner"
+              >
+                {digit}
+              </span>
+            ))}
+            <span className="ml-2 text-[11px] font-medium text-zinc-400">
+              online
+            </span>
+          </div>
+
+          <p className="mt-2 text-[11px] text-zinc-400">
             {showLiveList ? "Click to hide live list" : "Click to view active users"}
           </p>
         </button>
 
-        <div className="rounded-2xl border border-white/10 bg-zinc-900/70 p-5">
-          <div className="flex items-center justify-between text-xs text-zinc-400">
-            <span>Total Ordered Members</span>
-            <ShoppingBag className="h-4 w-4 text-[#FFD54A]" />
-          </div>
-          <p className="mt-2 text-3xl font-bold">{totalOrders}</p>
-          <p className="mt-1 text-xs text-zinc-500">
-            {paidCount} Confirmed • {completedCount} Completed
-          </p>
-        </div>
+        {/* Shown ONLY on Orders Tab */}
+        {showOrderStats && (
+          <>
+            <div className="rounded-2xl border border-white/10 bg-zinc-900/70 p-5">
+              <div className="flex items-center justify-between text-xs text-zinc-400">
+                <span>Total Website Visitors</span>
+                <Eye className="h-4 w-4 text-sky-400" />
+              </div>
+              <p className="mt-3 font-mono text-3xl font-bold">
+                {visitors.toLocaleString("en-IN")}
+              </p>
+            </div>
 
-        <div className="rounded-2xl border border-emerald-500/20 bg-emerald-950/20 p-5">
-          <div className="flex items-center justify-between text-xs text-zinc-400">
-            <span>Total Collected Cash</span>
-            <span className="font-bold text-emerald-400">₹</span>
-          </div>
-          <p className="mt-2 text-3xl font-bold text-emerald-400">
-            ₹{collectedCash.toLocaleString("en-IN")}
-          </p>
-          <p className="mt-1 text-xs text-zinc-400">
-            Pending Verification: ₹{pendingCash.toLocaleString("en-IN")}
-          </p>
-        </div>
+            <div className="rounded-2xl border border-white/10 bg-zinc-900/70 p-5">
+              <div className="flex items-center justify-between text-xs text-zinc-400">
+                <span>Total Ordered Members</span>
+                <ShoppingBag className="h-4 w-4 text-[#FFD54A]" />
+              </div>
+              <p className="mt-3 font-mono text-3xl font-bold">{totalOrders}</p>
+              <p className="mt-1 text-xs text-zinc-500">
+                {paidCount} Confirmed • {completedCount} Completed
+              </p>
+            </div>
+
+            <div className="rounded-2xl border border-emerald-500/20 bg-emerald-950/20 p-5">
+              <div className="flex items-center justify-between text-xs text-zinc-400">
+                <span>Total Collected Cash</span>
+                <span className="font-bold text-emerald-400">₹</span>
+              </div>
+              <p className="mt-3 font-mono text-3xl font-bold text-emerald-400">
+                ₹{collectedCash.toLocaleString("en-IN")}
+              </p>
+              <p className="mt-1 text-xs text-zinc-400">
+                Pending Verification: ₹{pendingCash.toLocaleString("en-IN")}
+              </p>
+            </div>
+          </>
+        )}
       </div>
 
       {showLiveList && (
