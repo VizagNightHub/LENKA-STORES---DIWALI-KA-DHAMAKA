@@ -80,9 +80,9 @@ export const PrismaHero = () => {
   const currentBanner = banners[slideIdx % Math.max(1, banners.length)];
 
   return (
-    <section className="w-full bg-[#071410] p-2 sm:p-3">
+    <section className="w-full bg-[#F8FAF9] p-2 sm:p-3">
       {/* P1: Video Hero */}
-      <div className="relative h-[34vh] min-h-[240px] w-full overflow-hidden rounded-2xl border border-[#C9A45C]/25 md:h-[62vh] md:rounded-[2rem]">
+      <div className="relative h-[34vh] min-h-[240px] w-full overflow-hidden rounded-2xl border border-[#DCE5DF] shadow-md md:h-[62vh] md:rounded-[2rem]">
         <video
           autoPlay
           loop
@@ -94,13 +94,13 @@ export const PrismaHero = () => {
           <source src="/hero.mp4.mp4" type="video/mp4" />
         </video>
 
-        <div className="pointer-events-none absolute inset-0 bg-gradient-to-b from-[#071410]/50 via-transparent to-[#071410]/85" />
+        <div className="pointer-events-none absolute inset-0 bg-gradient-to-b from-[#0B2219]/40 via-transparent to-[#0B2219]/80" />
 
         {/* Top-Left Circular Profile Button */}
         <Link
           href="/account"
           title={profileName ? `${profileName} (My Account)` : "Login / My Account"}
-          className="absolute left-3 top-3 z-30 flex h-10 w-10 items-center justify-center overflow-hidden rounded-full border-2 border-[#C9A45C] bg-[#071410]/90 text-[#C9A45C] shadow-lg transition hover:scale-105 sm:left-5 sm:top-4 sm:h-11 sm:w-11"
+          className="absolute left-3 top-3 z-30 flex h-10 w-10 items-center justify-center overflow-hidden rounded-full border-2 border-white bg-white/95 text-[#0B5D3B] shadow-md transition hover:scale-105 sm:left-5 sm:top-4 sm:h-11 sm:w-11"
         >
           {profilePhoto ? (
             <img
@@ -123,7 +123,7 @@ export const PrismaHero = () => {
             <div className="col-span-12 lg:col-span-8">
               <h1
                 className="font-medium leading-[0.88] tracking-[-0.06em] text-[11vw] sm:text-[10vw] md:text-[8vw] lg:text-[7vw]"
-                style={{ color: "#FFFDF2" }}
+                style={{ color: "#FFFFFF" }}
               >
                 <WordsPullUp text="LENKA STORE" showAsterisk />
               </h1>
@@ -134,7 +134,7 @@ export const PrismaHero = () => {
                 initial={{ y: 12, opacity: 0 }}
                 animate={{ y: 0, opacity: 1 }}
                 transition={{ duration: 0.7, delay: 0.4 }}
-                className="text-xs font-medium tracking-wide text-[#FFFDF2]/85 sm:text-sm md:text-base"
+                className="text-xs font-medium tracking-wide text-white/90 sm:text-sm md:text-base"
               >
                 Lenka Stores Diwali Ka Dhamaka
               </motion.p>
@@ -144,14 +144,14 @@ export const PrismaHero = () => {
                 onClick={scrollToCategories}
                 whileHover={{ scale: 1.03 }}
                 whileTap={{ scale: 0.97 }}
-                className="group inline-flex shrink-0 cursor-pointer items-center gap-2 rounded-full bg-[#C9A45C] py-1 pl-4 pr-1 text-xs font-bold tracking-wide text-[#071410] shadow-lg transition-all hover:bg-[#d8b673] sm:py-1.5 sm:pl-5 sm:pr-1.5 sm:text-sm"
+                className="group inline-flex shrink-0 cursor-pointer items-center gap-2 rounded-full bg-[#0B5D3B] py-1 pl-4 pr-1 text-xs font-bold tracking-wide text-white shadow-lg transition-all hover:bg-[#08472D] sm:py-1.5 sm:pl-5 sm:pr-1.5 sm:text-sm"
               >
                 GO AND GRAB IT
-                <span className="flex h-7 w-7 items-center justify-center rounded-full bg-[#071410] sm:h-9 sm:w-9">
+                <span className="flex h-7 w-7 items-center justify-center rounded-full bg-white text-[#0B5D3B] sm:h-9 sm:w-9">
                   <svg
                     viewBox="0 0 16 16"
                     fill="none"
-                    className="h-3.5 w-3.5 text-[#C9A45C]"
+                    className="h-3.5 w-3.5"
                     aria-hidden="true"
                   >
                     <path
@@ -170,7 +170,7 @@ export const PrismaHero = () => {
 
       {/* P2: Front-End Main Banners */}
       {currentBanner && (
-        <div className="relative mt-2.5 overflow-hidden rounded-2xl border border-[#C9A45C]/30 bg-[#0D211B] md:mt-3 md:rounded-3xl">
+        <div className="relative mt-2.5 overflow-hidden rounded-2xl border border-[#DCE5DF] bg-white shadow-[0_6px_24px_rgba(11,59,43,0.06)] md:mt-3 md:rounded-3xl">
           <div className="grid items-center md:grid-cols-12">
             {currentBanner.image && (
               <div className="relative h-44 w-full sm:h-56 md:col-span-5 md:h-64">
@@ -189,12 +189,12 @@ export const PrismaHero = () => {
             >
               <div>
                 {currentBanner.title && (
-                  <h2 className="text-lg font-bold text-[#C9A45C] sm:text-2xl">
+                  <h2 className="text-lg font-bold text-[#0B2219] sm:text-2xl">
                     {currentBanner.title}
                   </h2>
                 )}
                 {currentBanner.subtitle && (
-                  <p className="mt-1 text-xs leading-relaxed text-[#FFFDF2]/80 sm:text-sm">
+                  <p className="mt-1 text-xs leading-relaxed text-[#4A5D54] sm:text-sm">
                     {currentBanner.subtitle}
                   </p>
                 )}
@@ -204,12 +204,12 @@ export const PrismaHero = () => {
                 {currentBanner.href ? (
                   <Link
                     href={currentBanner.href}
-                    className="inline-flex rounded-full bg-[#C9A45C] px-5 py-2 text-xs font-bold text-[#071410] transition hover:bg-[#d8b673]"
+                    className="inline-flex rounded-full bg-[#0B5D3B] px-5 py-2 text-xs font-bold text-white transition hover:bg-[#08472D]"
                   >
                     Explore Offer →
                   </Link>
                 ) : (
-                  <span className="text-[11px] font-semibold uppercase tracking-widest text-[#C9A45C]/70">
+                  <span className="text-[11px] font-semibold uppercase tracking-widest text-[#0B5D3B]">
                     LENKA STORE FEATURED
                   </span>
                 )}
@@ -224,8 +224,8 @@ export const PrismaHero = () => {
                           onClick={() => setSlideIdx(i)}
                           className={`h-1.5 cursor-pointer rounded-full transition-all ${
                             i === slideIdx % banners.length
-                              ? "w-5 bg-[#C9A45C]"
-                              : "w-1.5 bg-[#FFFDF2]/25"
+                              ? "w-5 bg-[#0B5D3B]"
+                              : "w-1.5 bg-[#DCE5DF]"
                           }`}
                         />
                       ))}
@@ -235,14 +235,16 @@ export const PrismaHero = () => {
                       onClick={() =>
                         setSlideIdx((i) => (i - 1 + banners.length) % banners.length)
                       }
-                      className="cursor-pointer rounded-full border border-[#C9A45C]/25 p-1 text-[#FFFDF2]/75 hover:text-[#C9A45C]"
+                      className="cursor-pointer rounded-full border border-[#DCE5DF] p-1 text-[#4A5D54] hover:border-[#0B5D3B] hover:text-[#0B5D3B]"
                     >
                       <ChevronLeft className="h-3.5 w-3.5" />
                     </button>
                     <button
                       type="button"
-                      onClick={() => setSlideIdx((i) => (i + 1) % banners.length)}
-                      className="cursor-pointer rounded-full border border-[#C9A45C]/25 p-1 text-[#FFFDF2]/75 hover:text-[#C9A45C]"
+                      onClick={() =>
+                        setSlideIdx((i) => (i + 1) % banners.length)
+                      }
+                      className="cursor-pointer rounded-full border border-[#DCE5DF] p-1 text-[#4A5D54] hover:border-[#0B5D3B] hover:text-[#0B5D3B]"
                     >
                       <ChevronRight className="h-3.5 w-3.5" />
                     </button>
