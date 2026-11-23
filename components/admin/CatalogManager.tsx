@@ -12,7 +12,16 @@ import {
   setDoc,
   updateDoc,
 } from "firebase/firestore";
-import { BarChart3, MessageSquare, Pencil, Plus, Trash2, Upload, X } from "lucide-react";
+import {
+  AlertTriangle,
+  BarChart3,
+  MessageSquare,
+  Pencil,
+  Plus,
+  Trash2,
+  Upload,
+  X,
+} from "lucide-react";
 import { useEffect, useState } from "react";
 import { ProductReviewsModal } from "@/components/product/ProductReviewsModal";
 import { SUBCATEGORIES } from "@/data/subcategories";
@@ -276,6 +285,7 @@ export const CatalogManager = () => {
 
   const subOptions = SUBCATEGORIES[category] || [];
 
+  // Analytics & Smart Purchase Advisor
   const graphProducts =
     graphFilter === "all"
       ? products
@@ -284,9 +294,28 @@ export const CatalogManager = () => {
     (sum, p) => sum + getProductStock(p),
     0
   );
-  const lowStockGraphCount = graphProducts.filter(
-    (p) => Array.isArray(p.variants) && p.variants.some((v) => v.stock < 3)
-  ).length;
+
+  const restockAlerts: {
+    productName: string;
+    category: string;
+    variant: string;
+    stock: number;
+  }[] = [];
+  graphProducts.forEach((p) => {
+    if (Array.isArray(p.variants)) {
+      p.variants.forEach((v) => {
+        if (v.stock < 3) {
+          restockAlerts.push({
+            productName: p.name,
+            category: p.category,
+            variant: v.label,
+            stock: v.stock,
+          });
+        }
+      });
+    }
+  });
+  restockAlerts.sort((a, b) => a.stock - b.stock);
 
   const graphBars =
     graphFilter === "all"
@@ -313,16 +342,16 @@ export const CatalogManager = () => {
 
   return (
     <div className="mt-6 space-y-10">
-      {/* Interactive Stock Graph + Digital Counts */}
+      {/* Digital Display + Interactive Stock Graph + Restock Advisor */}
       <div className="rounded-2xl border border-white/10 bg-zinc-900/80 p-5 sm:p-6">
         <div className="flex flex-wrap items-center justify-between gap-4">
           <div>
             <h2 className="flex items-center gap-2 text-base font-bold text-white">
               <BarChart3 className="h-5 w-5 text-[#FFD54A]" />
-              Stock &amp; Inventory Analytics
+              Digital Stock Monitor &amp; Purchase Advisor
             </h2>
             <p className="text-xs text-zinc-400">
-              Click a category below to inspect digital counts and product-level stock.
+              Select a category to inspect live digital counts and what to purchase next.
             </p>
           </div>
 
@@ -355,27 +384,35 @@ export const CatalogManager = () => {
           </div>
         </div>
 
+        {/* Digital Counters */}
         <div className="mt-4 grid grid-cols-3 gap-3">
-          <div className="rounded-xl border border-white/10 bg-black/40 p-3">
-            <p className="text-[11px] text-zinc-400">Products</p>
+          <div className="rounded-xl border border-white/10 bg-black p-3.5">
+            <p className="text-[11px] uppercase tracking-wider text-zinc-400">
+              Products
+            </p>
             <p className="mt-1 font-mono text-2xl font-bold text-white">
-              {graphProducts.length}
+              {String(graphProducts.length).padStart(2, "0")}
             </p>
           </div>
-          <div className="rounded-xl border border-white/10 bg-black/40 p-3">
-            <p className="text-[11px] text-zinc-400">Total Stock Units</p>
+          <div className="rounded-xl border border-emerald-500/20 bg-black p-3.5">
+            <p className="text-[11px] uppercase tracking-wider text-zinc-400">
+              Total Stock Units
+            </p>
             <p className="mt-1 font-mono text-2xl font-bold text-emerald-400">
-              {totalGraphUnits}
+              {String(totalGraphUnits).padStart(3, "0")}
             </p>
           </div>
-          <div className="rounded-xl border border-white/10 bg-black/40 p-3">
-            <p className="text-[11px] text-zinc-400">Low Stock (&lt; 3)</p>
+          <div className="rounded-xl border border-red-500/20 bg-black p-3.5">
+            <p className="text-[11px] uppercase tracking-wider text-zinc-400">
+              Need Purchase (&lt; 3)
+            </p>
             <p className="mt-1 font-mono text-2xl font-bold text-red-400">
-              {lowStockGraphCount}
+              {String(restockAlerts.length).padStart(2, "0")}
             </p>
           </div>
         </div>
 
+        {/* Visual Bar Graph */}
         <div className="mt-5 space-y-2.5">
           {graphBars.map((bar) => {
             const pct = Math.round((bar.units / maxBarUnits) * 100);
@@ -398,6 +435,35 @@ export const CatalogManager = () => {
               </div>
             );
           })}
+        </div>
+
+        {/* Smart Purchase Advisor */}
+        <div className="mt-5 rounded-xl border border-[#FFD54A]/25 bg-black/50 p-4">
+          <p className="flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-[#FFD54A]">
+            <AlertTriangle className="h-4 w-4" />
+            Next Purchase Advisor
+          </p>
+          {restockAlerts.length === 0 ? (
+            <p className="mt-1.5 text-xs text-emerald-400">
+              All sizes and colours in this view have healthy stock (3+ units).
+            </p>
+          ) : (
+            <div className="mt-2 grid gap-2 sm:grid-cols-2">
+              {restockAlerts.slice(0, 6).map((r, i) => (
+                <div
+                  key={`${r.productName}-${r.variant}-${i}`}
+                  className="flex items-center justify-between rounded-lg border border-red-500/20 bg-red-950/20 px-3 py-2 text-xs"
+                >
+                  <span className="truncate font-semibold text-white">
+                    {r.productName} ({r.variant})
+                  </span>
+                  <span className="ml-2 shrink-0 font-mono font-bold text-red-400">
+                    {r.stock === 0 ? "BUY NOW (0)" : `${r.stock} left`}
+                  </span>
+                </div>
+              ))}
+            </div>
+          )}
         </div>
       </div>
 
