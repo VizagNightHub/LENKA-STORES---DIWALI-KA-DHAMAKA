@@ -22,6 +22,7 @@ import {
 } from "firebase/firestore";
 import {
   ArrowLeft,
+  Calendar,
   CheckCircle2,
   Eye,
   EyeOff,
@@ -46,6 +47,21 @@ import { STORE_CONFIG } from "@/data/storeConfig";
 import { auth, db } from "@/lib/firebase";
 
 const phoneToEmail = (phone: string) => `${phone}@users.lenkastore.in`;
+
+const DELIVERY_STEPS = [
+  { id: "CONFIRMED", label: "Order Confirmed" },
+  { id: "DISPATCHED", label: "Dispatched from Warehouse" },
+  { id: "IN_TRANSIT", label: "Out for Delivery" },
+  { id: "COMPLETED", label: "Delivery Completed" },
+];
+
+function getStepIndex(status?: string) {
+  if (status === "COMPLETED" || status === "DELIVERED") return 3;
+  if (status === "IN_TRANSIT" || status === "OUT_FOR_DELIVERY") return 2;
+  if (status === "DISPATCHED") return 1;
+  if (status === "CONFIRMED") return 0;
+  return -1;
+}
 
 interface CustomerProfile {
   uid: string;
@@ -662,38 +678,32 @@ export default function AccountPage() {
             </button>
           </form>
 
-          {/* Right: Order History & Saved Wishlist */}
+          {/* Right: Live Order & Delivery Details + Saved Wishlist */}
           <div className="space-y-6 lg:col-span-6">
             <div className="rounded-3xl border border-[#DCE5DF] bg-white p-6 shadow-sm">
-              <div className="flex items-center justify-between">
-                <h2 className="flex items-center gap-2 text-base font-bold">
-                  <Package className="h-4 w-4 text-[#0B5D3B]" /> My Orders ({orders.length})
-                </h2>
-                <Link
-                  href="/track-order"
-                  className="text-xs font-semibold text-[#0B5D3B] hover:underline"
-                >
-                  Track Live →
-                </Link>
-              </div>
+              <h2 className="flex items-center gap-2 text-base font-bold">
+                <Package className="h-4 w-4 text-[#0B5D3B]" /> My Orders ({orders.length})
+              </h2>
               {orders.length === 0 ? (
                 <p className="mt-3 text-xs text-[#4A5D54]">No orders placed yet.</p>
               ) : (
                 <div className="mt-3 space-y-3">
                   {orders.map((o) => {
                     const status = o.status || "PENDING_VERIFICATION";
+                    const isCancelled = status === "CANCELLED";
+                    const stepIdx = getStepIndex(status);
                     const canCancel =
-                      status !== "CANCELLED" &&
+                      !isCancelled &&
                       status !== "DELIVERED" &&
                       status !== "COMPLETED";
 
                     return (
                       <div
                         key={o.id}
-                        className="rounded-2xl border border-[#DCE5DF] bg-[#F8FAF9] p-3.5 text-xs"
+                        className="rounded-2xl border border-[#DCE5DF] bg-[#F8FAF9] p-4 text-xs"
                       >
                         <div className="flex items-center justify-between gap-2 font-bold">
-                          <span className="font-mono text-[#0B2219]">
+                          <span className="font-mono text-sm text-[#0B2219]">
                             {o.orderId || o.id}
                           </span>
                           <span className="text-sm text-[#0B5D3B]">
@@ -701,28 +711,8 @@ export default function AccountPage() {
                           </span>
                         </div>
 
-                        <div className="mt-1.5 flex flex-wrap items-center justify-between gap-2">
-                          <span
-                            className={`rounded-full px-2.5 py-0.5 text-[10px] font-bold uppercase ${
-                              status === "CANCELLED"
-                                ? "bg-red-100 text-red-700"
-                                : status === "DELIVERED" || status === "COMPLETED"
-                                ? "bg-emerald-100 text-emerald-800"
-                                : "bg-[#EDF5F0] text-[#0B5D3B]"
-                            }`}
-                          >
-                            {status.replace(/_/g, " ")}
-                          </span>
-
-                          {o.expectedDeliveryDate && (
-                            <span className="text-[11px] font-medium text-[#0B2219]">
-                              Arriving: {o.expectedDeliveryDate}
-                            </span>
-                          )}
-                        </div>
-
                         {Array.isArray(o.items) && o.items.length > 0 && (
-                          <p className="mt-2 text-[11px] text-[#4A5D54]">
+                          <p className="mt-1.5 text-[11px] font-medium text-[#4A5D54]">
                             {o.items
                               .map(
                                 (i) =>
@@ -734,32 +724,71 @@ export default function AccountPage() {
                           </p>
                         )}
 
-                        {o.trackingId && (
-                          <p className="mt-1.5 flex items-center gap-1 font-mono text-[11px] font-semibold text-[#0B5D3B]">
-                            <Truck className="h-3.5 w-3.5" /> Tracking ID: {o.trackingId}
-                          </p>
+                        {/* Direct Inline Delivery Timeline */}
+                        {isCancelled ? (
+                          <div className="mt-3 rounded-xl border border-red-200 bg-red-50 p-2.5 text-[11px] text-red-700">
+                            <p className="flex items-center gap-1.5 font-bold">
+                              <XCircle className="h-3.5 w-3.5 shrink-0" />
+                              Order Cancelled
+                            </p>
+                            {o.cancelReason && (
+                              <p className="mt-0.5 pl-5">Reason: {o.cancelReason}</p>
+                            )}
+                            {o.cancelComment && (
+                              <p className="mt-0.5 pl-5 text-red-600">
+                                Note: {o.cancelComment}
+                              </p>
+                            )}
+                          </div>
+                        ) : stepIdx === -1 ? (
+                          <div className="mt-3 flex items-center gap-2 rounded-xl border border-[#0B5D3B]/20 bg-[#EDF5F0] p-2.5 text-[11px] font-semibold text-[#0B5D3B]">
+                            <Package className="h-3.5 w-3.5 shrink-0" />
+                            Payment received — waiting for team verification.
+                          </div>
+                        ) : (
+                          <div className="mt-3 space-y-1.5 rounded-xl border border-[#DCE5DF] bg-white p-3">
+                            {DELIVERY_STEPS.map((st, idx) => {
+                              const done = idx <= stepIdx;
+                              return (
+                                <div key={st.id} className="flex items-center gap-2">
+                                  <CheckCircle2
+                                    className={`h-4 w-4 shrink-0 ${
+                                      done ? "text-[#0B5D3B]" : "text-[#DCE5DF]"
+                                    }`}
+                                  />
+                                  <span
+                                    className={`text-[11px] font-semibold ${
+                                      done ? "text-[#0B2219]" : "text-[#4A5D54]/45"
+                                    }`}
+                                  >
+                                    {st.label}
+                                  </span>
+                                </div>
+                              );
+                            })}
+                          </div>
                         )}
 
-                        {status === "CANCELLED" && o.cancelReason && (
-                          <div className="mt-2 rounded-xl border border-red-200 bg-red-50 p-2 text-[11px] text-red-700">
-                            <p className="font-bold">Cancelled: {o.cancelReason}</p>
-                            {o.cancelComment && (
-                              <p className="mt-0.5 text-red-600">
-                                Note: {o.cancelComment}
+                        {(o.expectedDeliveryDate || o.trackingId) && (
+                          <div className="mt-2.5 space-y-1 rounded-xl border border-[#DCE5DF] bg-white p-2.5 text-[11px]">
+                            {o.expectedDeliveryDate && (
+                              <p className="flex items-center gap-1.5 text-[#0B2219]">
+                                <Calendar className="h-3.5 w-3.5 text-[#0B5D3B]" />
+                                Expected Delivery:{" "}
+                                <strong>{o.expectedDeliveryDate}</strong>
+                              </p>
+                            )}
+                            {o.trackingId && (
+                              <p className="flex items-center gap-1.5 font-mono text-[#0B5D3B]">
+                                <Truck className="h-3.5 w-3.5" />
+                                Tracking ID: <strong>{o.trackingId}</strong>
                               </p>
                             )}
                           </div>
                         )}
 
-                        <div className="mt-3 flex flex-wrap items-center justify-between gap-2 border-t border-[#E6ECE8] pt-2.5">
-                          <Link
-                            href="/track-order"
-                            className="inline-flex items-center gap-1 text-[11px] font-bold text-[#0B5D3B] hover:underline"
-                          >
-                            <Truck className="h-3 w-3" /> View Delivery Timeline
-                          </Link>
-
-                          {canCancel && (
+                        {canCancel && (
+                          <div className="mt-3 flex justify-end border-t border-[#E6ECE8] pt-2.5">
                             <button
                               type="button"
                               onClick={() =>
@@ -774,8 +803,8 @@ export default function AccountPage() {
                             >
                               <XCircle className="h-3 w-3" /> Cancel Order
                             </button>
-                          )}
-                        </div>
+                          </div>
+                        )}
                       </div>
                     );
                   })}
