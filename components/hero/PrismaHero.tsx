@@ -6,6 +6,7 @@ import { motion } from "framer-motion";
 import { ChevronLeft, ChevronRight, User as UserIcon } from "lucide-react";
 import Link from "next/link";
 import { useEffect, useState } from "react";
+import { GlobalSearchBar } from "@/components/search/GlobalSearchBar";
 import { ShareMenuButton } from "@/components/ui/ShareMenuButton";
 import { auth, db } from "@/lib/firebase";
 import { WordsPullUp } from "./WordsPullUp";
@@ -113,8 +114,9 @@ export const PrismaHero = () => {
           )}
         </Link>
 
-        {/* Top-Right Share / Menu */}
-        <div className="absolute right-3 top-3 z-30 sm:right-5 sm:top-4">
+        {/* Top-Right Search + Share / Menu */}
+        <div className="absolute right-3 top-3 z-30 flex items-center gap-2 sm:right-5 sm:top-4">
+          <GlobalSearchBar />
           <ShareMenuButton />
         </div>
 
