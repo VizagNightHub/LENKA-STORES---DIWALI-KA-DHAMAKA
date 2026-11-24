@@ -1,11 +1,13 @@
 "use client";
 
+import { onAuthStateChanged } from "firebase/auth";
 import {
   collection,
   doc,
   getDoc,
   getDocs,
   limit,
+  onSnapshot,
   query,
   where,
 } from "firebase/firestore";
@@ -19,8 +21,12 @@ import {
   XCircle,
 } from "lucide-react";
 import Link from "next/link";
-import { useState } from "react";
-import { db } from "@/lib/firebase";
+import { useEffect, useState } from "react";
+import {
+  CancellableOrder,
+  CancelOrderModal,
+} from "@/components/orders/CancelOrderModal";
+import { auth, db } from "@/lib/firebase";
 
 interface TrackedOrder {
   id: string;
@@ -33,7 +39,15 @@ interface TrackedOrder {
   status?: string;
   trackingId?: string;
   expectedDeliveryDate?: string;
-  items?: { name: string; variant?: string; quantity?: number; qty?: number }[];
+  cancelReason?: string;
+  cancelComment?: string;
+  items?: {
+    id?: string;
+    name: string;
+    variant?: string;
+    quantity?: number;
+    qty?: number;
+  }[];
 }
 
 const STEPS = [
@@ -44,8 +58,8 @@ const STEPS = [
 ];
 
 function getStepIndex(status?: string) {
-  if (status === "COMPLETED") return 3;
-  if (status === "IN_TRANSIT") return 2;
+  if (status === "COMPLETED" || status === "DELIVERED") return 3;
+  if (status === "IN_TRANSIT" || status === "OUT_FOR_DELIVERY") return 2;
   if (status === "DISPATCHED") return 1;
   if (status === "CONFIRMED") return 0;
   return -1;
@@ -58,6 +72,61 @@ export default function TrackOrderPage() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [searched, setSearched] = useState(false);
+  const [loggedInPhone, setLoggedInPhone] = useState<string | null>(null);
+  const [cancelTarget, setCancelTarget] = useState<CancellableOrder | null>(null);
+
+  useEffect(() => {
+    let unsubOrders: (() => void) | null = null;
+
+    const unsubAuth = onAuthStateChanged(auth, async (u) => {
+      if (unsubOrders) {
+        unsubOrders();
+        unsubOrders = null;
+      }
+
+      if (u && u.email?.endsWith("@users.lenkastore.in")) {
+        let phone = u.email.replace("@users.lenkastore.in", "");
+        try {
+          const cSnap = await getDoc(doc(db, "customers", u.uid));
+          if (cSnap.exists() && cSnap.data().phone) {
+            phone = cSnap.data().phone;
+          }
+        } catch {
+          // Use email phone fallback
+        }
+        setLoggedInPhone(phone);
+
+        if (phone) {
+          setLoading(true);
+          const oq = query(
+            collection(db, "orders"),
+            where("phone", "==", phone),
+            limit(15)
+          );
+          unsubOrders = onSnapshot(
+            oq,
+            (snap) => {
+              const list = snap.docs.map((d) => ({
+                id: d.id,
+                ...(d.data() as Omit<TrackedOrder, "id">),
+              }));
+              setResults(list);
+              setSearched(true);
+              setLoading(false);
+            },
+            () => setLoading(false)
+          );
+        }
+      } else {
+        setLoggedInPhone(null);
+      }
+    });
+
+    return () => {
+      unsubAuth();
+      if (unsubOrders) unsubOrders();
+    };
+  }, []);
 
   const handleTrack = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -68,7 +137,9 @@ export default function TrackOrderPage() {
     const cleanPhone = phoneInput.replace(/\D/g, "").slice(-10);
 
     if (!cleanId && cleanPhone.length !== 10) {
-      setError("Enter either your Order ID (e.g. D27-123456) OR your 10-digit Mobile Number.");
+      setError(
+        "Enter either your Order ID (e.g. D27-123456) OR your 10-digit Mobile Number."
+      );
       return;
     }
 
@@ -106,26 +177,28 @@ export default function TrackOrderPage() {
   };
 
   return (
-    <main className="min-h-screen bg-[#FAF8F3] px-4 py-10 text-[#071410] sm:px-8">
+    <main className="min-h-screen bg-[#F8FAF9] px-4 py-8 pb-24 text-[#0B2219] sm:px-8 md:pb-12">
       <div className="mx-auto max-w-2xl">
         <Link
           href="/"
-          className="inline-flex items-center gap-2 text-sm font-medium text-[#0D211B]/70 hover:text-[#071410]"
+          className="inline-flex items-center gap-2 text-sm font-medium text-[#4A5D54] hover:text-[#0B5D3B]"
         >
           <ArrowLeft className="h-4 w-4" />
           Back to Lenka Store
         </Link>
 
-        <h1 className="mt-4 text-3xl font-bold text-[#071410] sm:text-4xl">
+        <h1 className="mt-4 text-3xl font-bold text-[#0B2219] sm:text-4xl">
           Track Your Order
         </h1>
-        <p className="mt-2 text-sm text-[#0D211B]/70">
-          Enter your <strong>Order ID</strong> or your <strong>10-digit Mobile Number</strong> (any one is enough).
+        <p className="mt-2 text-sm text-[#4A5D54]">
+          {loggedInPhone
+            ? `Showing live orders for your logged-in number (+91 ${loggedInPhone}). You can also search another order below.`
+            : "Enter your Order ID or your 10-digit Mobile Number (any one is enough)."}
         </p>
 
         <form
           onSubmit={handleTrack}
-          className="mt-6 space-y-4 rounded-3xl border border-[#0D211B]/10 bg-white p-6 shadow-sm"
+          className="mt-6 space-y-4 rounded-3xl border border-[#DCE5DF] bg-white p-6 shadow-sm"
         >
           <div className="grid gap-3 sm:grid-cols-2">
             <input
@@ -133,7 +206,7 @@ export default function TrackOrderPage() {
               placeholder="Order ID (e.g. D27-373826)"
               value={orderIdInput}
               onChange={(e) => setOrderIdInput(e.target.value.toUpperCase())}
-              className="w-full rounded-xl border border-[#0D211B]/20 bg-[#FAF8F3] px-4 py-3 font-mono text-sm uppercase text-[#071410] outline-none focus:border-[#C9A45C]"
+              className="w-full rounded-xl border border-[#DCE5DF] bg-[#F8FAF9] px-4 py-3 font-mono text-sm uppercase text-[#0B2219] outline-none focus:border-[#0B5D3B]"
             />
             <input
               type="tel"
@@ -141,7 +214,7 @@ export default function TrackOrderPage() {
               placeholder="Or 10-Digit Mobile Number"
               value={phoneInput}
               onChange={(e) => setPhoneInput(e.target.value.replace(/\D/g, ""))}
-              className="w-full rounded-xl border border-[#0D211B]/20 bg-[#FAF8F3] px-4 py-3 font-mono text-sm text-[#071410] outline-none focus:border-[#C9A45C]"
+              className="w-full rounded-xl border border-[#DCE5DF] bg-[#F8FAF9] px-4 py-3 font-mono text-sm text-[#0B2219] outline-none focus:border-[#0B5D3B]"
             />
           </div>
 
@@ -150,7 +223,7 @@ export default function TrackOrderPage() {
           <button
             type="submit"
             disabled={loading}
-            className="inline-flex w-full cursor-pointer items-center justify-center gap-2 rounded-full bg-[#C9A45C] py-3 text-sm font-bold text-[#071410] transition hover:bg-[#d8b673] disabled:opacity-50"
+            className="inline-flex w-full cursor-pointer items-center justify-center gap-2 rounded-full bg-[#0B5D3B] py-3 text-sm font-bold text-white transition hover:bg-[#08472D] disabled:opacity-50"
           >
             <Search className="h-4 w-4" />
             {loading ? "Checking Order..." : "Track Order"}
@@ -158,7 +231,7 @@ export default function TrackOrderPage() {
         </form>
 
         {searched && results.length === 0 && (
-          <div className="mt-6 rounded-2xl border border-[#0D211B]/10 bg-white p-6 text-center text-sm text-[#0D211B]/70 shadow-sm">
+          <div className="mt-6 rounded-2xl border border-[#DCE5DF] bg-white p-6 text-center text-sm text-[#4A5D54] shadow-sm">
             No matching order found. Double-check your Order ID or Mobile Number.
           </div>
         )}
@@ -167,34 +240,46 @@ export default function TrackOrderPage() {
           {results.map((order) => {
             const stepIdx = getStepIndex(order.status);
             const isCancelled = order.status === "CANCELLED";
+            const canCancel =
+              !isCancelled &&
+              order.status !== "COMPLETED" &&
+              order.status !== "DELIVERED";
 
             return (
               <div
                 key={order.id}
-                className="rounded-3xl border border-[#0D211B]/10 bg-white p-6 shadow-sm"
+                className="rounded-3xl border border-[#DCE5DF] bg-white p-6 shadow-sm"
               >
-                <div className="flex flex-wrap items-center justify-between gap-2 border-b border-[#0D211B]/10 pb-4">
+                <div className="flex flex-wrap items-center justify-between gap-2 border-b border-[#E6ECE8] pb-4">
                   <div>
-                    <p className="font-mono text-base font-bold text-[#071410]">
+                    <p className="font-mono text-base font-bold text-[#0B2219]">
                       {order.orderId || order.id}
                     </p>
-                    <p className="text-xs text-[#0D211B]/65">
+                    <p className="text-xs text-[#4A5D54]">
                       {order.customerName} • {order.city}, {order.state}
                     </p>
                   </div>
-                  <span className="rounded-full bg-[#071410] px-3 py-1 text-xs font-bold text-[#C9A45C]">
+                  <span className="rounded-full bg-[#EDF5F0] px-3 py-1 text-xs font-bold text-[#0B5D3B]">
                     ₹{Number(order.totalAmount || 0).toLocaleString("en-IN")}
                   </span>
                 </div>
 
                 {isCancelled ? (
-                  <div className="mt-4 flex items-center gap-2 rounded-xl border border-red-200 bg-red-50 p-3 text-xs font-semibold text-red-700">
-                    <XCircle className="h-4 w-4" />
-                    This order was cancelled. Contact support on WhatsApp if you need help.
+                  <div className="mt-4 space-y-1 rounded-xl border border-red-200 bg-red-50 p-3 text-xs text-red-700">
+                    <p className="flex items-center gap-2 font-bold">
+                      <XCircle className="h-4 w-4 shrink-0" />
+                      Order Cancelled
+                    </p>
+                    {order.cancelReason && (
+                      <p className="pl-6">Reason: {order.cancelReason}</p>
+                    )}
+                    {order.cancelComment && (
+                      <p className="pl-6">Note: {order.cancelComment}</p>
+                    )}
                   </div>
                 ) : stepIdx === -1 ? (
-                  <div className="mt-4 flex items-center gap-2 rounded-xl border border-[#C9A45C]/40 bg-[#FAF8F3] p-3 text-xs font-semibold text-[#071410]">
-                    <Package className="h-4 w-4 text-[#C9A45C]" />
+                  <div className="mt-4 flex items-center gap-2 rounded-xl border border-[#0B5D3B]/20 bg-[#EDF5F0] p-3 text-xs font-semibold text-[#0B5D3B]">
+                    <Package className="h-4 w-4 shrink-0" />
                     Payment received — waiting for team verification.
                   </div>
                 ) : (
@@ -205,12 +290,12 @@ export default function TrackOrderPage() {
                         <div key={st.id} className="flex items-center gap-3">
                           <CheckCircle2
                             className={`h-5 w-5 shrink-0 ${
-                              done ? "text-emerald-700" : "text-[#0D211B]/20"
+                              done ? "text-[#0B5D3B]" : "text-[#DCE5DF]"
                             }`}
                           />
                           <span
                             className={`text-sm font-medium ${
-                              done ? "text-[#071410]" : "text-[#0D211B]/40"
+                              done ? "text-[#0B2219]" : "text-[#4A5D54]/50"
                             }`}
                           >
                             {st.label}
@@ -222,18 +307,19 @@ export default function TrackOrderPage() {
                 )}
 
                 {(order.expectedDeliveryDate || order.trackingId) && (
-                  <div className="mt-5 space-y-2 rounded-2xl border border-[#C9A45C]/35 bg-[#FAF8F3] p-4 text-xs">
+                  <div className="mt-5 space-y-2 rounded-2xl border border-[#DCE5DF] bg-[#F8FAF9] p-4 text-xs">
                     {order.expectedDeliveryDate && (
-                      <p className="flex items-center gap-2 text-[#071410]">
-                        <Calendar className="h-4 w-4 text-[#C9A45C]" />
+                      <p className="flex items-center gap-2 text-[#0B2219]">
+                        <Calendar className="h-4 w-4 text-[#0B5D3B]" />
                         <span>
-                          Expected Delivery: <strong>{order.expectedDeliveryDate}</strong>
+                          Expected Delivery:{" "}
+                          <strong>{order.expectedDeliveryDate}</strong>
                         </span>
                       </p>
                     )}
                     {order.trackingId && (
-                      <p className="flex items-center gap-2 text-[#071410]">
-                        <Truck className="h-4 w-4 text-[#0D211B]" />
+                      <p className="flex items-center gap-2 text-[#0B2219]">
+                        <Truck className="h-4 w-4 text-[#0B5D3B]" />
                         <span>
                           Courier Tracking ID:{" "}
                           <strong className="font-mono">{order.trackingId}</strong>
@@ -244,13 +330,33 @@ export default function TrackOrderPage() {
                 )}
 
                 {Array.isArray(order.items) && order.items.length > 0 && (
-                  <div className="mt-4 space-y-1 border-t border-[#0D211B]/10 pt-3 text-xs text-[#0D211B]/70">
+                  <div className="mt-4 space-y-1 border-t border-[#E6ECE8] pt-3 text-xs text-[#4A5D54]">
                     {order.items.map((it, i) => (
                       <p key={i}>
                         • {it.name}
-                        {it.variant ? ` (${it.variant})` : ""} × {it.quantity ?? it.qty ?? 1}
+                        {it.variant ? ` (${it.variant})` : ""} ×{" "}
+                        {it.quantity ?? it.qty ?? 1}
                       </p>
                     ))}
+                  </div>
+                )}
+
+                {canCancel && (
+                  <div className="mt-4 flex justify-end border-t border-[#E6ECE8] pt-3">
+                    <button
+                      type="button"
+                      onClick={() =>
+                        setCancelTarget({
+                          id: order.id,
+                          orderId: order.orderId,
+                          totalAmount: order.totalAmount,
+                          items: order.items,
+                        })
+                      }
+                      className="inline-flex cursor-pointer items-center gap-1.5 rounded-full border border-red-200 bg-white px-4 py-1.5 text-xs font-bold text-red-600 transition hover:bg-red-600 hover:text-white"
+                    >
+                      <XCircle className="h-3.5 w-3.5" /> Cancel Order
+                    </button>
                   </div>
                 )}
               </div>
@@ -258,6 +364,28 @@ export default function TrackOrderPage() {
           })}
         </div>
       </div>
+
+      {cancelTarget && (
+        <CancelOrderModal
+          order={cancelTarget}
+          onClose={() => setCancelTarget(null)}
+          onCancelled={(docId, reason, comment) => {
+            setResults((prev) =>
+              prev.map((o) =>
+                o.id === docId
+                  ? {
+                      ...o,
+                      status: "CANCELLED",
+                      cancelReason: reason,
+                      cancelComment: comment,
+                    }
+                  : o
+              )
+            );
+            setCancelTarget(null);
+          }}
+        />
+      )}
     </main>
   );
 }
