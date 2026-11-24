@@ -12,8 +12,8 @@ import {
   collection,
   doc,
   getDoc,
-  getDocs,
   limit,
+  onSnapshot,
   query,
   serverTimestamp,
   setDoc,
@@ -30,12 +30,18 @@ import {
   Package,
   Save,
   Trash2,
+  Truck,
   Upload,
   User as UserIcon,
+  XCircle,
 } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
+import {
+  CancellableOrder,
+  CancelOrderModal,
+} from "@/components/orders/CancelOrderModal";
 import { STORE_CONFIG } from "@/data/storeConfig";
 import { auth, db } from "@/lib/firebase";
 
@@ -73,7 +79,15 @@ interface OrderSummary {
   status?: string;
   expectedDeliveryDate?: string;
   trackingId?: string;
-  items?: { name: string; variant?: string; quantity?: number; qty?: number }[];
+  cancelReason?: string;
+  cancelComment?: string;
+  items?: {
+    id?: string;
+    name: string;
+    variant?: string;
+    quantity?: number;
+    qty?: number;
+  }[];
 }
 
 function compressAvatar(file: File): Promise<string> {
@@ -127,9 +141,17 @@ export default function AccountPage() {
   const [wishlistItems, setWishlistItems] = useState<WishlistProduct[]>([]);
   const [saveMsg, setSaveMsg] = useState("");
   const [savingProfile, setSavingProfile] = useState(false);
+  const [cancelTarget, setCancelTarget] = useState<CancellableOrder | null>(null);
 
   useEffect(() => {
-    const unsub = onAuthStateChanged(auth, async (u) => {
+    let unsubOrders: (() => void) | null = null;
+
+    const unsubAuth = onAuthStateChanged(auth, async (u) => {
+      if (unsubOrders) {
+        unsubOrders();
+        unsubOrders = null;
+      }
+
       if (u && u.email?.endsWith("@users.lenkastore.in")) {
         setUser(u);
         const snap = await getDoc(doc(db, "customers", u.uid));
@@ -157,32 +179,36 @@ export default function AccountPage() {
             setWishlistItems([]);
           }
 
-          if (data.phone) {
-            try {
-              const oq = query(
-                collection(db, "orders"),
-                where("phone", "==", data.phone),
-                limit(15)
-              );
-              const osnap = await getDocs(oq);
+          const phoneDigits =
+            data.phone || u.email.replace("@users.lenkastore.in", "");
+          if (phoneDigits) {
+            const oq = query(
+              collection(db, "orders"),
+              where("phone", "==", phoneDigits),
+              limit(20)
+            );
+            unsubOrders = onSnapshot(oq, (osnap) => {
               setOrders(
                 osnap.docs.map((d) => ({
                   id: d.id,
                   ...(d.data() as Omit<OrderSummary, "id">),
                 }))
               );
-            } catch {
-              // Ignore
-            }
+            });
           }
         }
       } else {
         setUser(null);
         setProfile(null);
+        setOrders([]);
       }
       setLoading(false);
     });
-    return () => unsub();
+
+    return () => {
+      unsubAuth();
+      if (unsubOrders) unsubOrders();
+    };
   }, []);
 
   const handleLogin = async (e: React.FormEvent) => {
@@ -299,7 +325,7 @@ export default function AccountPage() {
 
   if (loading) {
     return (
-      <main className="flex min-h-screen items-center justify-center bg-[#FAF8F3] text-[#071410]">
+      <main className="flex min-h-screen items-center justify-center bg-[#F8FAF9] text-[#0B2219]">
         Loading account...
       </main>
     );
@@ -307,18 +333,18 @@ export default function AccountPage() {
 
   if (!user || !profile) {
     return (
-      <main className="min-h-screen bg-[#FAF8F3] px-4 py-10 text-[#071410] sm:px-8">
+      <main className="min-h-screen bg-[#F8FAF9] px-4 py-10 text-[#0B2219] sm:px-8">
         <div className="mx-auto max-w-md">
           <Link
             href="/"
-            className="inline-flex items-center gap-2 text-sm font-medium text-[#0D211B]/70 hover:text-[#071410]"
+            className="inline-flex items-center gap-2 text-sm font-medium text-[#4A5D54] hover:text-[#0B5D3B]"
           >
             <ArrowLeft className="h-4 w-4" />
             Back to Lenka Store
           </Link>
 
-          <div className="mt-6 rounded-3xl border border-[#0D211B]/10 bg-white p-6 shadow-sm sm:p-8">
-            <div className="mb-6 grid grid-cols-2 gap-2 rounded-2xl bg-[#FAF8F3] p-1">
+          <div className="mt-6 rounded-3xl border border-[#DCE5DF] bg-white p-6 shadow-sm sm:p-8">
+            <div className="mb-6 grid grid-cols-2 gap-2 rounded-2xl bg-[#F8FAF9] p-1">
               <button
                 type="button"
                 onClick={() => {
@@ -327,8 +353,8 @@ export default function AccountPage() {
                 }}
                 className={`cursor-pointer rounded-xl py-2.5 text-xs font-bold transition ${
                   mode === "login"
-                    ? "bg-[#071410] text-[#FFFDF2]"
-                    : "text-[#0D211B]/70"
+                    ? "bg-[#0B5D3B] text-white"
+                    : "text-[#4A5D54]"
                 }`}
               >
                 Login
@@ -341,8 +367,8 @@ export default function AccountPage() {
                 }}
                 className={`cursor-pointer rounded-xl py-2.5 text-xs font-bold transition ${
                   mode === "signup"
-                    ? "bg-[#071410] text-[#FFFDF2]"
-                    : "text-[#0D211B]/70"
+                    ? "bg-[#0B5D3B] text-white"
+                    : "text-[#4A5D54]"
                 }`}
               >
                 Create Account
@@ -359,7 +385,7 @@ export default function AccountPage() {
                   value={loginPhone}
                   onChange={(e) => setLoginPhone(e.target.value.replace(/\D/g, ""))}
                   required
-                  className="w-full rounded-xl border border-[#0D211B]/20 bg-[#FAF8F3] px-4 py-3 font-mono text-sm outline-none focus:border-[#C9A45C]"
+                  className="w-full rounded-xl border border-[#DCE5DF] bg-[#F8FAF9] px-4 py-3 font-mono text-sm outline-none focus:border-[#0B5D3B]"
                 />
                 <div className="relative">
                   <input
@@ -368,12 +394,12 @@ export default function AccountPage() {
                     value={loginPass}
                     onChange={(e) => setLoginPass(e.target.value)}
                     required
-                    className="w-full rounded-xl border border-[#0D211B]/20 bg-[#FAF8F3] px-4 py-3 pr-11 text-sm outline-none focus:border-[#C9A45C]"
+                    className="w-full rounded-xl border border-[#DCE5DF] bg-[#F8FAF9] px-4 py-3 pr-11 text-sm outline-none focus:border-[#0B5D3B]"
                   />
                   <button
                     type="button"
                     onClick={() => setShowLoginPass((v) => !v)}
-                    className="absolute right-3 top-1/2 -translate-y-1/2 cursor-pointer text-[#0D211B]/60"
+                    className="absolute right-3 top-1/2 -translate-y-1/2 cursor-pointer text-[#4A5D54]"
                   >
                     {showLoginPass ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                   </button>
@@ -384,7 +410,7 @@ export default function AccountPage() {
                 <button
                   type="submit"
                   disabled={submitting}
-                  className="w-full cursor-pointer rounded-full bg-[#C9A45C] py-3 text-sm font-bold text-[#071410] hover:bg-[#d8b673] disabled:opacity-50"
+                  className="w-full cursor-pointer rounded-full bg-[#0B5D3B] py-3 text-sm font-bold text-white hover:bg-[#08472D] disabled:opacity-50"
                 >
                   {submitting ? "Signing In..." : "Login"}
                 </button>
@@ -398,7 +424,7 @@ export default function AccountPage() {
                   value={signupName}
                   onChange={(e) => setSignupName(e.target.value)}
                   required
-                  className="w-full rounded-xl border border-[#0D211B]/20 bg-[#FAF8F3] px-4 py-3 text-sm outline-none focus:border-[#C9A45C]"
+                  className="w-full rounded-xl border border-[#DCE5DF] bg-[#F8FAF9] px-4 py-3 text-sm outline-none focus:border-[#0B5D3B]"
                 />
                 <input
                   type="tel"
@@ -407,24 +433,24 @@ export default function AccountPage() {
                   value={signupPhone}
                   onChange={(e) => setSignupPhone(e.target.value.replace(/\D/g, ""))}
                   required
-                  className="w-full rounded-xl border border-[#0D211B]/20 bg-[#FAF8F3] px-4 py-3 font-mono text-sm outline-none focus:border-[#C9A45C]"
+                  className="w-full rounded-xl border border-[#DCE5DF] bg-[#F8FAF9] px-4 py-3 font-mono text-sm outline-none focus:border-[#0B5D3B]"
                 />
                 <input
                   type="email"
                   placeholder="Email Address (Optional)"
                   value={signupEmail}
                   onChange={(e) => setSignupEmail(e.target.value)}
-                  className="w-full rounded-xl border border-[#0D211B]/20 bg-[#FAF8F3] px-4 py-3 text-sm outline-none focus:border-[#C9A45C]"
+                  className="w-full rounded-xl border border-[#DCE5DF] bg-[#F8FAF9] px-4 py-3 text-sm outline-none focus:border-[#0B5D3B]"
                 />
                 <div>
-                  <label className="mb-1 block text-xs text-[#0D211B]/65">
+                  <label className="mb-1 block text-xs text-[#4A5D54]">
                     Date of Birth (Optional)
                   </label>
                   <input
                     type="date"
                     value={signupDob}
                     onChange={(e) => setSignupDob(e.target.value)}
-                    className="w-full rounded-xl border border-[#0D211B]/20 bg-[#FAF8F3] px-4 py-2.5 text-sm outline-none focus:border-[#C9A45C]"
+                    className="w-full rounded-xl border border-[#DCE5DF] bg-[#F8FAF9] px-4 py-2.5 text-sm outline-none focus:border-[#0B5D3B]"
                   />
                 </div>
 
@@ -435,12 +461,12 @@ export default function AccountPage() {
                     value={signupPass}
                     onChange={(e) => setSignupPass(e.target.value)}
                     required
-                    className="w-full rounded-xl border border-[#0D211B]/20 bg-[#FAF8F3] px-4 py-3 pr-11 text-sm outline-none focus:border-[#C9A45C]"
+                    className="w-full rounded-xl border border-[#DCE5DF] bg-[#F8FAF9] px-4 py-3 pr-11 text-sm outline-none focus:border-[#0B5D3B]"
                   />
                   <button
                     type="button"
                     onClick={() => setShowPass1((v) => !v)}
-                    className="absolute right-3 top-1/2 -translate-y-1/2 cursor-pointer text-[#0D211B]/60"
+                    className="absolute right-3 top-1/2 -translate-y-1/2 cursor-pointer text-[#4A5D54]"
                   >
                     {showPass1 ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                   </button>
@@ -453,12 +479,12 @@ export default function AccountPage() {
                     value={signupConfirm}
                     onChange={(e) => setSignupConfirm(e.target.value)}
                     required
-                    className="w-full rounded-xl border border-[#0D211B]/20 bg-[#FAF8F3] px-4 py-3 pr-11 text-sm outline-none focus:border-[#C9A45C]"
+                    className="w-full rounded-xl border border-[#DCE5DF] bg-[#F8FAF9] px-4 py-3 pr-11 text-sm outline-none focus:border-[#0B5D3B]"
                   />
                   <button
                     type="button"
                     onClick={() => setShowPass2((v) => !v)}
-                    className="absolute right-3 top-1/2 -translate-y-1/2 cursor-pointer text-[#0D211B]/60"
+                    className="absolute right-3 top-1/2 -translate-y-1/2 cursor-pointer text-[#4A5D54]"
                   >
                     {showPass2 ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                   </button>
@@ -469,7 +495,7 @@ export default function AccountPage() {
                 <button
                   type="submit"
                   disabled={submitting}
-                  className="w-full cursor-pointer rounded-full bg-[#C9A45C] py-3 text-sm font-bold text-[#071410] hover:bg-[#d8b673] disabled:opacity-50"
+                  className="w-full cursor-pointer rounded-full bg-[#0B5D3B] py-3 text-sm font-bold text-white hover:bg-[#08472D] disabled:opacity-50"
                 >
                   {submitting ? "Creating Account..." : "Create Account"}
                 </button>
@@ -482,12 +508,12 @@ export default function AccountPage() {
   }
 
   return (
-    <main className="min-h-screen bg-[#FAF8F3] px-4 py-10 text-[#071410] sm:px-8">
-      <div className="mx-auto max-w-5xl space-y-8">
+    <main className="min-h-screen bg-[#F8FAF9] px-4 py-8 pb-24 text-[#0B2219] sm:px-8 md:pb-12">
+      <div className="mx-auto max-w-5xl space-y-6">
         <div className="flex flex-wrap items-center justify-between gap-4">
           <Link
             href="/"
-            className="inline-flex items-center gap-2 text-sm font-medium text-[#0D211B]/70 hover:text-[#071410]"
+            className="inline-flex items-center gap-2 text-sm font-medium text-[#4A5D54] hover:text-[#0B5D3B]"
           >
             <ArrowLeft className="h-4 w-4" />
             Back to Lenka Store
@@ -495,34 +521,34 @@ export default function AccountPage() {
           <button
             type="button"
             onClick={() => signOut(auth)}
-            className="inline-flex cursor-pointer items-center gap-1.5 rounded-full border border-[#0D211B]/20 bg-white px-4 py-2 text-xs font-bold text-[#071410] hover:border-[#C9A45C]"
+            className="inline-flex cursor-pointer items-center gap-1.5 rounded-full border border-[#DCE5DF] bg-white px-4 py-2 text-xs font-bold text-[#0B2219] hover:border-[#0B5D3B]"
           >
             <LogOut className="h-3.5 w-3.5" /> Sign Out
           </button>
         </div>
 
-        <div className="grid gap-8 lg:grid-cols-12">
+        <div className="grid gap-6 lg:grid-cols-12">
           {/* Editable Profile & Saved Address */}
           <form
             onSubmit={handleSaveProfile}
-            className="space-y-4 rounded-3xl border border-[#0D211B]/10 bg-white p-6 shadow-sm lg:col-span-7"
+            className="space-y-4 rounded-3xl border border-[#DCE5DF] bg-white p-6 shadow-sm lg:col-span-6"
           >
             <div className="flex items-center gap-4">
               {profile.photo ? (
                 <img
                   src={profile.photo}
                   alt={profile.name}
-                  className="h-16 w-16 rounded-full border-2 border-[#C9A45C] object-cover"
+                  className="h-16 w-16 rounded-full border-2 border-[#0B5D3B] object-cover"
                 />
               ) : (
-                <div className="flex h-16 w-16 items-center justify-center rounded-full bg-[#071410] text-[#C9A45C]">
+                <div className="flex h-16 w-16 items-center justify-center rounded-full bg-[#EDF5F0] text-[#0B5D3B]">
                   <UserIcon className="h-7 w-7" />
                 </div>
               )}
               <div>
                 <h1 className="text-xl font-bold">{profile.name}</h1>
-                <p className="font-mono text-xs text-[#0D211B]/65">+91 {profile.phone}</p>
-                <label className="mt-1 inline-flex cursor-pointer items-center gap-1 text-xs font-semibold text-[#C9A45C] hover:underline">
+                <p className="font-mono text-xs text-[#4A5D54]">+91 {profile.phone}</p>
+                <label className="mt-1 inline-flex cursor-pointer items-center gap-1 text-xs font-semibold text-[#0B5D3B] hover:underline">
                   <Upload className="h-3 w-3" /> Change Photo
                   <input
                     type="file"
@@ -540,20 +566,20 @@ export default function AccountPage() {
                 placeholder="Full Name"
                 value={profile.name}
                 onChange={(e) => setProfile({ ...profile, name: e.target.value })}
-                className="w-full rounded-xl border border-[#0D211B]/20 bg-[#FAF8F3] px-4 py-2.5 text-sm outline-none focus:border-[#C9A45C]"
+                className="w-full rounded-xl border border-[#DCE5DF] bg-[#F8FAF9] px-4 py-2.5 text-sm outline-none focus:border-[#0B5D3B]"
               />
               <input
                 type="email"
                 placeholder="Email"
                 value={profile.email}
                 onChange={(e) => setProfile({ ...profile, email: e.target.value })}
-                className="w-full rounded-xl border border-[#0D211B]/20 bg-[#FAF8F3] px-4 py-2.5 text-sm outline-none focus:border-[#C9A45C]"
+                className="w-full rounded-xl border border-[#DCE5DF] bg-[#F8FAF9] px-4 py-2.5 text-sm outline-none focus:border-[#0B5D3B]"
               />
               <input
                 type="date"
                 value={profile.dob}
                 onChange={(e) => setProfile({ ...profile, dob: e.target.value })}
-                className="w-full rounded-xl border border-[#0D211B]/20 bg-[#FAF8F3] px-4 py-2.5 text-sm outline-none focus:border-[#C9A45C]"
+                className="w-full rounded-xl border border-[#DCE5DF] bg-[#F8FAF9] px-4 py-2.5 text-sm outline-none focus:border-[#0B5D3B]"
               />
               <input
                 type="text"
@@ -563,7 +589,7 @@ export default function AccountPage() {
                 onChange={(e) =>
                   setProfile({ ...profile, pincode: e.target.value.replace(/\D/g, "") })
                 }
-                className="w-full rounded-xl border border-[#0D211B]/20 bg-[#FAF8F3] px-4 py-2.5 font-mono text-sm outline-none focus:border-[#C9A45C]"
+                className="w-full rounded-xl border border-[#DCE5DF] bg-[#F8FAF9] px-4 py-2.5 font-mono text-sm outline-none focus:border-[#0B5D3B]"
               />
             </div>
 
@@ -571,7 +597,7 @@ export default function AccountPage() {
               <select
                 value={profile.state}
                 onChange={(e) => setProfile({ ...profile, state: e.target.value })}
-                className="w-full rounded-xl border border-[#0D211B]/20 bg-[#FAF8F3] px-3 py-2.5 text-sm outline-none focus:border-[#C9A45C]"
+                className="w-full rounded-xl border border-[#DCE5DF] bg-[#F8FAF9] px-3 py-2.5 text-sm outline-none focus:border-[#0B5D3B]"
               >
                 {STORE_CONFIG.supportedStates.map((st) => (
                   <option key={st} value={st}>
@@ -584,14 +610,14 @@ export default function AccountPage() {
                 placeholder="District"
                 value={profile.district}
                 onChange={(e) => setProfile({ ...profile, district: e.target.value })}
-                className="w-full rounded-xl border border-[#0D211B]/20 bg-[#FAF8F3] px-3 py-2.5 text-sm outline-none focus:border-[#C9A45C]"
+                className="w-full rounded-xl border border-[#DCE5DF] bg-[#F8FAF9] px-3 py-2.5 text-sm outline-none focus:border-[#0B5D3B]"
               />
               <input
                 type="text"
                 placeholder="City / Town"
                 value={profile.city}
                 onChange={(e) => setProfile({ ...profile, city: e.target.value })}
-                className="w-full rounded-xl border border-[#0D211B]/20 bg-[#FAF8F3] px-3 py-2.5 text-sm outline-none focus:border-[#C9A45C]"
+                className="w-full rounded-xl border border-[#DCE5DF] bg-[#F8FAF9] px-3 py-2.5 text-sm outline-none focus:border-[#0B5D3B]"
               />
             </div>
 
@@ -601,14 +627,14 @@ export default function AccountPage() {
                 placeholder="Street & Road No."
                 value={profile.streetRoad}
                 onChange={(e) => setProfile({ ...profile, streetRoad: e.target.value })}
-                className="w-full rounded-xl border border-[#0D211B]/20 bg-[#FAF8F3] px-4 py-2.5 text-sm outline-none focus:border-[#C9A45C]"
+                className="w-full rounded-xl border border-[#DCE5DF] bg-[#F8FAF9] px-4 py-2.5 text-sm outline-none focus:border-[#0B5D3B]"
               />
               <input
                 type="text"
                 placeholder="Landmark"
                 value={profile.landmark}
                 onChange={(e) => setProfile({ ...profile, landmark: e.target.value })}
-                className="w-full rounded-xl border border-[#0D211B]/20 bg-[#FAF8F3] px-4 py-2.5 text-sm outline-none focus:border-[#C9A45C]"
+                className="w-full rounded-xl border border-[#DCE5DF] bg-[#F8FAF9] px-4 py-2.5 text-sm outline-none focus:border-[#0B5D3B]"
               />
             </div>
 
@@ -617,11 +643,11 @@ export default function AccountPage() {
               placeholder="House / Flat / Door No."
               value={profile.address}
               onChange={(e) => setProfile({ ...profile, address: e.target.value })}
-              className="w-full rounded-xl border border-[#0D211B]/20 bg-[#FAF8F3] px-4 py-2.5 text-sm outline-none focus:border-[#C9A45C]"
+              className="w-full rounded-xl border border-[#DCE5DF] bg-[#F8FAF9] px-4 py-2.5 text-sm outline-none focus:border-[#0B5D3B]"
             />
 
             {saveMsg && (
-              <p className="flex items-center gap-1.5 text-xs font-semibold text-emerald-700">
+              <p className="flex items-center gap-1.5 text-xs font-semibold text-[#0B5D3B]">
                 <CheckCircle2 className="h-4 w-4" /> {saveMsg}
               </p>
             )}
@@ -629,7 +655,7 @@ export default function AccountPage() {
             <button
               type="submit"
               disabled={savingProfile}
-              className="inline-flex w-full cursor-pointer items-center justify-center gap-2 rounded-full bg-[#C9A45C] py-3 text-sm font-bold text-[#071410] hover:bg-[#d8b673] disabled:opacity-50"
+              className="inline-flex w-full cursor-pointer items-center justify-center gap-2 rounded-full bg-[#0B5D3B] py-3 text-sm font-bold text-white hover:bg-[#08472D] disabled:opacity-50"
             >
               <Save className="h-4 w-4" />
               {savingProfile ? "Saving..." : "Save Profile & Address"}
@@ -637,57 +663,133 @@ export default function AccountPage() {
           </form>
 
           {/* Right: Order History & Saved Wishlist */}
-          <div className="space-y-6 lg:col-span-5">
-            <div className="rounded-3xl border border-[#0D211B]/10 bg-white p-6 shadow-sm">
-              <h2 className="flex items-center gap-2 text-base font-bold">
-                <Package className="h-4 w-4 text-[#C9A45C]" /> My Orders ({orders.length})
-              </h2>
+          <div className="space-y-6 lg:col-span-6">
+            <div className="rounded-3xl border border-[#DCE5DF] bg-white p-6 shadow-sm">
+              <div className="flex items-center justify-between">
+                <h2 className="flex items-center gap-2 text-base font-bold">
+                  <Package className="h-4 w-4 text-[#0B5D3B]" /> My Orders ({orders.length})
+                </h2>
+                <Link
+                  href="/track-order"
+                  className="text-xs font-semibold text-[#0B5D3B] hover:underline"
+                >
+                  Track Live →
+                </Link>
+              </div>
               {orders.length === 0 ? (
-                <p className="mt-3 text-xs text-[#0D211B]/60">No orders placed yet.</p>
+                <p className="mt-3 text-xs text-[#4A5D54]">No orders placed yet.</p>
               ) : (
-                <div className="mt-3 space-y-2.5">
-                  {orders.map((o) => (
-                    <div
-                      key={o.id}
-                      className="rounded-xl border border-[#0D211B]/10 bg-[#FAF8F3] p-3 text-xs"
-                    >
-                      <div className="flex justify-between font-bold">
-                        <span className="font-mono">{o.orderId || o.id}</span>
-                        <span>₹{Number(o.totalAmount || 0).toLocaleString("en-IN")}</span>
+                <div className="mt-3 space-y-3">
+                  {orders.map((o) => {
+                    const status = o.status || "PENDING_VERIFICATION";
+                    const canCancel =
+                      status !== "CANCELLED" &&
+                      status !== "DELIVERED" &&
+                      status !== "COMPLETED";
+
+                    return (
+                      <div
+                        key={o.id}
+                        className="rounded-2xl border border-[#DCE5DF] bg-[#F8FAF9] p-3.5 text-xs"
+                      >
+                        <div className="flex items-center justify-between gap-2 font-bold">
+                          <span className="font-mono text-[#0B2219]">
+                            {o.orderId || o.id}
+                          </span>
+                          <span className="text-sm text-[#0B5D3B]">
+                            ₹{Number(o.totalAmount || 0).toLocaleString("en-IN")}
+                          </span>
+                        </div>
+
+                        <div className="mt-1.5 flex flex-wrap items-center justify-between gap-2">
+                          <span
+                            className={`rounded-full px-2.5 py-0.5 text-[10px] font-bold uppercase ${
+                              status === "CANCELLED"
+                                ? "bg-red-100 text-red-700"
+                                : status === "DELIVERED" || status === "COMPLETED"
+                                ? "bg-emerald-100 text-emerald-800"
+                                : "bg-[#EDF5F0] text-[#0B5D3B]"
+                            }`}
+                          >
+                            {status.replace(/_/g, " ")}
+                          </span>
+
+                          {o.expectedDeliveryDate && (
+                            <span className="text-[11px] font-medium text-[#0B2219]">
+                              Arriving: {o.expectedDeliveryDate}
+                            </span>
+                          )}
+                        </div>
+
+                        {Array.isArray(o.items) && o.items.length > 0 && (
+                          <p className="mt-2 text-[11px] text-[#4A5D54]">
+                            {o.items
+                              .map(
+                                (i) =>
+                                  `${i.name}${i.variant ? ` (${i.variant})` : ""} × ${
+                                    i.quantity ?? i.qty ?? 1
+                                  }`
+                              )
+                              .join(", ")}
+                          </p>
+                        )}
+
+                        {o.trackingId && (
+                          <p className="mt-1.5 flex items-center gap-1 font-mono text-[11px] font-semibold text-[#0B5D3B]">
+                            <Truck className="h-3.5 w-3.5" /> Tracking ID: {o.trackingId}
+                          </p>
+                        )}
+
+                        {status === "CANCELLED" && o.cancelReason && (
+                          <div className="mt-2 rounded-xl border border-red-200 bg-red-50 p-2 text-[11px] text-red-700">
+                            <p className="font-bold">Cancelled: {o.cancelReason}</p>
+                            {o.cancelComment && (
+                              <p className="mt-0.5 text-red-600">
+                                Note: {o.cancelComment}
+                              </p>
+                            )}
+                          </div>
+                        )}
+
+                        <div className="mt-3 flex flex-wrap items-center justify-between gap-2 border-t border-[#E6ECE8] pt-2.5">
+                          <Link
+                            href="/track-order"
+                            className="inline-flex items-center gap-1 text-[11px] font-bold text-[#0B5D3B] hover:underline"
+                          >
+                            <Truck className="h-3 w-3" /> View Delivery Timeline
+                          </Link>
+
+                          {canCancel && (
+                            <button
+                              type="button"
+                              onClick={() =>
+                                setCancelTarget({
+                                  id: o.id,
+                                  orderId: o.orderId,
+                                  totalAmount: o.totalAmount,
+                                  items: o.items,
+                                })
+                              }
+                              className="inline-flex cursor-pointer items-center gap-1 rounded-full border border-red-200 bg-white px-3 py-1 text-[11px] font-bold text-red-600 transition hover:bg-red-600 hover:text-white"
+                            >
+                              <XCircle className="h-3 w-3" /> Cancel Order
+                            </button>
+                          )}
+                        </div>
                       </div>
-                      <p className="mt-1 text-[#0D211B]/70">
-                        Status: <strong>{o.status || "PENDING_VERIFICATION"}</strong>
-                      </p>
-                      {Array.isArray(o.items) && o.items.length > 0 && (
-                        <p className="mt-1 text-[11px] text-[#0D211B]/65">
-                          {o.items
-                            .map((i) => `${i.name}${i.variant ? ` (${i.variant})` : ""} × ${i.quantity ?? i.qty ?? 1}`)
-                            .join(", ")}
-                        </p>
-                      )}
-                      {o.expectedDeliveryDate && (
-                        <p className="mt-0.5 text-[11px] font-medium text-[#071410]">
-                          Expected Delivery: {o.expectedDeliveryDate}
-                        </p>
-                      )}
-                      {o.trackingId && (
-                        <p className="mt-0.5 font-mono text-[11px] text-[#0D211B]/75">
-                          Tracking: {o.trackingId}
-                        </p>
-                      )}
-                    </div>
-                  ))}
+                    );
+                  })}
                 </div>
               )}
             </div>
 
-            <div className="rounded-3xl border border-[#0D211B]/10 bg-white p-6 shadow-sm">
+            <div className="rounded-3xl border border-[#DCE5DF] bg-white p-6 shadow-sm">
               <h2 className="flex items-center gap-2 text-base font-bold">
-                <Heart className="h-4 w-4 text-[#C9A45C]" /> Saved Wishlist (
+                <Heart className="h-4 w-4 text-[#0B5D3B]" /> Saved Wishlist (
                 {wishlistItems.length})
               </h2>
               {wishlistItems.length === 0 ? (
-                <p className="mt-2 text-xs text-[#0D211B]/65">
+                <p className="mt-2 text-xs text-[#4A5D54]">
                   Tap the heart icon on any product to save it here.
                 </p>
               ) : (
@@ -695,7 +797,7 @@ export default function AccountPage() {
                   {wishlistItems.map((item) => (
                     <div
                       key={item.id}
-                      className="flex items-center justify-between gap-3 rounded-xl border border-[#0D211B]/10 bg-[#FAF8F3] p-2.5"
+                      className="flex items-center justify-between gap-3 rounded-xl border border-[#DCE5DF] bg-[#F8FAF9] p-2.5"
                     >
                       <Link
                         href={`/${item.category}#product-${item.id}`}
@@ -704,13 +806,13 @@ export default function AccountPage() {
                         <img
                           src={item.images?.[0] || "/images/new-launch.png"}
                           alt={item.name}
-                          className="h-11 w-11 shrink-0 rounded-lg object-cover"
+                          className="h-11 w-11 shrink-0 rounded-lg border border-[#DCE5DF] object-cover"
                         />
                         <div className="min-w-0">
-                          <p className="truncate text-xs font-bold text-[#071410] hover:underline">
+                          <p className="truncate text-xs font-bold text-[#0B2219] hover:underline">
                             {item.name}
                           </p>
-                          <p className="text-xs font-semibold text-[#C9A45C]">
+                          <p className="text-xs font-semibold text-[#0B5D3B]">
                             ₹{Number(item.price || 0).toLocaleString("en-IN")}
                           </p>
                         </div>
@@ -731,6 +833,14 @@ export default function AccountPage() {
           </div>
         </div>
       </div>
+
+      {cancelTarget && (
+        <CancelOrderModal
+          order={cancelTarget}
+          onClose={() => setCancelTarget(null)}
+          onCancelled={() => setCancelTarget(null)}
+        />
+      )}
     </main>
   );
 }
