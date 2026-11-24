@@ -46,6 +46,9 @@ export interface OrderRecord {
   status?: string;
   trackingId?: string;
   expectedDeliveryDate?: string;
+  cancelReason?: string;
+  cancelComment?: string;
+  cancelledBy?: string;
 }
 
 type OrderFilter = "PROCESSING" | "COMPLETED" | "CANCELLED" | "ALL";
@@ -211,6 +214,11 @@ export const OrdersManager = ({ orders }: { orders: OrderRecord[] }) => {
                   >
                     {order.status || "PENDING_VERIFICATION"}
                   </span>
+                  {order.status === "CANCELLED" && order.cancelledBy === "CUSTOMER" && (
+                    <span className="rounded-full border border-red-500/40 bg-red-500/15 px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-wider text-red-300">
+                      Cancelled by Customer
+                    </span>
+                  )}
                 </div>
                 <p className="text-sm font-semibold text-white">
                   {order.customerName} • {order.phone}
@@ -313,6 +321,23 @@ export const OrdersManager = ({ orders }: { orders: OrderRecord[] }) => {
                 </button>
               </div>
             </div>
+
+            {order.status === "CANCELLED" && (order.cancelReason || order.cancelComment) && (
+              <div className="mt-3 rounded-xl border border-red-500/35 bg-red-950/35 p-3 text-xs text-red-200">
+                {order.cancelReason && (
+                  <p>
+                    <strong className="text-red-300">Cancellation Reason:</strong>{" "}
+                    {order.cancelReason}
+                  </p>
+                )}
+                {order.cancelComment && (
+                  <p className="mt-1">
+                    <strong className="text-red-300">Customer Comment / Refund Note:</strong>{" "}
+                    {order.cancelComment}
+                  </p>
+                )}
+              </div>
+            )}
 
             <div className="mt-4 flex flex-wrap items-center gap-2 border-t border-white/10 pt-3">
               <span className="text-[11px] font-semibold text-zinc-400">
