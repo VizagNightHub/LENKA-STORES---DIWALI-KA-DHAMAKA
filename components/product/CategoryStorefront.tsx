@@ -224,67 +224,67 @@ export const CategoryStorefront = ({
   };
 
   return (
-    <div className="min-h-screen w-full bg-[#F8FAF9] text-[#0B2219]">
-      <section className="mx-auto max-w-7xl overflow-x-hidden px-4 py-10 sm:px-6">
-        <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
+    <div className="min-h-screen w-full bg-[#F8FAF9] pb-20 text-[#0B2219] md:pb-10">
+      <section className="mx-auto max-w-7xl overflow-x-hidden px-3 py-5 sm:px-6 sm:py-8">
+        <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
           <Link
             href="/"
-            className="inline-flex items-center gap-2 text-sm font-medium text-[#4A5D54] transition hover:text-[#0B5D3B]"
+            className="inline-flex items-center gap-1.5 text-xs font-medium text-[#4A5D54] transition hover:text-[#0B5D3B] sm:text-sm"
           >
-            <ArrowLeft className="h-4 w-4" />
+            <ArrowLeft className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
             Back to Lenka Store
           </Link>
 
           <Link
             href="/account"
-            className="inline-flex items-center gap-1.5 rounded-full border border-[#DCE5DF] bg-white px-3.5 py-1.5 text-xs font-semibold text-[#0B2219] shadow-sm transition hover:border-[#0B5D3B]"
+            className="inline-flex items-center gap-1.5 rounded-full border border-[#DCE5DF] bg-white px-3 py-1 text-[11px] font-semibold text-[#0B2219] shadow-sm transition hover:border-[#0B5D3B] sm:px-3.5 sm:py-1.5 sm:text-xs"
           >
-            <UserIcon className="h-3.5 w-3.5 text-[#0B5D3B]" />
+            <UserIcon className="h-3 w-3 text-[#0B5D3B] sm:h-3.5 sm:w-3.5" />
             {customerUid ? "My Profile" : "Login / Sign Up"}
           </Link>
         </div>
 
-        <div className="flex flex-col gap-4 border-b border-[#DCE5DF] pb-6 sm:flex-row sm:items-end sm:justify-between">
+        <div className="flex flex-col gap-3 border-b border-[#DCE5DF] pb-4 sm:flex-row sm:items-end sm:justify-between sm:pb-5">
           <div>
-            <h1 className="text-3xl font-bold tracking-tight text-[#0B2219] sm:text-4xl">
+            <h1 className="text-xl font-bold tracking-tight text-[#0B2219] sm:text-3xl">
               {title}
             </h1>
             {subtitle && (
-              <p className="mt-2 text-sm text-[#4A5D54]">{subtitle}</p>
+              <p className="mt-1 text-xs text-[#4A5D54] sm:text-sm">{subtitle}</p>
             )}
           </div>
 
           <div className="relative w-full sm:w-72">
-            <Search className="pointer-events-none absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-[#0B5D3B]" />
+            <Search className="pointer-events-none absolute left-3 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-[#0B5D3B] sm:h-4 sm:w-4" />
             <input
               type="text"
               placeholder="Search products..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              className="w-full rounded-full border border-[#DCE5DF] bg-white py-2.5 pl-10 pr-4 text-sm text-[#0B2219] placeholder:text-[#4A5D54]/60 shadow-sm outline-none focus:border-[#0B5D3B]"
+              className="w-full rounded-full border border-[#DCE5DF] bg-white py-2 pl-9 pr-4 text-xs text-[#0B2219] placeholder:text-[#4A5D54]/60 shadow-sm outline-none focus:border-[#0B5D3B] sm:py-2.5 sm:pl-10 sm:text-sm"
             />
           </div>
         </div>
 
-        <div className="mt-8 grid min-w-0 gap-6 lg:grid-cols-12">
+        <div className="mt-5 grid min-w-0 gap-4 lg:mt-6 lg:grid-cols-12 lg:gap-6">
           {subList.length > 0 && (
             <aside className="min-w-0 lg:col-span-3">
-              <div className="flex w-full max-w-full gap-2 overflow-x-auto pb-2 lg:sticky lg:top-6 lg:flex-col lg:overflow-visible lg:rounded-2xl lg:border lg:border-[#DCE5DF] lg:bg-white lg:p-3 lg:shadow-sm">
+              <div className="flex w-full max-w-full gap-1.5 overflow-x-auto pb-1 lg:sticky lg:top-6 lg:flex-col lg:overflow-visible lg:rounded-2xl lg:border lg:border-[#DCE5DF] lg:bg-white lg:p-3 lg:shadow-sm">
                 <button
                   type="button"
                   onClick={() => setSelectedSub("all")}
-                  className={`flex shrink-0 cursor-pointer items-center justify-between gap-2 rounded-xl px-3.5 py-2.5 text-left text-xs font-semibold transition ${
+                  className={`flex shrink-0 cursor-pointer items-center justify-between gap-1.5 rounded-full px-3 py-1.5 text-left text-[11px] font-semibold transition lg:rounded-xl lg:px-3.5 lg:py-2.5 lg:text-xs ${
                     selectedSub === "all"
                       ? "bg-[#0B5D3B] text-white"
                       : "border border-[#DCE5DF] bg-white text-[#4A5D54] hover:border-[#0B5D3B] hover:text-[#0B5D3B] lg:border-transparent lg:bg-transparent"
                   }`}
                 >
-                  <span className="inline-flex items-center gap-2">
-                    <LayoutGrid className="h-3.5 w-3.5" />
+                  <span className="inline-flex items-center gap-1.5">
+                    <LayoutGrid className="h-3 w-3 sm:h-3.5 sm:w-3.5" />
                     All Items
                   </span>
                   <span
-                    className={`rounded-full px-2 py-0.5 text-[10px] font-bold ${
+                    className={`rounded-full px-1.5 py-0.5 text-[9px] font-bold sm:text-[10px] ${
                       selectedSub === "all"
                         ? "bg-white text-[#0B5D3B]"
                         : "bg-[#EDF5F0] text-[#0B5D3B]"
@@ -302,7 +302,7 @@ export const CategoryStorefront = ({
                       key={sub.slug}
                       type="button"
                       onClick={() => setSelectedSub(sub.slug)}
-                      className={`flex shrink-0 cursor-pointer items-center justify-between gap-2 rounded-xl px-3.5 py-2.5 text-left text-xs font-semibold transition ${
+                      className={`flex shrink-0 cursor-pointer items-center justify-between gap-1.5 rounded-full px-3 py-1.5 text-left text-[11px] font-semibold transition lg:rounded-xl lg:px-3.5 lg:py-2.5 lg:text-xs ${
                         isSelected
                           ? "bg-[#0B5D3B] text-white"
                           : "border border-[#DCE5DF] bg-white text-[#4A5D54] hover:border-[#0B5D3B] hover:text-[#0B5D3B] lg:border-transparent lg:bg-transparent"
@@ -310,7 +310,7 @@ export const CategoryStorefront = ({
                     >
                       <span>{sub.label}</span>
                       <span
-                        className={`rounded-full px-2 py-0.5 text-[10px] font-bold ${
+                        className={`rounded-full px-1.5 py-0.5 text-[9px] font-bold sm:text-[10px] ${
                           isSelected
                             ? "bg-white text-[#0B5D3B]"
                             : "bg-[#EDF5F0] text-[#0B5D3B]"
@@ -327,20 +327,20 @@ export const CategoryStorefront = ({
 
           <div className={subList.length > 0 ? "min-w-0 lg:col-span-9" : "min-w-0 lg:col-span-12"}>
             {loading ? (
-              <div className="grid gap-6 sm:grid-cols-2 xl:grid-cols-3">
-                {[1, 2, 3].map((n) => (
+              <div className="grid grid-cols-2 gap-2.5 sm:grid-cols-3 sm:gap-4 xl:grid-cols-4">
+                {[1, 2, 3, 4].map((n) => (
                   <div
                     key={n}
-                    className="h-80 animate-pulse rounded-2xl border border-[#DCE5DF] bg-white"
+                    className="h-60 animate-pulse rounded-xl border border-[#DCE5DF] bg-white sm:h-72 sm:rounded-2xl"
                   />
                 ))}
               </div>
             ) : filtered.length === 0 ? (
-              <div className="rounded-2xl border border-[#DCE5DF] bg-white p-10 text-center text-sm text-[#4A5D54]">
-                No products in this section yet. Check another category on the left or check back soon!
+              <div className="rounded-2xl border border-[#DCE5DF] bg-white p-8 text-center text-xs text-[#4A5D54] sm:p-10 sm:text-sm">
+                No products in this section yet. Check another category or check back soon!
               </div>
             ) : (
-              <div className="grid gap-6 sm:grid-cols-2 xl:grid-cols-3">
+              <div className="grid grid-cols-2 gap-2.5 sm:grid-cols-3 sm:gap-4 xl:grid-cols-4">
                 {filtered.map((p) => {
                   const variants = Array.isArray(p.variants) ? p.variants : [];
                   const availableVariants = variants.filter((v) => v.stock > 0);
@@ -349,15 +349,19 @@ export const CategoryStorefront = ({
                   const isOutOfStock =
                     variants.length > 0 && availableVariants.length === 0;
                   const liked = wishlist.includes(p.id);
+                  const discountPct =
+                    p.mrp > p.price
+                      ? Math.round(((p.mrp - p.price) / p.mrp) * 100)
+                      : 0;
 
                   return (
                     <div
                       key={p.id}
                       id={`product-${p.id}`}
-                      className="flex flex-col justify-between rounded-2xl border border-[#DCE5DF] bg-white p-4 shadow-sm transition hover:border-[#0B5D3B]/50 hover:shadow-md"
+                      className="flex flex-col justify-between rounded-xl border border-[#DCE5DF] bg-white p-2.5 shadow-sm transition hover:border-[#0B5D3B]/50 hover:shadow-md sm:rounded-2xl sm:p-3.5"
                     >
                       <div>
-                        <div className="relative">
+                        <div className="relative overflow-hidden rounded-lg sm:rounded-xl">
                           <ProductViewer3D
                             images={
                               p.images?.length ? p.images : ["/images/new-launch.png"]
@@ -365,19 +369,19 @@ export const CategoryStorefront = ({
                             alt={p.name}
                           />
                           {p.badge && (
-                            <span className="absolute left-3 top-3 rounded-full bg-[#0B5D3B] px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-wider text-white">
+                            <span className="absolute left-1.5 top-1.5 rounded-full bg-[#0B5D3B] px-2 py-0.5 text-[8px] font-bold uppercase tracking-wider text-white sm:left-2.5 sm:top-2.5 sm:text-[10px]">
                               {p.badge}
                             </span>
                           )}
-                          <div className="absolute right-2 top-2 flex items-center gap-1.5">
+                          <div className="absolute right-1.5 top-1.5 flex items-center gap-1 sm:right-2 sm:top-2">
                             <button
                               type="button"
                               onClick={() => toggleWishlist(p.id)}
                               title="Save to Wishlist"
-                              className="cursor-pointer rounded-full border border-white/25 bg-black/50 p-1.5 text-white transition hover:border-white"
+                              className="cursor-pointer rounded-full border border-white/25 bg-black/50 p-1 text-white transition hover:border-white sm:p-1.5"
                             >
                               <Heart
-                                className={`h-3.5 w-3.5 ${
+                                className={`h-3 w-3 sm:h-3.5 sm:w-3.5 ${
                                   liked ? "fill-red-500 text-red-500" : "text-white"
                                 }`}
                               />
@@ -391,19 +395,28 @@ export const CategoryStorefront = ({
                           </div>
                         </div>
 
-                        <h2 className="mt-4 text-lg font-bold text-[#0B2219]">{p.name}</h2>
+                        <h2 className="mt-2.5 line-clamp-2 text-xs font-bold leading-snug text-[#0B2219] sm:mt-3 sm:text-sm">
+                          {p.name}
+                        </h2>
                         {p.tagline && (
-                          <p className="mt-1 text-xs text-[#4A5D54]">{p.tagline}</p>
+                          <p className="mt-0.5 line-clamp-1 text-[10px] text-[#4A5D54] sm:text-xs">
+                            {p.tagline}
+                          </p>
                         )}
 
-                        <div className="mt-3 flex items-center justify-between">
-                          <div className="flex items-baseline gap-2">
-                            <span className="text-xl font-bold text-[#0B5D3B]">
+                        <div className="mt-2 flex flex-wrap items-center justify-between gap-1">
+                          <div className="flex flex-wrap items-baseline gap-1.5">
+                            <span className="text-sm font-bold text-[#0B5D3B] sm:text-base">
                               ₹{Number(p.price).toLocaleString("en-IN")}
                             </span>
                             {p.mrp > p.price && (
-                              <span className="text-xs text-[#4A5D54]/50 line-through">
+                              <span className="text-[10px] text-[#4A5D54]/50 line-through sm:text-xs">
                                 ₹{Number(p.mrp).toLocaleString("en-IN")}
+                              </span>
+                            )}
+                            {discountPct > 0 && (
+                              <span className="text-[10px] font-bold text-[#0B5D3B]">
+                                {discountPct}% off
                               </span>
                             )}
                           </div>
@@ -411,15 +424,15 @@ export const CategoryStorefront = ({
                           <button
                             type="button"
                             onClick={() => setReviewProduct({ id: p.id, name: p.name })}
-                            className="inline-flex cursor-pointer items-center gap-1 rounded-full border border-[#DCE5DF] bg-[#F8FAF9] px-2.5 py-1 text-[11px] font-semibold text-[#0B2219] hover:border-[#0B5D3B]"
+                            className="inline-flex cursor-pointer items-center gap-0.5 rounded-full border border-[#DCE5DF] bg-[#F8FAF9] px-1.5 py-0.5 text-[10px] font-semibold text-[#0B2219] hover:border-[#0B5D3B] sm:px-2 sm:py-1 sm:text-[11px]"
                           >
-                            <Star className="h-3 w-3 fill-amber-400 text-amber-400" />
-                            Reviews
+                            <Star className="h-2.5 w-2.5 fill-amber-400 text-amber-400 sm:h-3 sm:w-3" />
+                            <span>Reviews</span>
                           </button>
                         </div>
 
                         {variants.length > 0 && (
-                          <div className="mt-3 flex flex-wrap gap-1.5">
+                          <div className="mt-2 flex flex-wrap gap-1">
                             {variants.map((v) => {
                               const out = v.stock <= 0;
                               const selected = activeVariant === v.label;
@@ -434,7 +447,7 @@ export const CategoryStorefront = ({
                                       [p.id]: v.label,
                                     }))
                                   }
-                                  className={`rounded-lg border px-2.5 py-1 text-xs font-semibold transition ${
+                                  className={`rounded-md border px-1.5 py-0.5 text-[10px] font-semibold transition sm:rounded-lg sm:px-2 sm:py-1 sm:text-[11px] ${
                                     out
                                       ? "cursor-not-allowed border-[#DCE5DF] bg-[#F8FAF9] text-[#4A5D54]/40 line-through"
                                       : selected
@@ -454,9 +467,9 @@ export const CategoryStorefront = ({
                         type="button"
                         disabled={isOutOfStock}
                         onClick={() => handleAdd(p)}
-                        className="mt-4 inline-flex w-full cursor-pointer items-center justify-center gap-2 rounded-full bg-[#0B5D3B] py-2.5 text-sm font-bold text-white transition hover:bg-[#08472D] disabled:cursor-not-allowed disabled:bg-[#DCE5DF] disabled:text-[#4A5D54]/60"
+                        className="mt-2.5 inline-flex w-full cursor-pointer items-center justify-center gap-1.5 rounded-full bg-[#0B5D3B] py-1.5 text-[11px] font-bold text-white transition hover:bg-[#08472D] disabled:cursor-not-allowed disabled:bg-[#DCE5DF] disabled:text-[#4A5D54]/60 sm:mt-3 sm:py-2 sm:text-xs"
                       >
-                        <ShoppingBag className="h-4 w-4" />
+                        <ShoppingBag className="h-3 w-3 sm:h-3.5 sm:w-3.5" />
                         {isOutOfStock ? "Out of Stock" : "Add to Cart"}
                       </button>
                     </div>
