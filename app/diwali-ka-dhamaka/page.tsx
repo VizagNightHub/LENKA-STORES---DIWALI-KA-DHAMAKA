@@ -7,15 +7,16 @@ import {
   Check,
   ChevronDown,
   ChevronUp,
-  Plus,
   Search,
   ShieldCheck,
+  ShoppingBag,
   Truck,
 } from "lucide-react";
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import { useCart } from "@/components/cart/CartProvider";
 import { ProductViewer3D } from "@/components/product/ProductViewer3D";
+import { recordRecentlyViewed } from "@/components/product/RecentlyViewedStrip";
 import { ShareProductButton } from "@/components/product/ShareProductButton";
 import { db } from "@/lib/firebase";
 
@@ -56,7 +57,7 @@ export default function DiwaliKaDhamakaPage() {
           itemCount: data.itemCount || "DIWALI SPECIAL",
           images: Array.isArray(data.images) ? data.images : ["/images/diwali.png"],
           items: Array.isArray(data.items) ? data.items : [],
-          accent: "#C9A45C",
+          accent: "#0B5D3B",
         };
       });
       setLiveProducts(list);
@@ -73,51 +74,51 @@ export default function DiwaliKaDhamakaPage() {
   );
 
   return (
-    <main className="min-h-screen bg-[#FAF8F3] pb-32 text-[#071410]">
-      <header className="sticky top-0 z-30 border-b border-[#0D211B]/10 bg-[#FAF8F3]/90 backdrop-blur-md">
-        <div className="mx-auto flex max-w-7xl items-center justify-between px-4 py-4 sm:px-8">
+    <main className="min-h-screen bg-[#F8FAF9] pb-24 text-[#0B2219] md:pb-12">
+      <header className="sticky top-0 z-30 border-b border-[#DCE5DF] bg-white/90 backdrop-blur-md">
+        <div className="mx-auto flex max-w-7xl items-center justify-between px-4 py-3 sm:px-8">
           <Link
             href="/"
-            className="inline-flex items-center gap-2 text-sm font-semibold text-[#0D211B]/80 transition-colors hover:text-[#071410]"
+            className="inline-flex items-center gap-1.5 text-xs font-semibold text-[#4A5D54] transition-colors hover:text-[#0B5D3B] sm:text-sm"
           >
             <ArrowLeft className="h-4 w-4" />
             LENKA STORE
           </Link>
-          <span className="rounded-full bg-[#071410] px-3 py-1 text-[11px] font-bold tracking-widest text-[#C9A45C]">
+          <span className="rounded-full bg-[#0B5D3B] px-3 py-1 text-[10px] font-bold tracking-widest text-white sm:text-[11px]">
             DIWALI KA DHAMAKA
           </span>
         </div>
       </header>
 
-      <section className="mx-auto max-w-7xl px-4 pt-10 sm:px-8 md:pt-14">
-        <div className="grid items-center gap-8 rounded-3xl border border-[#C9A45C]/35 bg-[#0D211B] p-6 text-[#FFFDF2] shadow-sm sm:p-10 lg:grid-cols-12">
-          <div className="lg:col-span-7">
-            <p className="text-xs font-semibold uppercase tracking-[0.25em] text-[#C9A45C]">
+      <section className="mx-auto max-w-7xl px-3 pt-5 sm:px-8 sm:pt-8">
+        <div className="grid items-center gap-5 rounded-2xl border border-[#DCE5DF] bg-[#0B3B2B] p-5 text-white shadow-sm sm:rounded-3xl sm:p-8 lg:grid-cols-12">
+          <div className="lg:col-span-8">
+            <p className="text-[10px] font-semibold uppercase tracking-[0.25em] text-[#A7F3D0] sm:text-xs">
               Sivakasi Direct • AP &amp; Telangana Only
             </p>
-            <h1 className="mt-3 text-4xl font-semibold tracking-tight sm:text-5xl md:text-6xl">
+            <h1 className="mt-2 text-2xl font-bold tracking-tight sm:text-4xl">
               Festive Cracker Combos
             </h1>
-            <p className="mt-4 max-w-xl text-sm leading-relaxed text-[#FFFDF2]/75 sm:text-base">
+            <p className="mt-2 max-w-xl text-xs leading-relaxed text-white/80 sm:text-sm">
               Hand-picked Sivakasi firework boxes packed for maximum value.
               Prepaid-only booking via UPI with UTR verification across Andhra
               Pradesh &amp; Telangana.
             </p>
 
-            <div className="mt-6 flex flex-wrap gap-3 text-xs text-[#FFFDF2]/85">
-              <span className="inline-flex items-center gap-1.5 rounded-full border border-[#C9A45C]/30 bg-[#071410] px-3.5 py-1.5">
-                <ShieldCheck className="h-3.5 w-3.5 text-[#C9A45C]" />
+            <div className="mt-4 flex flex-wrap gap-2 text-[11px] text-white/90 sm:text-xs">
+              <span className="inline-flex items-center gap-1.5 rounded-full border border-white/20 bg-white/10 px-3 py-1">
+                <ShieldCheck className="h-3.5 w-3.5 text-[#A7F3D0]" />
                 100% Genuine Sivakasi Stock
               </span>
-              <span className="inline-flex items-center gap-1.5 rounded-full border border-[#C9A45C]/30 bg-[#071410] px-3.5 py-1.5">
-                <Truck className="h-3.5 w-3.5 text-[#C9A45C]" />
+              <span className="inline-flex items-center gap-1.5 rounded-full border border-white/20 bg-white/10 px-3 py-1">
+                <Truck className="h-3.5 w-3.5 text-[#A7F3D0]" />
                 AP &amp; Telangana Priority Supply
               </span>
             </div>
           </div>
 
-          <div className="lg:col-span-5">
-            <div className="relative mx-auto aspect-square max-w-[300px] overflow-hidden rounded-2xl border border-[#C9A45C]/30 shadow-[0_24px_60px_rgba(0,0,0,0.45)]">
+          <div className="hidden lg:col-span-4 lg:block">
+            <div className="relative mx-auto aspect-[4/3] max-w-[240px] overflow-hidden rounded-2xl border border-white/20 shadow-lg">
               <img
                 src="/images/diwali.png"
                 alt="Lenka Store Diwali Ka Dhamaka Combo Boxes"
@@ -128,71 +129,83 @@ export default function DiwaliKaDhamakaPage() {
         </div>
       </section>
 
-      <section className="mx-auto mt-10 max-w-7xl px-4 sm:px-8">
-        <div className="mb-8 flex justify-end">
-          <div className="relative w-full md:w-72">
-            <Search className="absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-[#0D211B]/50" />
+      <section className="mx-auto mt-6 max-w-7xl px-3 sm:mt-8 sm:px-8">
+        <div className="mb-5 flex justify-end">
+          <div className="relative w-full sm:w-72">
+            <Search className="absolute left-3.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-[#0B5D3B] sm:h-4 sm:w-4" />
             <input
               type="text"
               placeholder="Search Diwali combos..."
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              className="w-full rounded-full border border-[#0D211B]/15 bg-white py-2.5 pl-10 pr-4 text-xs text-[#071410] outline-none focus:border-[#C9A45C]"
+              className="w-full rounded-full border border-[#DCE5DF] bg-white py-2 pl-9 pr-4 text-xs text-[#0B2219] shadow-sm outline-none focus:border-[#0B5D3B] sm:py-2.5 sm:pl-10 sm:text-sm"
             />
           </div>
         </div>
 
-        <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
+        <div className="grid grid-cols-2 gap-2.5 sm:grid-cols-3 sm:gap-4 xl:grid-cols-4">
           {displayProducts.map((combo, idx) => {
             const isOpen = !!expanded[combo.id];
             const hasItems = Array.isArray(combo.items) && combo.items.length > 0;
+            const discountPct =
+              combo.mrp > combo.price
+                ? Math.round(((combo.mrp - combo.price) / combo.mrp) * 100)
+                : 0;
 
             return (
               <motion.div
                 key={combo.id}
                 id={`product-${combo.id}`}
-                initial={{ opacity: 0, y: 28 }}
+                initial={{ opacity: 0, y: 18 }}
                 animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.5, delay: idx * 0.1 }}
-                className="relative flex flex-col justify-between rounded-3xl border border-[#0D211B]/10 bg-white p-6 shadow-sm transition-all hover:border-[#C9A45C] sm:p-8"
+                transition={{ duration: 0.4, delay: idx * 0.05 }}
+                className="relative flex flex-col justify-between rounded-xl border border-[#DCE5DF] bg-white p-2.5 shadow-sm transition-all hover:border-[#0B5D3B]/50 hover:shadow-md sm:rounded-2xl sm:p-3.5"
               >
                 <div>
-                  <div className="flex items-center justify-between gap-2">
-                    <ShareProductButton
-                      productId={combo.id}
-                      productName={combo.name}
-                      price={combo.price}
-                      categoryPath="/diwali-ka-dhamaka"
-                    />
-                    {combo.badge && (
-                      <span className="rounded-full bg-[#C9A45C] px-3 py-1 text-[10px] font-bold tracking-wider text-[#071410]">
-                        {combo.badge}
-                      </span>
-                    )}
-                  </div>
-
-                  <div className="mt-4">
+                  <div className="relative overflow-hidden rounded-lg sm:rounded-xl">
                     <ProductViewer3D
                       images={combo.images}
                       alt={combo.name}
                       accent={combo.accent}
                     />
+                    {combo.badge && (
+                      <span className="absolute left-1.5 top-1.5 rounded-full bg-[#0B5D3B] px-2 py-0.5 text-[8px] font-bold uppercase tracking-wider text-white sm:left-2.5 sm:top-2.5 sm:text-[10px]">
+                        {combo.badge}
+                      </span>
+                    )}
+                    <div className="absolute right-1.5 top-1.5 sm:right-2 sm:top-2">
+                      <ShareProductButton
+                        productId={combo.id}
+                        productName={combo.name}
+                        price={combo.price}
+                        categoryPath="/diwali-ka-dhamaka"
+                      />
+                    </div>
                   </div>
 
-                  <h2 className="mt-5 text-2xl font-bold tracking-tight text-[#071410]">
+                  <h2 className="mt-2.5 line-clamp-2 text-xs font-bold leading-snug text-[#0B2219] sm:mt-3 sm:text-sm">
                     {combo.name}
                   </h2>
-                  <p className="mt-1.5 text-sm text-[#0D211B]/65">
-                    {combo.tagline}
-                  </p>
+                  {combo.tagline && (
+                    <p className="mt-0.5 line-clamp-1 text-[10px] text-[#4A5D54] sm:text-xs">
+                      {combo.tagline}
+                    </p>
+                  )}
 
-                  <div className="mt-5 flex items-baseline gap-3">
-                    <span className="text-4xl font-bold text-[#071410]">
+                  <div className="mt-2 flex flex-wrap items-baseline gap-1.5">
+                    <span className="text-sm font-bold text-[#0B5D3B] sm:text-base">
                       ₹{combo.price.toLocaleString("en-IN")}
                     </span>
-                    <span className="text-sm text-[#0D211B]/40 line-through">
-                      ₹{combo.mrp.toLocaleString("en-IN")}
-                    </span>
+                    {combo.mrp > combo.price && (
+                      <span className="text-[10px] text-[#4A5D54]/50 line-through sm:text-xs">
+                        ₹{combo.mrp.toLocaleString("en-IN")}
+                      </span>
+                    )}
+                    {discountPct > 0 && (
+                      <span className="text-[10px] font-bold text-[#0B5D3B]">
+                        {discountPct}% off
+                      </span>
+                    )}
                   </div>
 
                   {hasItems && (
@@ -200,21 +213,21 @@ export default function DiwaliKaDhamakaPage() {
                       <button
                         type="button"
                         onClick={() => toggleItems(combo.id)}
-                        className="mt-5 flex w-full cursor-pointer items-center justify-between rounded-xl border border-[#0D211B]/15 bg-[#FAF8F3] px-4 py-2.5 text-xs font-semibold text-[#071410] hover:border-[#C9A45C]"
+                        className="mt-2 flex w-full cursor-pointer items-center justify-between rounded-lg border border-[#DCE5DF] bg-[#F8FAF9] px-2.5 py-1.5 text-[10px] font-semibold text-[#0B2219] hover:border-[#0B5D3B] sm:text-xs"
                       >
-                        <span>{isOpen ? "Hide" : "View"} Box Contents</span>
+                        <span>{isOpen ? "Hide" : "Box"} Contents</span>
                         {isOpen ? (
-                          <ChevronUp className="h-4 w-4" />
+                          <ChevronUp className="h-3.5 w-3.5" />
                         ) : (
-                          <ChevronDown className="h-4 w-4" />
+                          <ChevronDown className="h-3.5 w-3.5" />
                         )}
                       </button>
 
                       {isOpen && (
-                        <ul className="mt-4 space-y-2 border-t border-[#0D211B]/10 pt-4 text-xs text-[#0D211B]/75">
+                        <ul className="mt-2 space-y-1 border-t border-[#E6ECE8] pt-2 text-[10px] text-[#4A5D54] sm:text-xs">
                           {combo.items!.map((item) => (
-                            <li key={item} className="flex items-start gap-2">
-                              <Check className="mt-0.5 h-3.5 w-3.5 shrink-0 text-[#C9A45C]" />
+                            <li key={item} className="flex items-start gap-1.5">
+                              <Check className="mt-0.5 h-3 w-3 shrink-0 text-[#0B5D3B]" />
                               <span>{item}</span>
                             </li>
                           ))}
@@ -224,30 +237,35 @@ export default function DiwaliKaDhamakaPage() {
                   )}
                 </div>
 
-                <div className="mt-8 pt-4">
-                  <button
-                    type="button"
-                    onClick={() => {
-                      addItem({
-                        id: combo.id,
-                        name: combo.name,
-                        price: combo.price,
-                        category: "diwali-ka-dhamaka",
-                      });
-                      openDrawer();
-                    }}
-                    className="flex w-full cursor-pointer items-center justify-center gap-2 rounded-full bg-[#C9A45C] py-3 text-sm font-bold text-[#071410] transition-colors hover:bg-[#d8b673]"
-                  >
-                    <Plus className="h-4 w-4" />
-                    Add to Cart
-                  </button>
-                </div>
+                <button
+                  type="button"
+                  onClick={() => {
+                    recordRecentlyViewed({
+                      id: combo.id,
+                      name: combo.name,
+                      price: combo.price,
+                      category: "diwali-ka-dhamaka",
+                      image: combo.images?.[0],
+                    });
+                    addItem({
+                      id: combo.id,
+                      name: combo.name,
+                      price: combo.price,
+                      category: "diwali-ka-dhamaka",
+                    });
+                    openDrawer();
+                  }}
+                  className="mt-2.5 inline-flex w-full cursor-pointer items-center justify-center gap-1.5 rounded-full bg-[#0B5D3B] py-1.5 text-[11px] font-bold text-white transition hover:bg-[#08472D] sm:mt-3 sm:py-2 sm:text-xs"
+                >
+                  <ShoppingBag className="h-3 w-3 sm:h-3.5 sm:w-3.5" />
+                  Add to Cart
+                </button>
               </motion.div>
             );
           })}
         </div>
 
-        <p className="mt-10 text-center text-xs text-[#0D211B]/55">
+        <p className="mt-8 text-center text-[11px] text-[#4A5D54] sm:text-xs">
           Pre-booking is strictly for buyers aged 18+ in compliance with
           applicable fireworks safety and transport guidelines across Andhra
           Pradesh &amp; Telangana. Prepaid UPI orders only.
